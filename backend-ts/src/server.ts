@@ -961,7 +961,7 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
 });
 
 // ============================================================================
-// STRIPE CHECKOUT (MOCK - sem Stripe SDK)
+// STRIPE CHECKOUT
 // ============================================================================
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
   try {
@@ -972,30 +972,171 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Plano inválido' });
     }
 
-    // Create payment transaction record
-    const sessionId = uuidv4();
     const plan = PLANS[plan_id as keyof typeof PLANS];
+    if (!plan.stripePriceId) {
+      return res.status(400).json({ error: 'Plano não configurado no Stripe' });
+    }
 
+    // Get or create Stripe customer
+    let customer;
+    if (user.stripeCustomerId) {
+      customer = await stripe.customers.retrieve(user.stripeCustomerId);
+    } else {
+      customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name,
+      });
+      // Update user with customer ID
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customer.id },
+      });
+    }
+
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: plan.stripePriceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${FRONTEND_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${FRONTEND_URL}/plans?canceled=true`,
+      metadata: {
+        userId: user.id,
+        plan: plan_id,
+      },
+    });
+
+    // Create payment transaction record
     await prisma.paymentTransaction.create({
       data: {
         userId: user.id,
         userEmail: user.email,
-        sessionId,
+        sessionId: session.id,
         amount: plan.price,
         currency: 'BRL',
         plan: plan_id,
         paymentStatus: 'pending',
+        stripePaymentId: session.id,
       },
     });
 
-    // For now, return a mock stripe URL
-    // In production, would use Stripe SDK to create actual session
-    const mockUrl = `https://checkout.stripe.com/pay/cs_test_${sessionId}`;
-    res.json({ url: mockUrl, sessionId });
+    res.json({ url: session.url, sessionId: session.id });
   } catch (err: any) {
+    console.error('Stripe checkout error:', err);
     res.status(500).json({ error: err.message || 'Erro ao criar checkout' });
   }
 });
+
+// ============================================================================
+// STRIPE WEBHOOK
+// ============================================================================
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'] as string;
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret!);
+  } catch (err: any) {
+    console.log(`Webhook signature verification failed.`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      await handleCheckoutCompleted(session);
+      break;
+    case 'invoice.payment_succeeded':
+      const invoice = event.data.object;
+      await handleInvoicePaymentSucceeded(invoice);
+      break;
+    case 'customer.subscription.deleted':
+      const subscription = event.data.object;
+      await handleSubscriptionDeleted(subscription);
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+async function handleCheckoutCompleted(session: any) {
+  const userId = session.metadata.userId;
+  const plan = session.metadata.plan;
+
+  // Update payment transaction
+  await prisma.paymentTransaction.updateMany({
+    where: { sessionId: session.id },
+    data: {
+      paymentStatus: 'paid',
+      status: 'completed',
+      stripePaymentId: session.payment_intent,
+    },
+  });
+
+  // Update user plan
+  const planExpiresAt = new Date();
+  planExpiresAt.setMonth(planExpiresAt.getMonth() + 1); // Assuming monthly
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      plan: plan,
+      stripeSubscriptionId: session.subscription,
+      planExpiresAt,
+    },
+  });
+}
+
+async function handleInvoicePaymentSucceeded(invoice: any) {
+  // Handle recurring payments
+  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+  const customer = await stripe.customers.retrieve(subscription.customer as string);
+
+  // Find user by stripeCustomerId
+  const user = await prisma.user.findFirst({
+    where: { stripeCustomerId: customer.id },
+  });
+
+  if (user) {
+    const planExpiresAt = new Date();
+    planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { planExpiresAt },
+    });
+  }
+}
+
+async function handleSubscriptionDeleted(subscription: any) {
+  const customer = await stripe.customers.retrieve(subscription.customer);
+
+  const user = await prisma.user.findFirst({
+    where: { stripeCustomerId: customer.id },
+  });
+
+  if (user) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        plan: 'FREE',
+        stripeSubscriptionId: null,
+        planExpiresAt: null,
+      },
+    });
+  }
+}
 
 // ============================================================================
 // HEALTH
