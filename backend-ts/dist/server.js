@@ -17,18 +17,21 @@ const multer_1 = __importDefault(require("multer"));
 const zod_1 = require("zod");
 const pdfkit_1 = __importDefault(require("pdfkit"));
 const exceljs_1 = __importDefault(require("exceljs"));
+const stripe_1 = __importDefault(require("stripe"));
 dotenv_1.default.config();
 (_a = process.env).DATABASE_URL || (_a.DATABASE_URL = 'file:./dev.db');
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
+const stripe = process.env.STRIPE_SECRET_KEY ? new stripe_1.default(process.env.STRIPE_SECRET_KEY) : null;
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixxapp.vercel.app';
+const corsOrigins = [
+    FRONTEND_URL
+];
 app.use((0, cors_1.default)({
-    origin: [
-        "https://finixxapp.vercel.app/",
-        "http://localhost:5173"
-    ],
+    origin: corsOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
@@ -48,12 +51,14 @@ exports.PLANS = {
         transactionsLimit: 500, categoriesLimit: 999, goalsLimit: 5,
         hasAI: true, hasAdvancedAI: false, hasPDF: true, hasExcel: false,
         hasPrioritySupport: false,
+        stripePriceId: 'price_1TRjBSJjlHCvcKLJki6868NK',
     },
     PRO: {
         id: 'PRO', name: 'Pro', price: 35, currency: 'BRL',
         transactionsLimit: -1, categoriesLimit: 999, goalsLimit: -1,
         hasAI: true, hasAdvancedAI: true, hasPDF: true, hasExcel: true,
         hasPrioritySupport: true,
+        stripePriceId: 'price_1TRjBTJjlHCvcKLJICo0Js1Y',
     },
 };
 const currentMonthKey = () => {
@@ -162,11 +167,29 @@ const profileUpdateSchema = zod_1.z.object({
     newPassword: zod_1.z.string().min(6).max(128).optional(),
     photo: zod_1.z.string().optional(),
 });
+const categoriesUpdateSchema = zod_1.z.object({
+    categories: zod_1.z.array(zod_1.z.string().min(1).max(50)).min(1),
+});
 const userUpdateSchema = zod_1.z.object({
     name: zod_1.z.string().optional(),
     role: zod_1.z.enum(['USER', 'ADMIN']).optional(),
     blocked: zod_1.z.boolean().optional(),
     plan: zod_1.z.enum(['FREE', 'BASIC', 'PRO']).optional(),
+    hasCompletedOnboarding: zod_1.z.boolean().optional(),
+    usageType: zod_1.z.enum(['pessoal', 'empresarial', 'organizar']).optional(),
+    companyName: zod_1.z.string().optional().nullable(),
+    companyLogo: zod_1.z.string().optional().nullable(),
+    businessPurpose: zod_1.z.string().optional().nullable(),
+    primaryColor: zod_1.z.string().optional().nullable(),
+    categories: zod_1.z.array(zod_1.z.string().min(1).max(50)).optional(),
+});
+const onboardingSchema = zod_1.z.object({
+    usageType: zod_1.z.enum(['pessoal', 'empresarial', 'organizar']),
+    companyName: zod_1.z.string().optional(),
+    companyLogo: zod_1.z.string().optional(),
+    businessPurpose: zod_1.z.string().optional(),
+    primaryColor: zod_1.z.string().optional(),
+    categories: zod_1.z.array(zod_1.z.string().min(1).max(50)).min(1),
 });
 // ============================================================================
 // HELPERS
@@ -175,7 +198,9 @@ const userPublic = (u) => ({
     id: u.id, name: u.name, email: u.email, role: u.role, blocked: u.blocked,
     photo: u.photo, plan: u.plan, transactionsUsed: u.transactionsUsed,
     stripeCustomerId: u.stripeCustomerId, stripeSubscriptionId: u.stripeSubscriptionId,
-    planExpiresAt: u.planExpiresAt, createdAt: u.createdAt,
+    planExpiresAt: u.planExpiresAt, hasCompletedOnboarding: u.hasCompletedOnboarding,
+    usageType: u.usageType, companyName: u.companyName, companyLogo: u.companyLogo,
+    businessPurpose: u.businessPurpose, primaryColor: u.primaryColor, createdAt: u.createdAt,
 });
 // ============================================================================
 // AUTH
@@ -232,8 +257,64 @@ app.get('/api/auth/me', authenticate, (req, res) => {
     res.json({ ...userPublic(user), planDetails: plan });
 });
 // ============================================================================
-// PLANS
+// ONBOARDING
 // ============================================================================
+app.post('/api/onboarding', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        if (user.plan !== 'PRO') {
+            return res.status(403).json({ error: 'Onboarding disponível apenas para plano PRO' });
+        }
+        if (user.hasCompletedOnboarding) {
+            return res.status(400).json({ error: 'Onboarding já completado' });
+        }
+        const data = onboardingSchema.parse(req.body);
+        const updateData = {
+            hasCompletedOnboarding: true,
+            usageType: data.usageType,
+        };
+        if (data.usageType !== 'pessoal') {
+            updateData.companyName = data.companyName;
+            updateData.companyLogo = data.companyLogo;
+            updateData.businessPurpose = data.businessPurpose;
+            updateData.primaryColor = data.primaryColor;
+        }
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: updateData,
+        });
+        // Salvar categorias personalizadas
+        await prisma.category.createMany({
+            data: data.categories.map(name => ({ userId: user.id, name })),
+        });
+        res.json({ user: userPublic(updatedUser) });
+    }
+    catch (err) {
+        console.error('Onboarding error:', err);
+        if (err.name === 'ZodError') {
+            return res.status(400).json({ error: 'Dados inválidos' });
+        }
+        res.status(500).json({ error: err.message || 'Erro no onboarding' });
+    }
+});
+app.post('/api/upload-logo', authenticate, upload.single('logo'), async (req, res) => {
+    try {
+        const user = req.user;
+        if (user.plan !== 'PRO') {
+            return res.status(403).json({ error: 'Upload de logo disponível apenas para plano PRO' });
+        }
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+        }
+        // Simular upload - em produção, salvar no cloud storage
+        const logoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        res.json({ logoUrl });
+    }
+    catch (err) {
+        console.error('Upload error:', err);
+        res.status(500).json({ error: 'Erro no upload' });
+    }
+});
 app.get('/api/plans', (req, res) => {
     res.json(Object.values(exports.PLANS));
 });
@@ -249,9 +330,48 @@ app.get('/api/plans/me', authenticate, (req, res) => {
         planExpiresAt: user.planExpiresAt,
     });
 });
-// ============================================================================
-// TRANSACTIONS (with plan gate)
-// ============================================================================
+app.put('/api/categories', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+        if (plan.categoriesLimit === 3) {
+            return res.status(403).json({ error: 'Atualização de categorias disponível apenas para planos avançados' });
+        }
+        const data = categoriesUpdateSchema.parse(req.body);
+        const uniqueCategories = Array.from(new Set(data.categories.map((cat) => cat.trim()).filter(Boolean)));
+        if (uniqueCategories.length === 0) {
+            return res.status(400).json({ error: 'Adicione pelo menos uma categoria' });
+        }
+        if (plan.categoriesLimit !== 999 && uniqueCategories.length > plan.categoriesLimit) {
+            return res.status(400).json({ error: `Plano ${plan.name} permite até ${plan.categoriesLimit} categorias.` });
+        }
+        await prisma.category.deleteMany({ where: { userId: user.id } });
+        await prisma.category.createMany({ data: uniqueCategories.map((name) => ({ userId: user.id, name })) });
+        const categories = await prisma.category.findMany({ where: { userId: user.id }, orderBy: { name: 'asc' } });
+        res.json(categories);
+    }
+    catch (err) {
+        console.error('Categories update error:', err);
+        if (err.name === 'ZodError') {
+            return res.status(400).json({ error: 'Dados de categoria inválidos' });
+        }
+        res.status(500).json({ error: err.message || 'Erro ao atualizar categorias' });
+    }
+});
+app.get('/api/categories', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const categories = await prisma.category.findMany({
+            where: { userId: user.id },
+            orderBy: { name: 'asc' },
+        });
+        res.json(categories);
+    }
+    catch (err) {
+        console.error('Categories error:', err);
+        res.status(500).json({ error: 'Erro ao buscar categorias' });
+    }
+});
 app.get('/api/transactions', authenticate, async (req, res) => {
     const user = req.user;
     const { type, category, search, startDate, endDate } = req.query;
@@ -540,12 +660,27 @@ app.get('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
         return res.status(404).json({ error: 'Usuário não encontrado' });
     const transactions = await prisma.transaction.findMany({ where: { userId } });
     const goals = await prisma.goal.findMany({ where: { userId } });
-    res.json({ user: userPublic(user), transactions, goals });
+    const categories = await prisma.category.findMany({ where: { userId }, orderBy: { name: 'asc' } });
+    res.json({ user: userPublic(user), transactions, goals, categories });
 });
 app.put('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
     const data = userUpdateSchema.parse(req.body);
     const userId = String(req.params.id);
-    const updated = await prisma.user.update({ where: { id: userId }, data });
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser)
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+    const { categories, ...updateData } = data;
+    if (data.plan === 'PRO' && targetUser.plan !== 'PRO' && data.hasCompletedOnboarding === undefined) {
+        updateData.hasCompletedOnboarding = false;
+    }
+    const updated = await prisma.user.update({ where: { id: userId }, data: updateData });
+    if (categories) {
+        const uniqueCategories = Array.from(new Set(categories.map((name) => name.trim()).filter(Boolean)));
+        await prisma.category.deleteMany({ where: { userId } });
+        if (uniqueCategories.length) {
+            await prisma.category.createMany({ data: uniqueCategories.map((name) => ({ userId, name })) });
+        }
+    }
     res.json(userPublic(updated));
 });
 app.delete('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
@@ -789,38 +924,169 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
     res.json(tx);
 });
 // ============================================================================
-// STRIPE CHECKOUT (MOCK - sem Stripe SDK)
+// STRIPE CHECKOUT
 // ============================================================================
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ error: 'Stripe não configurado' });
+    }
     try {
         const { plan_id } = req.body;
         const user = req.user;
         if (!['BASIC', 'PRO'].includes(plan_id)) {
             return res.status(400).json({ error: 'Plano inválido' });
         }
-        // Create payment transaction record
-        const sessionId = (0, uuid_1.v4)();
         const plan = exports.PLANS[plan_id];
+        if (!plan.stripePriceId) {
+            return res.status(400).json({ error: 'Plano não configurado no Stripe' });
+        }
+        // Get or create Stripe customer
+        let customer;
+        if (user.stripeCustomerId) {
+            customer = await stripe.customers.retrieve(user.stripeCustomerId);
+        }
+        else {
+            customer = await stripe.customers.create({
+                email: user.email,
+                name: user.name,
+            });
+            // Update user with customer ID
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { stripeCustomerId: customer.id },
+            });
+        }
+        // Create checkout session
+        const session = await stripe.checkout.sessions.create({
+            customer: customer.id,
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price: plan.stripePriceId,
+                    quantity: 1,
+                },
+            ],
+            mode: 'subscription',
+            success_url: `${FRONTEND_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${FRONTEND_URL}/plans?canceled=true`,
+            metadata: {
+                userId: user.id,
+                plan: plan_id,
+            },
+        });
+        // Create payment transaction record
         await prisma.paymentTransaction.create({
             data: {
                 userId: user.id,
                 userEmail: user.email,
-                sessionId,
+                sessionId: session.id,
                 amount: plan.price,
                 currency: 'BRL',
                 plan: plan_id,
                 paymentStatus: 'pending',
+                stripePaymentId: session.id,
             },
         });
-        // For now, return a mock stripe URL
-        // In production, would use Stripe SDK to create actual session
-        const mockUrl = `https://checkout.stripe.com/pay/cs_test_${sessionId}`;
-        res.json({ url: mockUrl, sessionId });
+        res.json({ url: session.url, sessionId: session.id });
     }
     catch (err) {
+        console.error('Stripe checkout error:', err);
         res.status(500).json({ error: err.message || 'Erro ao criar checkout' });
     }
 });
+// ============================================================================
+// STRIPE WEBHOOK
+// ============================================================================
+app.post('/api/stripe/webhook', express_1.default.raw({ type: 'application/json' }), async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ error: 'Stripe não configurado' });
+    }
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    }
+    catch (err) {
+        console.log(`Webhook signature verification failed.`, err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    // Handle the event
+    switch (event.type) {
+        case 'checkout.session.completed':
+            const session = event.data.object;
+            await handleCheckoutCompleted(session);
+            break;
+        case 'invoice.payment_succeeded':
+            const invoice = event.data.object;
+            await handleInvoicePaymentSucceeded(invoice);
+            break;
+        case 'customer.subscription.deleted':
+            const subscription = event.data.object;
+            await handleSubscriptionDeleted(subscription);
+            break;
+        default:
+            console.log(`Unhandled event type ${event.type}`);
+    }
+    res.json({ received: true });
+});
+async function handleCheckoutCompleted(session) {
+    const userId = session.metadata.userId;
+    const plan = session.metadata.plan;
+    // Update payment transaction
+    await prisma.paymentTransaction.updateMany({
+        where: { sessionId: session.id },
+        data: {
+            paymentStatus: 'paid',
+            status: 'completed',
+            stripePaymentId: session.payment_intent,
+        },
+    });
+    // Update user plan
+    const planExpiresAt = new Date();
+    planExpiresAt.setMonth(planExpiresAt.getMonth() + 1); // Assuming monthly
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            plan: plan,
+            stripeSubscriptionId: session.subscription,
+            planExpiresAt,
+        },
+    });
+}
+async function handleInvoicePaymentSucceeded(invoice) {
+    // Handle recurring payments
+    const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+    const customer = await stripe.customers.retrieve(subscription.customer);
+    // Find user by stripeCustomerId
+    const user = await prisma.user.findFirst({
+        where: { stripeCustomerId: customer.id },
+    });
+    if (user) {
+        const planExpiresAt = new Date();
+        planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { planExpiresAt },
+        });
+    }
+}
+async function handleSubscriptionDeleted(subscription) {
+    const customer = await stripe.customers.retrieve(subscription.customer);
+    const user = await prisma.user.findFirst({
+        where: { stripeCustomerId: customer.id },
+    });
+    if (user) {
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                plan: 'FREE',
+                stripeSubscriptionId: null,
+                planExpiresAt: null,
+            },
+        });
+    }
+}
 // ============================================================================
 // HEALTH
 // ============================================================================

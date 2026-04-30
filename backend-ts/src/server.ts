@@ -18,7 +18,7 @@ process.env.DATABASE_URL ||= 'file:./dev.db';
 const app = express();
 const prisma = new PrismaClient();
 const upload = multer({ storage: multer.memoryStorage() });
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
@@ -964,6 +964,10 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
 // STRIPE CHECKOUT
 // ============================================================================
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe não configurado' });
+  }
+
   try {
     const { plan_id } = req.body;
     const user = (req as any).user;
@@ -980,9 +984,9 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     // Get or create Stripe customer
     let customer;
     if (user.stripeCustomerId) {
-      customer = await stripe.customers.retrieve(user.stripeCustomerId);
+      customer = await stripe!.customers.retrieve(user.stripeCustomerId);
     } else {
-      customer = await stripe.customers.create({
+      customer = await stripe!.customers.create({
         email: user.email,
         name: user.name,
       });
@@ -994,7 +998,7 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe!.checkout.sessions.create({
       customer: customer.id,
       payment_method_types: ['card'],
       line_items: [
@@ -1037,13 +1041,17 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
 // STRIPE WEBHOOK
 // ============================================================================
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe não configurado' });
+  }
+
   const sig = req.headers['stripe-signature'] as string;
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret!);
+    event = stripe!.webhooks.constructEvent(req.body, sig, endpointSecret!);
   } catch (err: any) {
     console.log(`Webhook signature verification failed.`, err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -1100,8 +1108,8 @@ async function handleCheckoutCompleted(session: any) {
 
 async function handleInvoicePaymentSucceeded(invoice: any) {
   // Handle recurring payments
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-  const customer = await stripe.customers.retrieve(subscription.customer as string);
+  const subscription = await stripe!.subscriptions.retrieve(invoice.subscription);
+  const customer = await stripe!.customers.retrieve(subscription.customer as string);
 
   // Find user by stripeCustomerId
   const user = await prisma.user.findFirst({
@@ -1120,7 +1128,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
 }
 
 async function handleSubscriptionDeleted(subscription: any) {
-  const customer = await stripe.customers.retrieve(subscription.customer);
+  const customer = await stripe!.customers.retrieve(subscription.customer);
 
   const user = await prisma.user.findFirst({
     where: { stripeCustomerId: customer.id },
