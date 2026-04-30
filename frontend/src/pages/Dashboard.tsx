@@ -75,11 +75,11 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="skeleton h-10 w-64" />
+        <div className="skeleton h-10 w-48 sm:w-64" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-32" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-28 sm:h-32" />)}
         </div>
-        <div className="skeleton h-80" />
+        <div className="skeleton h-60 sm:h-80" />
       </div>
     );
   }

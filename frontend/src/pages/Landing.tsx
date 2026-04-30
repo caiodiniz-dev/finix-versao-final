@@ -104,7 +104,7 @@ export default function Landing() {
 
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
             <Logo />
           </motion.div>
@@ -127,31 +127,31 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         {/* Ambient orbs */}
         <motion.div
-          className="absolute -top-32 -left-32 w-[38rem] h-[38rem] rounded-full blur-3xl opacity-30"
+          className="absolute -top-32 -left-32 w-[38rem] h-[38rem] rounded-full blur-3xl opacity-30 hidden md:block"
           style={{ background: 'radial-gradient(circle, #2563EB, transparent 60%)' }}
           animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute top-10 -right-32 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-30"
+          className="absolute top-10 -right-32 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-30 hidden md:block"
           style={{ background: 'radial-gradient(circle, #7C3AED, transparent 60%)' }}
           animate={{ scale: [1.1, 1, 1.1], opacity: [0.35, 0.25, 0.35] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute bottom-0 left-1/3 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-25"
+          className="absolute bottom-0 left-1/3 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-25 hidden md:block"
           style={{ background: 'radial-gradient(circle, #22C55E, transparent 60%)' }}
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative max-w-7xl mx-auto px-6 pt-24 pb-32 grid lg:grid-cols-2 gap-14 items-center">
-          <div>
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-24 pb-16 sm:pb-32 grid lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+          <div className="order-2 lg:order-1">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="chip bg-gradient-to-r from-brand-blue/10 to-brand-purple/10 text-brand-blue mb-5 border border-brand-blue/20 backdrop-blur"
+              className="chip bg-gradient-to-r from-brand-blue/10 to-brand-purple/10 text-brand-blue mb-5 border border-brand-blue/20 backdrop-blur w-fit"
             >
               <Sparkles className="w-3.5 h-3.5" /> Implantado Com I.A.
             </motion.div>
@@ -159,7 +159,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.05 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-display font-extrabold leading-[1.05] tracking-tight"
+              className="text-3xl sm:text-4xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight"
             >
               Controle suas finanças como um{' '}
               <span className="relative inline-block">
@@ -172,37 +172,37 @@ export default function Landing() {
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
-              className="mt-5 text-lg text-slate-600 max-w-xl leading-relaxed"
+              className="mt-5 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed"
             >
               Organize gastos, economize mais e alcance seus objetivos com um painel premium, insights inteligentes por IA e metas que realmente funcionam.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
-              className="mt-8 flex flex-wrap gap-3"
+              className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3"
             >
-              <Link to="/register" className="btn-primary !px-7 !py-3.5 text-base group" data-testid="hero-cta-register">
+              <Link to="/register" className="btn-primary !px-6 sm:!px-7 !py-3 sm:!py-3.5 text-sm sm:text-base group w-full sm:w-auto justify-center" data-testid="hero-cta-register">
                 Começar grátis
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <a href="#preview" className="btn-outline !px-7 !py-3.5 text-base group">
+              <a href="#preview" className="btn-outline !px-6 sm:!px-7 !py-3 sm:!py-3.5 text-sm sm:text-base group w-full sm:w-auto justify-center">
                 <Play className="w-4 h-4 group-hover:scale-110 transition" /> Ver demonstração
               </a>
             </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-8 flex flex-wrap items-center gap-5 text-sm text-slate-500">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-8 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-5 text-xs sm:text-sm text-slate-500">
               {[
                 { icon: CheckCircle2, text: 'Sem cartão de crédito' },
                 { icon: ShieldCheck, text: 'Criptografia bcrypt + JWT' },
                 { icon: Clock, text: 'Configure em 1 minuto' },
               ].map((t) => (
-                <div key={t.text} className="flex items-center gap-1.5"><t.icon className="w-4 h-4 text-brand-green" /> {t.text}</div>
+                <div key={t.text} className="flex items-center gap-1.5"><t.icon className="w-4 h-4 text-brand-green flex-shrink-0" /> {t.text}</div>
               ))}
             </motion.div>
 
             {/* Avatars social proof */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="mt-10 flex items-center gap-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex -space-x-2">
                 {['#F59E0B', '#2563EB', '#7C3AED', '#22C55E', '#EC4899', '#FB7185', '#F97316'].map((c, i) => (
-                  <div key={i} className="w-9 h-9 rounded-full ring-2 ring-white flex items-center justify-center text-white font-bold text-xs" style={{ background: c }}>
+                  <div key={i} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-white flex items-center justify-center text-white font-bold text-xs" style={{ background: c }}>
                     {['R', 'M', 'A', 'L', 'C', 'S', 'P'][i]}
                   </div>
                 ))}
@@ -216,35 +216,39 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          {/* Hero dashboard preview */}
-          <HeroDashboard />
+          {/* Hero dashboard preview - hidden on small mobile */}
+          <div className="order-1 lg:order-2 hidden sm:block">
+            <HeroDashboard />
+          </div>
         </motion.div>
       </section>
 
       {/* Counters strip */}
       <section className="border-y border-slate-100 bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-6">
-          <StatCounter value={100} label="Controle total das suas finanças" suffix="%" />
-          <StatCounter value={100} label="Visualização clara dos seus gastos" suffix="%" />
-          <StatCounter value={100} label="Acompanhe suas metas em tempo real" suffix="%" />
-          <StatCounter value={100} label="nterface rápida e simples" suffix="%" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          <StatCounter value={100} label="Controle total" suffix="%" />
+          <StatCounter value={100} label="Visualização clara" suffix="%" />
+          <StatCounter value={100} label="Metas em tempo real" suffix="%" />
+          <StatCounter value={100} label="Interface rápida" suffix="%" />
         </div>
       </section>
 
       {/* Feature cards */}
-      <section id="features" className="py-24 bg-gradient-to-b from-white via-slate-50 to-white">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="features" className="py-16 sm:py-24 bg-gradient-to-b from-white via-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <div className="chip bg-brand-purple/10 text-brand-purple mb-3 mx-auto border border-brand-purple/20">Recursos</div>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight">
+            <div className="chip bg-brand-purple/10 text-brand-purple mb-3 mx-auto border border-brand-purple/20 w-fit">Recursos</div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">
               Tudo que você precisa para <span className="text-brand-blue">dominar seu dinheiro</span>
             </h2>
-            <p className="mt-4 text-slate-600 text-lg">Um painel premium com as ferramentas certas — sem complicação.</p>
+            <p className="mt-4 text-slate-600 text-sm sm:text-lg">Um painel premium com as ferramentas certas — sem complicação.</p>
           </motion.div>
-          <div className="mt-16 overflow-hidden">
+
+          {/* Desktop horizontal scroll */}
+          <div className="mt-12 hidden md:block overflow-hidden">
             <motion.div
               initial={{ x: 0 }}
               animate={{ x: ['0%', '-50%'] }}
@@ -252,29 +256,30 @@ export default function Landing() {
               className="flex gap-6"
             >
               {[...features, ...features].map((f, index) => (
-                <div key={`${f.title}-${index}`} className="group relative card hover:shadow-glow transition-all min-w-[22rem] flex-shrink-0">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.gradient} flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform shadow-md`}>
-                    <f.icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-display font-bold text-lg">{f.title}</h3>
-                  <p className="text-slate-600 mt-2 text-sm leading-relaxed">{f.desc}</p>
-                </div>
+                <FeatureCard key={`${f.title}-${index}`} feature={f} />
               ))}
             </motion.div>
+          </div>
+
+          {/* Mobile grid */}
+          <div className="mt-12 md:hidden grid grid-cols-1 gap-4">
+            {features.map((f) => (
+              <FeatureCard key={f.title} feature={f} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* Product preview showcase */}
-      <section id="preview" className="py-24 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="preview" className="py-16 sm:py-24 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center max-w-2xl mx-auto mb-16"
+            className="text-center max-w-2xl mx-auto mb-12 sm:mb-16"
           >
-            <div className="chip bg-brand-green/10 text-brand-green mb-3 mx-auto border border-brand-green/20">Preview</div>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight">Veja o Finix em ação</h2>
-            <p className="mt-4 text-slate-600 text-lg">Cada pixel foi pensado pra você tomar decisões melhores.</p>
+            <div className="chip bg-brand-green/10 text-brand-green mb-3 mx-auto border border-brand-green/20 w-fit">Preview</div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Veja o Finix em ação</h2>
+            <p className="mt-4 text-slate-600 text-sm sm:text-lg">Cada pixel foi pensado pra você tomar decisões melhores.</p>
           </motion.div>
 
           <PreviewCard
@@ -305,14 +310,14 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="testimonials" className="py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto mb-12"
           >
-            <div className="chip bg-amber-100 text-amber-700 mb-3 mx-auto border border-amber-200">Depoimentos</div>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight">Pessoas que <span className="text-brand-green">economizaram de verdade</span></h2>
+            <div className="chip bg-amber-100 text-amber-700 mb-3 mx-auto border border-amber-200 w-fit">Depoimentos</div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Pessoas que <span className="text-brand-green">economizaram de verdade</span></h2>
           </motion.div>
 
           <TestimonialCarousel />
@@ -320,61 +325,50 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="pricing" className="py-16 sm:py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-            <div className="chip bg-brand-blue/10 text-brand-blue mb-3 mx-auto border border-brand-blue/20">Preço</div>
-            <h2 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight">Grátis durante o lançamento</h2>
-            <p className="mt-3 text-slate-600 text-lg">Teste o Finix sem compromisso. O plano Pro traz personalização para sua empresa e recursos premium.</p>
+            <div className="chip bg-brand-blue/10 text-brand-blue mb-3 mx-auto border border-brand-blue/20 w-fit">Preço</div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Grátis durante o lançamento</h2>
+            <p className="mt-3 text-slate-600 text-sm sm:text-lg">Teste o Finix sem compromisso. O plano Pro traz personalização para sua empresa e recursos premium.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
-            {/* Plano Grátis */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              whileHover={{ y: -4 }}
-              className="relative card hover:shadow-glow transition-all rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 h-full"
-            >
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-brand-green mx-auto mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-display font-bold text-center">Grátis</h3>
-              <div className="text-4xl font-display font-extrabold text-center mt-4">R$ 0</div>
-              <div className="text-slate-600 text-sm text-center mt-2">Para sempre</div>
-              <ul className="mt-8 space-y-3 text-left">
-                {['Até 100 transações/mês', 'Dashboard básico', '3 categorias', 'Gráficos simples', 'Sem IA'].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register" className="w-full mt-8 inline-flex items-center justify-center gap-2 py-3 px-6 bg-brand-green text-white rounded-xl font-semibold hover:shadow-lg transition-all">
-                Iniciar <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto items-center">
+            <PricingCard
+              icon={Sparkles}
+              title="Grátis"
+              price="0"
+              period="Para sempre"
+              features={['Até 100 transações/mês', 'Dashboard básico', '3 categorias', 'Gráficos simples', 'Sem IA']}
+              buttonText="Iniciar"
+              buttonColor="bg-brand-green"
+              borderColor="border-emerald-200"
+              bgGradient="from-emerald-50 to-green-50"
+              planId="BASIC"
+              onCheckout={() => { }}
+              isHighlighted={false}
+            />
 
-            {/* Plano Pro - DESTAQUE NO MEIO */}
             <motion.div
               initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               whileHover={{ y: -8 }}
-              className="relative card hover:shadow-glow transition-all rounded-2xl border-2 border-brand-purple bg-gradient-to-br from-blue-50 via-purple-50 to-purple-100 scale-105 shadow-2xl h-full md:col-span-1"
+              className="relative card hover:shadow-glow transition-all rounded-2xl border-2 border-brand-purple bg-gradient-to-br from-blue-50 via-purple-50 to-purple-100 shadow-2xl h-full md:scale-105"
             >
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-gradient-to-r from-brand-blue to-brand-purple text-white px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">✨ MAIS POPULAR</span>
+                <span className="bg-gradient-to-r from-brand-blue to-brand-purple text-white px-4 sm:px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">✨ MAIS POPULAR</span>
               </div>
-              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-brand-blue to-brand-purple mx-auto mb-4">
-                <PiggyBank className="w-7 h-7 text-white" />
+              <div className="flex items-center justify-center w-12 sm:w-14 h-12 sm:h-14 rounded-xl bg-gradient-to-br from-brand-blue to-brand-purple mx-auto mb-4">
+                <PiggyBank className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-display font-bold text-center">Plano Pro</h3>
-              <div className="text-5xl font-display font-extrabold text-center mt-4">R$ 35</div>
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-center">Plano Pro</h3>
+              <div className="text-4xl sm:text-5xl font-display font-extrabold text-center mt-4">R$ 35</div>
               <div className="text-slate-600 text-sm text-center mt-2">/mês</div>
               <div className="text-center text-sm text-brand-blue font-semibold mt-3">Personalize para sua empresa</div>
-              <ul className="mt-8 space-y-3 text-left">
+              <ul className="mt-8 space-y-3 text-left text-sm">
                 {['Transações ilimitadas', 'Dashboard completo', 'Análise com IA detalhada', 'Personalização completa da marca', 'Exportação PDF + Excel', 'Suporte prioritário'].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-blue" />
-                    {f}
+                  <li key={f} className="flex items-start gap-2 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-brand-blue mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -387,55 +381,41 @@ export default function Landing() {
               </button>
             </motion.div>
 
-            {/* Plano Básico */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              whileHover={{ y: -4 }}
-              className="relative card hover:shadow-glow transition-all rounded-2xl border-2 border-slate-200 bg-white h-full"
-            >
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100 mx-auto mb-4">
-                <Wallet className="w-6 h-6 text-slate-600" />
-              </div>
-              <h3 className="text-xl font-display font-bold text-center">Plano Básico</h3>
-              <div className="text-4xl font-display font-extrabold text-center mt-4">R$ 10</div>
-              <div className="text-slate-600 text-sm text-center mt-2">/mês</div>
-              <ul className="mt-8 space-y-3 text-left">
-                {['Até 500 transações/mês', 'Dashboard completo', 'Análise com IA', 'Exportação PDF', 'Até 5 metas'].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handleCheckout('BASIC')}
-                disabled={loadingPlan === 'BASIC'}
-                className="w-full mt-8 inline-flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-r from-brand-blue to-brand-purple text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {loadingPlan === 'BASIC' ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Assinar agora <ArrowRight className="w-4 h-4" /></>}
-              </button>
-            </motion.div>
+            <PricingCard
+              icon={Wallet}
+              title="Plano Básico"
+              price="10"
+              period="/mês"
+              features={['Até 500 transações/mês', 'Dashboard completo', 'Análise com IA', 'Exportação PDF', 'Até 5 metas']}
+              buttonText="Assinar agora"
+              buttonColor="bg-gradient-to-r from-brand-blue to-brand-purple"
+              borderColor="border-slate-200"
+              bgGradient="bg-white"
+              planId="BASIC"
+              onCheckout={() => handleCheckout('BASIC')}
+              isHighlighted={false}
+              isLoading={loadingPlan === 'BASIC'}
+            />
           </div>
         </div>
       </section>
 
       {/* Big CTA */}
-      <section className="py-16 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="py-12 sm:py-16 bg-slate-50 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"
+            className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <div className="text-xs uppercase tracking-[0.35em] text-brand-blue font-semibold mb-2">Suporte</div>
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900">Precisa de ajuda? Estamos disponíveis.</h2>
-                <p className="mt-3 text-slate-600 max-w-2xl">
+                <h2 className="text-xl sm:text-3xl font-display font-bold text-slate-900">Precisa de ajuda? Estamos disponíveis.</h2>
+                <p className="mt-3 text-slate-600 max-w-2xl text-sm sm:text-base">
                   Converse com a nossa equipe por WhatsApp ou envie um e-mail. Estamos prontos para te ajudar a configurar o Finix e resolver qualquer dúvida.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
                 <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="btn-primary">
                   WhatsApp
                 </a>
@@ -448,10 +428,10 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 py-10 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-slate-100 py-8 sm:py-10 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <Logo size={32} />
-          <div className="text-sm text-slate-500 text-center sm:text-right">
+          <div className="text-xs sm:text-sm text-slate-500">
             © 2026 Finix · Suas finanças, seu futuro. Feito com 💙 <a href="https://caiodiniz.dev.br" target="_blank" rel="noreferrer" className="text-brand-blue hover:underline">Caio Diniz</a>
           </div>
         </div>
@@ -460,121 +440,194 @@ export default function Landing() {
   );
 }
 
+
 /* ===== Visual components (animated mockups) ===== */
 
-function TestimonialCarousel() {
-  const testimonials = [
-    {
-      name: 'Rafael Mendes',
-      role: 'Designer · SP',
-      text: 'O Finix mudou meu jogo. Em 3 meses economizei R$ 4.200 só descobrindo para onde meu dinheiro ia.',
-      color: '#2563EB',
-    },
-    {
-      name: 'Marina Costa',
-      role: 'Engenheira · RJ',
-      text: 'A análise da IA foi impressionante. Identificou que eu gastava demais com delivery e me ajudou a cortar 40%.',
-      color: '#7C3AED',
-    },
-    {
-      name: 'Lucas Almeida',
-      role: 'Dev · BH',
-      text: 'Finalmente um app de finanças bonito e rápido. Os gráficos e as metas me mantêm motivado todo mês.',
-      color: '#22C55E',
-    },
-    {
-      name: 'Patrícia Soares',
-      role: 'Empreendedora · RJ',
-      text: 'A exportação em PDF e Excel salvou o meu relatório mensal e facilitou a apresentação ao meu contador.',
-      color: '#F97316',
-    },
-    {
-      name: 'Guilherme Rocha',
-      role: 'Consultor · SP',
-      text: 'O recurso de metas me fez economizar para uma viagem em apenas 4 meses. Recomendo demais.',
-      color: '#EC4899',
-    },
-  ];
-
-  const [current, setCurrent] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCurrent((prev) => (prev + 1) % testimonials.length);
-    }, 4500);
-    return () => window.clearInterval(timer);
-  }, [testimonials.length]);
-
-  const prev = () => setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  const next = () => setCurrent((prev) => (prev + 1) % testimonials.length);
-
+function FeatureCard({ feature }: { feature: { icon: any; title: string; desc: string; gradient: string } }) {
   return (
-    <div className="relative max-w-4xl mx-auto">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={testimonials[current].name}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.45 }}
-          className="card p-8 shadow-xl"
-        >
-          <Quote className="absolute top-6 right-6 w-10 h-10 text-slate-100 opacity-20" />
-          <div className="flex items-center gap-2 text-amber-500 mb-4">
-            {[1, 2, 3, 4, 5].map((star) => <Star key={star} className="w-4 h-4 fill-current" />)}
-          </div>
-          <p className="text-lg sm:text-xl text-slate-700 leading-relaxed">"{testimonials[current].text}"</p>
-          <div className="mt-8 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base" style={{ background: testimonials[current].color }}>
-              {testimonials[current].name.charAt(0)}
-            </div>
-            <div>
-              <div className="font-semibold text-slate-900">{testimonials[current].name}</div>
-              <div className="text-sm text-slate-500">{testimonials[current].role}</div>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-      <div className="mt-8 flex items-center justify-between gap-3 text-slate-500">
-        <button onClick={prev} className="btn-outline inline-flex items-center gap-2 px-4 py-2 rounded-full">
-          <ChevronLeft className="w-4 h-4" /> Anterior
-        </button>
-        <div className="flex items-center gap-2">
-          {testimonials.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrent(index)}
-              className={`w-3 h-3 rounded-full ${index === current ? 'bg-brand-green' : 'bg-slate-300'}`}
-              aria-label={`Depoimento ${index + 1}`}
-            />
-          ))}
-        </div>
-        <button onClick={next} className="btn-outline inline-flex items-center gap-2 px-4 py-2 rounded-full">
-          Próximo <ChevronRight className="w-4 h-4" />
-        </button>
+    <motion.div
+      whileHover={{ y: -4 }}
+      className="group relative card hover:shadow-glow transition-all min-w-[22rem] flex-shrink-0 h-full perspective"
+    >
+      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform shadow-md`}>
+        <feature.icon className="w-5 h-5" />
       </div>
-    </div>
+      <h3 className="font-display font-bold text-lg">{feature.title}</h3>
+      <p className="text-slate-600 mt-2 text-sm leading-relaxed">{feature.desc}</p>
+    </motion.div>
   );
+}
+
+function PricingCard({
+  icon: Icon,
+  title,
+  price,
+  period,
+  features,
+  buttonText,
+  buttonColor,
+  borderColor,
+  bgGradient,
+  isHighlighted,
+  isLoading,
+  onCheckout,
+}: {
+  icon: any;
+  title: string;
+  price: string;
+  period: string;
+  features: string[];
+  buttonText: string;
+  buttonColor: string;
+  borderColor: string;
+  bgGradient: string;
+  isHighlighted?: boolean;
+  isLoading?: boolean;
+  onCheckout: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+      whileHover={{ y: -4 }}
+      className={`relative card hover:shadow-glow transition-all rounded-2xl border-2 ${borderColor} ${bgGradient} h-full ${isHighlighted ? 'shadow-2xl' : ''}`}
+    >
+      <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${buttonColor} mx-auto mb-4`}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      <h3 className={`${isHighlighted ? 'text-2xl' : 'text-xl'} font-display font-bold text-center`}>{title}</h3>
+      <div className={`${isHighlighted ? 'text-5xl' : 'text-4xl'} font-display font-extrabold text-center mt-4`}>R$ {price}</div>
+      <div className="text-slate-600 text-sm text-center mt-2">{period}</div>
+      <ul className={`mt-8 space-y-3 text-left ${isHighlighted ? 'text-sm' : 'text-sm'}`}>
+        {features.map(f => (
+          <li key={f} className="flex items-start gap-2">
+            <CheckCircle2 className={`w-4 h-4 ${buttonColor.includes('green') ? 'text-brand-green' : buttonColor.includes('blue') ? 'text-brand-blue' : 'text-amber-500'} mt-0.5 flex-shrink-0`} />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={onCheckout}
+        disabled={isLoading}
+        className={`w-full mt-8 inline-flex items-center justify-center gap-2 py-3 px-6 ${buttonColor} text-white rounded-xl font-${isHighlighted ? 'bold' : 'semibold'} hover:shadow-lg transition-all ${isHighlighted ? 'hover:scale-105' : ''} disabled:opacity-50`}
+      >
+        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{buttonText} <ArrowRight className="w-4 h-4" /></>}
+      </button>
+    </motion.div>
+  );
+}
+
+const testimonials = [
+  {
+    name: 'Rafael Mendes',
+    role: 'Designer · SP',
+    text: 'O Finix mudou meu jogo. Em 3 meses economizei R$ 4.200 só descobrindo para onde meu dinheiro ia.',
+    color: '#2563EB',
+  },
+  {
+    name: 'Marina Costa',
+    role: 'Engenheira · RJ',
+    text: 'A análise da IA foi impressionante. Identificou que eu gastava demais com delivery e me ajudou a cortar 40%.',
+    color: '#7C3AED',
+  },
+  {
+    name: 'Lucas Almeida',
+    role: 'Dev · BH',
+    text: 'Finalmente um app de finanças bonito e rápido. Os gráficos e as metas me mantêm motivado todo mês.',
+    color: '#22C55E',
+  },
+  {
+    name: 'Patrícia Soares',
+    role: 'Empreendedora · RJ',
+    text: 'A exportação em PDF e Excel salvou o meu relatório mensal e facilitou a apresentação ao meu contador.',
+    color: '#F97316',
+  },
+  {
+    name: 'Guilherme Rocha',
+    role: 'Consultor · SP',
+    text: 'O recurso de metas me fez economizar para uma viagem em apenas 4 meses. Recomendo demais.',
+    color: '#EC4899',
+  },
+];
+
+const [current, setCurrent] = useState(0);
+
+useEffect(() => {
+  const timer = window.setInterval(() => {
+    setCurrent((prev) => (prev + 1) % testimonials.length);
+  }, 4500);
+  return () => window.clearInterval(timer);
+}, [testimonials.length]);
+
+const prev = () => setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+const next = () => setCurrent((prev) => (prev + 1) % testimonials.length);
+
+return (
+  <div className="relative max-w-4xl mx-auto px-4 sm:px-0">
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={testimonials[current].name}
+        initial={{ opacity: 0, y: 20, rotateX: 10 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+        exit={{ opacity: 0, y: -20, rotateX: -10 }}
+        transition={{ duration: 0.45 }}
+        className="card p-6 sm:p-8 shadow-xl perspective"
+      >
+        <Quote className="absolute top-6 right-6 w-8 sm:w-10 h-8 sm:h-10 text-slate-100 opacity-20" />
+        <div className="flex items-center gap-2 text-amber-500 mb-4">
+          {[1, 2, 3, 4, 5].map((star) => <Star key={star} className="w-4 h-4 fill-current" />)}
+        </div>
+        <p className="text-base sm:text-lg lg:text-xl text-slate-700 leading-relaxed">"{testimonials[current].text}"</p>
+        <div className="mt-6 sm:mt-8 flex items-center gap-4">
+          <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: testimonials[current].color }}>
+            {testimonials[current].name.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <div className="font-semibold text-slate-900 text-sm sm:text-base">{testimonials[current].name}</div>
+            <div className="text-xs sm:text-sm text-slate-500">{testimonials[current].role}</div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500">
+      <button onClick={prev} className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm w-full sm:w-auto justify-center">
+        <ChevronLeft className="w-4 h-4" /> Anterior
+      </button>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {testimonials.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrent(index)}
+            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${index === current ? 'bg-brand-green' : 'bg-slate-300'}`}
+            aria-label={`Depoimento ${index + 1}`}
+          />
+        ))}
+      </div>
+      <button onClick={next} className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm w-full sm:w-auto justify-center">
+        Próximo <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+);
 }
 
 function HeroDashboard() {
   const bars = [40, 62, 50, 78, 55, 84, 70, 92, 66, 88, 75, 95];
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+      initial={{ opacity: 0, scale: 0.9, rotateX: -5 }}
+      animate={{ opacity: 1, scale: 1, rotateX: 0 }}
       transition={{ duration: 0.8, delay: 0.2, type: 'spring', stiffness: 70 }}
-      className="relative"
+      className="relative perspective"
     >
       {/* Glow */}
-      <div className="absolute -inset-8 bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-green/30 blur-3xl rounded-full opacity-60" />
+      <div className="absolute -inset-4 sm:-inset-8 bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-green/30 blur-3xl rounded-full opacity-60" />
 
-      {/* Floating side card 1 */}
+      {/* Floating side card 1 - hidden on mobile */}
       <motion.div
-        initial={{ opacity: 0, x: 30, y: 20 }}
-        animate={{ opacity: 1, x: 0, y: 0 }}
+        initial={{ opacity: 0, x: 30, y: 20, rotateZ: -10 }}
+        animate={{ opacity: 1, x: 0, y: 0, rotateZ: 0 }}
         transition={{ delay: 0.8 }}
-        className="absolute -left-8 top-44 z-20 card !p-4 w-56 bg-white/95 backdrop-blur"
+        className="hidden sm:block absolute -left-8 top-44 z-20 card !p-4 w-56 bg-white/95 backdrop-blur"
         style={{ boxShadow: '0 20px 60px -20px rgba(37,99,235,0.4)' }}
       >
         <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
@@ -588,12 +641,12 @@ function HeroDashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Floating side card 2 */}
+      {/* Floating side card 2 - hidden on mobile */}
       <motion.div
-        initial={{ opacity: 0, x: -30, y: -10 }}
-        animate={{ opacity: 1, x: 0, y: 0 }}
+        initial={{ opacity: 0, x: -30, y: -10, rotateZ: 10 }}
+        animate={{ opacity: 1, x: 0, y: 0, rotateZ: 0 }}
         transition={{ delay: 1 }}
-        className="absolute -right-6 -bottom-6 z-20 card !p-4 w-52 bg-white/95 backdrop-blur"
+        className="hidden sm:block absolute -right-6 -bottom-6 z-20 card !p-4 w-52 bg-white/95 backdrop-blur"
         style={{ boxShadow: '0 20px 60px -20px rgba(34,197,94,0.4)' }}
       >
         <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}>
@@ -613,13 +666,13 @@ function HeroDashboard() {
 
       {/* Main dashboard card */}
       <div
-        className="relative card !p-6 bg-white/95 backdrop-blur border border-white"
+        className="relative card !p-4 sm:!p-6 bg-white/95 backdrop-blur border border-white"
         style={{ boxShadow: '0 30px 80px -30px rgba(37,99,235,0.5)' }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
           <div>
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo total</div>
-            <div className="text-3xl font-display font-extrabold mt-1 tabular-nums">R$ 19.230,75</div>
+            <div className="text-2xl sm:text-3xl font-display font-extrabold mt-1 tabular-nums">R$ 19.230,75</div>
           </div>
           <motion.div
             animate={{ scale: [1, 1.05, 1] }}
@@ -629,7 +682,7 @@ function HeroDashboard() {
             <TrendingUp className="w-3.5 h-3.5" /> +18%
           </motion.div>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-3">
+        <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3">
           {[
             { label: 'Receitas', value: 'R$ 31,1k', color: 'from-green-500 to-emerald-500' },
             { label: 'Despesas', value: 'R$ 11,9k', color: 'from-rose-500 to-red-500' },
@@ -638,15 +691,15 @@ function HeroDashboard() {
             <motion.div
               key={c.label}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 + i * 0.1 }}
-              className="rounded-xl bg-slate-50 p-3"
+              className="rounded-lg sm:rounded-xl bg-slate-50 p-2 sm:p-3"
             >
-              <div className={`h-1 rounded-full bg-gradient-to-r ${c.color} mb-2`} />
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">{c.label}</div>
-              <div className="font-bold text-sm">{c.value}</div>
+              <div className={`h-0.5 sm:h-1 rounded-full bg-gradient-to-r ${c.color} mb-1 sm:mb-2`} />
+              <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500">{c.label}</div>
+              <div className="font-bold text-xs sm:text-sm">{c.value}</div>
             </motion.div>
           ))}
         </div>
-        <div className="mt-6 h-32 flex items-end gap-1.5">
+        <div className="mt-4 sm:mt-6 h-24 sm:h-32 flex items-end gap-1">
           {bars.map((h, i) => (
             <motion.div
               key={i}
@@ -656,8 +709,8 @@ function HeroDashboard() {
             />
           ))}
         </div>
-        <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
-          <span>Nov</span><span>Dez</span><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span>
+        <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mt-1">
+          <span>Nov</span><span className="hidden sm:inline">Dez</span><span>Jan</span><span className="hidden sm:inline">Fev</span><span>Mar</span><span className="hidden sm:inline">Abr</span>
         </div>
       </div>
     </motion.div>
@@ -668,17 +721,17 @@ function PreviewCard({ order, badge, title, desc, align, visual }: { order: numb
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
-      className={`grid lg:grid-cols-2 gap-12 items-center mb-24 ${align === 'right' ? 'lg:[&>*:first-child]:order-2' : ''}`}
+      className={`grid lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-16 sm:mb-24 ${align === 'right' ? 'lg:[&>*:first-child]:order-2' : ''}`}
     >
       <div>
-        <div className="chip bg-brand-blue/10 text-brand-blue border border-brand-blue/20 mb-3">#{order} · {badge}</div>
-        <h3 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight">{title}</h3>
-        <p className="mt-4 text-slate-600 text-lg leading-relaxed">{desc}</p>
-        <Link to="/register" className="inline-flex items-center gap-1 mt-5 text-brand-blue font-semibold hover:gap-2 transition-all">
+        <div className="chip bg-brand-blue/10 text-brand-blue border border-brand-blue/20 mb-3 w-fit">#{order} · {badge}</div>
+        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight">{title}</h3>
+        <p className="mt-4 text-slate-600 text-sm sm:text-lg leading-relaxed">{desc}</p>
+        <Link to="/register" className="inline-flex items-center gap-1 mt-5 text-brand-blue font-semibold hover:gap-2 transition-all text-sm sm:text-base">
           Experimente agora <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
-      <motion.div whileHover={{ y: -4 }} className="relative">
+      <motion.div whileHover={{ y: -4 }} className="relative perspective">
         {visual}
       </motion.div>
     </motion.div>
