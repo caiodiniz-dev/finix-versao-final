@@ -10,6 +10,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
+import Stripe from 'stripe';
 
 dotenv.config();
 process.env.DATABASE_URL ||= 'file:./dev.db';
@@ -17,6 +18,7 @@ process.env.DATABASE_URL ||= 'file:./dev.db';
 const app = express();
 const prisma = new PrismaClient();
 const upload = multer({ storage: multer.memoryStorage() });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
@@ -40,7 +42,7 @@ export const PLANS: Record<string, {
   id: string; name: string; price: number; currency: string;
   transactionsLimit: number; categoriesLimit: number; goalsLimit: number;
   hasAI: boolean; hasAdvancedAI: boolean; hasPDF: boolean; hasExcel: boolean;
-  hasPrioritySupport: boolean;
+  hasPrioritySupport: boolean; stripePriceId?: string;
 }> = {
   FREE: {
     id: 'FREE', name: 'Grátis', price: 0, currency: 'BRL',
@@ -53,12 +55,14 @@ export const PLANS: Record<string, {
     transactionsLimit: 500, categoriesLimit: 999, goalsLimit: 5,
     hasAI: true, hasAdvancedAI: false, hasPDF: true, hasExcel: false,
     hasPrioritySupport: false,
+    stripePriceId: 'price_1TRjBSJjlHCvcKLJki6868NK',
   },
   PRO: {
     id: 'PRO', name: 'Pro', price: 35, currency: 'BRL',
     transactionsLimit: -1, categoriesLimit: 999, goalsLimit: -1,
     hasAI: true, hasAdvancedAI: true, hasPDF: true, hasExcel: true,
     hasPrioritySupport: true,
+    stripePriceId: 'price_1TRjBTJjlHCvcKLJICo0Js1Y',
   },
 };
 
