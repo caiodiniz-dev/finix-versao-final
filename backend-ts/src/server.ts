@@ -28,7 +28,9 @@ const JWT_EXPIRES_IN = '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixxapp.vercel.app';
 
 const corsOrigins = [
-  FRONTEND_URL,
+  process.env.FRONTEND_URL || 'https://finixapp.vercel.app',
+  'https://finixapp.vercel.app',
+  'https://finixxapp.vercel.app',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
