@@ -1,0 +1,91 @@
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { api, apiErrorMessage } from '../services/api';
+import { User } from '../types';
+
+interface AuthCtx {
+  user: User | null | undefined; // undefined = loading, null = not logged in
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<{ userId: string; message: string }>;
+  setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
+
+const Ctx = createContext<AuthCtx | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+
+  useEffect(() => {
+    const token = localStorage.getItem('finix_token') || sessionStorage.getItem('finix_token');
+    if (!token) { setUser(null); return; }
+    api.get('/api/auth/me').then((r) => setUser(r.data)).catch(() => {
+      localStorage.removeItem('finix_token');
+      sessionStorage.removeItem('finix_token');
+      setUser(null);
+    });
+  }, []);
+
+  const login = async (email: string, password: string, remember = true) => {
+    try {
+      const { data } = await api.post('/api/auth/login', { email, password });
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('finix_token', data.token);
+      setUser(data.user);
+
+      // Check if user is verified
+      if (!data.user.isVerified) {
+        throw new Error('E-mail não verificado. Verifique seu e-mail antes de continuar.');
+      }
+    } catch (e) { throw new Error(apiErrorMessage(e)); }
+  };
+
+  const register = async (name: string, email: string, password: string): Promise<{ userId: string; message: string }> => {
+    try {
+      const { data } = await api.post('/api/auth/signup', { name, email, password });
+      return data;
+    } catch (e) { throw new Error(apiErrorMessage(e)); }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('finix_token');
+    sessionStorage.removeItem('finix_token');
+    setUser(null);
+    window.location.href = '/';
+  };
+
+  const refreshUser = async () => {
+    const token = localStorage.getItem('finix_token') || sessionStorage.getItem('finix_token');
+    if (!token) return;
+    try {
+      const r = await api.get('/api/auth/me');
+      setUser(r.data);
+    } catch (e) {
+      console.error('Failed to refresh user:', e);
+    }
+  };
+
+  return <Ctx.Provider value={{ user, login, register, setUser, logout, refreshUser }}>{children}</Ctx.Provider>;
+}
+
+export const useAuth = () => {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+};
+
+export function useAutoRefreshUser(intervalMs = 30000) {
+  const { refreshUser } = useAuth();
+
+  useEffect(() => {
+    const interval = setInterval(refreshUser, intervalMs);
+
+    const handleFocus = () => refreshUser();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refreshUser, intervalMs]);
+}

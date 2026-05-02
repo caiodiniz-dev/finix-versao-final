@@ -1,0 +1,26 @@
+[33m71bdda1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev[m[33m)[m feat: atualiza projeto sem secrets
+[33m6fc7c7c[m fix: remove exposed stripe key from readme
+[33m72c7ac3[m sua mensagem
+[33m3157189[m[33m ([m[1;31morigin/dev[m[33m)[m AGORAVAII
+[33mf7e3114[m update
+[33m1a1ff86[m feat: responsividade e animações 3D - mobile-first design com efeitos 3D modernos
+[33m851cb4a[m Fix Stripe initialization to handle missing env vars in production
+[33m94a820c[m Update Stripe checkout to real implementation, add webhook handling
+[33mc3533b9[m Integrate Stripe correctly with live keys, create plans, update checkout endpoint
+[33m06b6d47[m fix: reset onboarding when admin upgrades user to PRO
+[33mc00332c[m Update production URLs and CORS configuration
+[33m1961164[m update dev
+[33m3a0040a[m fix cors definitivo
+[33m91625da[m Update CORS configuration to allow specific origins
+[33m889bac6[m fix: add /api prefix to all frontend API routes
+[33md125904[m fix: CORS allow all methods, axios baseURL with fallback
+[33mac4bf89[m fix login + integração api
+[33m49cca0f[m fix rotas auth
+[33m1e5e77b[m fix integracao frontend
+[33ma4a25f6[m fix api url
+[33m1f9f56a[m fix: altera provider para postgresql e ajusta schema
+[33m6a9da7e[m subindo projeto pra dev
+[33m5cfb1ee[m fix: install vite correctly
+[33m4c20356[m addhtml
+[33m5c5c8d1[m fix: adiciona vite
+[33mdb97f4d[m subindo projeto completo
