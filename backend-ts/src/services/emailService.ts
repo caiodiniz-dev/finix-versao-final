@@ -1,12 +1,18 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD, // Use App Password, not regular password
-  },
-});
+const createTransporter = () => {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!user || !pass) {
+    throw new Error('Configuração de e-mail inválida. Defina GMAIL_USER e GMAIL_APP_PASSWORD.');
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+  });
+};
 
 export const sendVerificationEmail = async (email: string, code: string) => {
   const html = `
@@ -183,5 +189,11 @@ export const sendVerificationEmail = async (email: string, code: string) => {
     html,
   };
 
-  await transporter.sendMail(mailOptions);
+  const transporter = createTransporter();
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error: any) {
+    throw new Error('Erro ao enviar e-mail de verificação. Verifique as configurações de e-mail no backend.');
+  }
 };

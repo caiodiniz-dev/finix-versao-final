@@ -14,8 +14,10 @@ const generateVerificationCode = () => {
 };
 exports.generateVerificationCode = generateVerificationCode;
 const signup = async (email, password, name) => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedName = name.trim();
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
         throw new Error('Usuário já existe');
     }
@@ -27,21 +29,27 @@ const signup = async (email, password, name) => {
     // Create user
     const user = await prisma.user.create({
         data: {
-            email,
+            email: normalizedEmail,
             passwordHash,
-            name,
+            name: normalizedName,
             isVerified: false,
             verificationCode,
             verificationExpires,
         },
     });
-    // Send verification email
-    await (0, emailService_1.sendVerificationEmail)(email, verificationCode);
+    try {
+        await (0, emailService_1.sendVerificationEmail)(normalizedEmail, verificationCode);
+    }
+    catch (error) {
+        await prisma.user.delete({ where: { id: user.id } }).catch(() => null);
+        throw new Error(error.message || 'Erro ao criar conta. Tente novamente mais tarde.');
+    }
     return { userId: user.id, message: 'Usuário criado. Verifique seu e-mail.' };
 };
 exports.signup = signup;
 const verifyEmail = async (email, code) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
         throw new Error('Usuário não encontrado');
     }
@@ -56,7 +64,7 @@ const verifyEmail = async (email, code) => {
     }
     // Update user
     await prisma.user.update({
-        where: { email },
+        where: { email: normalizedEmail },
         data: {
             isVerified: true,
             verificationCode: null,
@@ -67,7 +75,8 @@ const verifyEmail = async (email, code) => {
 };
 exports.verifyEmail = verifyEmail;
 const resendVerificationCode = async (email) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
         throw new Error('Usuário não encontrado');
     }
@@ -79,19 +88,20 @@ const resendVerificationCode = async (email) => {
     const verificationExpires = new Date(Date.now() + 5 * 60 * 1000);
     // Update user
     await prisma.user.update({
-        where: { email },
+        where: { email: normalizedEmail },
         data: {
             verificationCode,
             verificationExpires,
         },
     });
     // Send email
-    await (0, emailService_1.sendVerificationEmail)(email, verificationCode);
+    await (0, emailService_1.sendVerificationEmail)(normalizedEmail, verificationCode);
     return { message: 'Novo código enviado' };
 };
 exports.resendVerificationCode = resendVerificationCode;
 const login = async (email, password) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
         throw new Error('Credenciais inválidas');
     }

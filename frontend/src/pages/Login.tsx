@@ -129,7 +129,7 @@ export default function Login() {
             <p className="mt-2">Se precisar de ajuda antes de entrar, fale com a equipe pelo WhatsApp ou por e-mail.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="btn-outline text-brand-blue">WhatsApp</a>
-              <a href="mailto:cvdinizramos@gmail.com" className="btn-outline text-brand-blue">E-mail</a>
+              <a href="mailto:finixappp@gmail.com" className="btn-outline text-brand-blue">E-mail</a>
             </div>
           </div>
 

@@ -37,7 +37,7 @@ export default function VerifyEmail() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || data.message || 'Erro ao verificar código');
 
       setIsVerified(true);
       toast.success('✨ E-mail verificado com sucesso!');
@@ -59,7 +59,7 @@ export default function VerifyEmail() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || data.message || 'Erro ao reenviar código');
 
       toast.success('Código reenviado!');
     } catch (err: any) {

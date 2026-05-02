@@ -31,7 +31,7 @@ export default function Signup() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar conta');
+        throw new Error(data.error || data.message || 'Erro ao criar conta');
       }
 
       toast.success('Conta criada! Verifique seu e-mail para ativar.');

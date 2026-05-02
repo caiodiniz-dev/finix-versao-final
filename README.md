@@ -1,188 +1,154 @@
 # Finix - Gestão Financeira Pessoal
 
 ## Descrição
-Aplicativo completo de gestão financeira pessoal com sistema de autenticação OTP por e-mail. Frontend moderno em React/TypeScript com Tailwind CSS e backend robusto em Node.js/TypeScript com Prisma (SQLite/PostgreSQL).
+Aplicativo completo de gestão financeira pessoal com frontend em React/TypeScript e backend em Node.js/TypeScript. O sistema inclui autenticação por JWT, verificação de e-mail por OTP, integração com Stripe e geração de relatórios em PDF/Excel.
 
-## ✨ Funcionalidades Principais
+## O que tem no repositório
+- `backend-ts/` — backend Node.js + TypeScript com Express, Prisma, JWT, Stripe e envio de e-mail
+- `frontend/` — frontend React + TypeScript com Vite, Tailwind CSS e Axios
 
-### 🔐 Sistema de Autenticação Completo
-- **Cadastro seguro** com validação de e-mail
-- **Verificação OTP** de 6 dígitos por e-mail
-- **Template de e-mail profissional** estilo fintech
-- **Login com JWT** e proteção de rotas
-- **Reenvio de código** com expiração controlada
+## Tecnologias principais
+- Backend: Node.js, TypeScript, Express, Prisma, JWT, Nodemailer, Stripe
+- Frontend: React, TypeScript, Vite, Tailwind CSS, Axios, Framer Motion
+- Banco de dados: SQLite local ou PostgreSQL em produção
 
-### 💰 Gestão Financeira
-- Dashboard com visão geral
-- Controle de transações (receitas/despesas)
-- Orçamentos por categoria
-- Metas financeiras com progresso
-- Relatórios em PDF e Excel
-- Integração com Stripe para planos premium
+## Como rodar localmente
 
-### 🎨 Design Moderno
-- Interface inspirada em bancos digitais
-- Gradientes e cores modernas
-- Animações suaves com Framer Motion
-- Design responsivo mobile-first
-- UX intuitiva e acessível
-
-## 🛠️ Tecnologias
-
-### Backend
-- **Node.js** + **TypeScript**
-- **Express.js** para API REST
-- **Prisma ORM** (SQLite/PostgreSQL)
-- **Nodemailer** com Gmail SMTP
-- **bcrypt** + **JWT** para segurança
-- **Zod** para validação
-
-### Frontend
-- **React 18** + **TypeScript**
-- **Vite** para build e dev server
-- **Tailwind CSS** para estilização
-- **Framer Motion** para animações
-- **React Hook Form** + **Yup** para formulários
-- **Axios** para requisições HTTP
-- **Recharts** para gráficos
-
-## 🚀 Como Executar
-
-### Pré-requisitos
-- Node.js (versão 18 ou superior)
-- npm ou yarn
-
-### 1. Configuração do Backend
-
+### 1. Backend
 ```bash
 cd backend-ts
-
-# Instalar dependências
 npm install
-
-# Configurar variáveis de ambiente
 cp .env.example .env
-# Edite o .env com suas configurações (Gmail, JWT secret, etc.)
-
-# Migrar banco de dados
+# Edite o .env com seus valores
 npm run prisma:migrate
 npm run prisma:generate
-
-# Iniciar servidor
 npm run dev
 ```
 
-### 2. Configuração do Frontend
+O backend fica em `http://localhost:8000`.
 
+### 2. Frontend
 ```bash
-cd ../frontend
-
-# Instalar dependências
+cd frontend
 npm install
-
-# Iniciar aplicação
 npm run dev
 ```
 
-### 3. Acesse o Aplicativo
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8000`
+O frontend fica em `http://localhost:5173`.
 
-## 📧 Configuração do E-mail (Gmail SMTP)
+## Variáveis de ambiente importantes
 
-1. Ative a verificação em 2 etapas na sua conta Google
-2. Gere uma "App Password" em [Google Account Settings](https://myaccount.google.com/apppasswords)
-3. Configure no `.env` do backend:
-   ```
-   GMAIL_USER=seu-email@gmail.com
-   GMAIL_APP_PASSWORD=sua-app-password
-   ```
+### Backend (`backend-ts/.env`)
+```env
+JWT_SECRET="your_jwt_secret_here"
+CORS_ORIGINS="https://finixxapp.vercel.app"
+DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require&channel_binding=require"
+FRONTEND_URL=https://finixxapp.vercel.app
+PORT=8000
+STRIPE_PUBLISHABLE_KEY=pk_live_your_publishable_key_here
+STRIPE_SECRET_KEY=sk_live_your_secret_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+GMAIL_USER=finixappp@gmail.com
+GMAIL_APP_PASSWORD="your_gmail_app_password_here"  # sem espaços, tem que ser a senha de app do Gmail
+```
 
-## 📱 Fluxo de Verificação de E-mail
+### Frontend (`frontend/.env`)
+```env
+VITE_API_URL=https://finix-versao-final-5.onrender.com
+```
 
-1. **Cadastro**: Usuário preenche formulário
-2. **OTP**: Sistema gera código de 6 dígitos
-3. **E-mail**: Template profissional enviado automaticamente
-4. **Verificação**: Interface moderna para digitar código
-5. **Ativação**: Conta liberada após confirmação
+> Importante: o backend usa `FRONTEND_URL` para liberar CORS, e o frontend usa `VITE_API_URL` para apontar ao backend.
 
-## 🗂️ Estrutura do Projeto
+## Deploy
+
+### Backend no Render
+
+Configure o serviço:
+- `Root Directory`: `backend-ts`
+- `Build Command`: `npm install && npm run build`
+- `Start Command`: `npm start`
+
+Defina estas variáveis no painel do Render:
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `FRONTEND_URL`
+- `GMAIL_USER`
+- `GMAIL_APP_PASSWORD`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+
+### Frontend na Vercel ou Netlify
+
+- `Build Command`: `npm run build`
+- `Output Directory`: `dist`
+- Variável de ambiente: `VITE_API_URL=https://seu-backend.onrender.com`
+
+## Problemas comuns de autenticação
+Se o login funciona mas a autenticação falha depois do deploy:
+- Verifique se `VITE_API_URL` está apontando para o backend correto
+- Verifique se `FRONTEND_URL` está configurado com o domínio correto do frontend
+- Verifique se o token JWT está sendo enviado no cabeçalho `Authorization: Bearer <token>`
+
+## Comandos úteis
+
+### Backend
+```bash
+cd backend-ts
+npm install
+npm run dev
+npm run build
+npm start
+npm run prisma:migrate
+npm run prisma:generate
+npm run prisma:studio
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+npm run build
+npm run preview
+```
+
+## Estrutura do projeto
 
 ```
 finixv1/
-├── backend-ts/          # Backend Node.js/TypeScript
+├── backend-ts/
 │   ├── src/
-│   │   ├── controllers/ # API controllers
-│   │   ├── middlewares/ # Auth, validation
-│   │   ├── routes/      # API routes
-│   │   ├── services/    # Business logic
-│   │   └── server.ts    # Main server file
-│   └── prisma/          # Database schema
-├── frontend/            # Frontend React/TypeScript
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── server.ts
+│   ├── prisma/
+│   ├── package.json
+│   └── .env.example
+├── frontend/
 │   ├── src/
-│   │   ├── components/  # Reusable components
-│   │   ├── pages/       # Page components
-│   │   ├── contexts/    # React contexts
-│   │   ├── services/    # API services
-│   │   └── utils/       # Utilities
-│   └── public/          # Static assets
+│   ├── public/
+│   ├── package.json
+│   └── tsconfig.json
 └── README.md
 ```
 
-## 🔒 Segurança
+## O que o backend oferece
+- Cadastro de usuário
+- Login com JWT
+- Verificação de e-mail por OTP
+- Proteção de rotas com middleware
+- Integração com Stripe
+- Geração de PDF e Excel
 
-- Hash de senhas com bcrypt
-- JWT para autenticação stateless
-- Verificação de e-mail obrigatória
-- Middleware de proteção de rotas
-- Validação de entrada com Zod
-- Rate limiting preparado
-
-## 📈 Deploy
-
-### Backend (Render, Railway, etc.)
-```bash
-npm run build
-npm start
-```
-
-### Frontend (Vercel, Netlify)
-```bash
-npm run build
-# Deploy do dist/
-```
-
-## 🤝 Suporte
-
-- **Email**: suporte@finix.com
-- **WhatsApp**: +55 19 99473-7425
-- **GitHub Issues**: Para bugs e sugestões
+## Dicas finais
+- Use senha de app do Gmail para `GMAIL_APP_PASSWORD`
+- Nunca deixe `JWT_SECRET` com o valor padrão em produção
+- Atualize `VITE_API_URL` sempre que mudar o backend de domínio
+- O Render fornece a porta automaticamente via `process.env.PORT`
 
 ---
 
-**Finix** - Transformando finanças pessoais com tecnologia. 🚀
-- Faça login com uma das contas abaixo.
-
-## Contas de Teste
-
-### Administrador
-- **Email:** cvdinizramos@gmail.com
-- **Senha:** Admin@123
-- **Permissões:** Acesso total, gerenciamento de usuários.
-
-### Usuário Demo
-- **Email:** demo@finix.com
-- **Senha:** Demo@123
-- **Permissões:** Usuário comum, com dados de exemplo pré-carregados.
-
-## Funcionalidades
-- Autenticação JWT
-- Dashboard com gráficos e insights
-- CRUD de transações, metas e orçamentos
-- Exportação de relatórios (Excel/PDF)
-- Perfil com upload de foto
-- Painel admin para gerenciar usuários
-
-## Notas
-- O banco de dados é SQLite (arquivo local), não requer servidor separado.
-- Se houver problemas com `npm install` no frontend, tente limpar o cache: `npm cache clean --force` e reinstalar.
+## Contato
+Se quiser, me manda o URL do backend no Render e eu te ajudo a ajustar `VITE_API_URL` e `FRONTEND_URL` direitinho.

@@ -5,13 +5,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const transporter = nodemailer_1.default.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD, // Use App Password, not regular password
-    },
-});
+const createTransporter = () => {
+    const user = process.env.GMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD;
+    if (!user || !pass) {
+        throw new Error('Configuração de e-mail inválida. Defina GMAIL_USER e GMAIL_APP_PASSWORD.');
+    }
+    return nodemailer_1.default.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+    });
+};
 const sendVerificationEmail = async (email, code) => {
     const html = `
     <!DOCTYPE html>
@@ -185,6 +189,12 @@ const sendVerificationEmail = async (email, code) => {
         subject: 'Verifique seu e-mail - Código de ativação',
         html,
     };
-    await transporter.sendMail(mailOptions);
+    const transporter = createTransporter();
+    try {
+        await transporter.sendMail(mailOptions);
+    }
+    catch (error) {
+        throw new Error('Erro ao enviar e-mail de verificação. Verifique as configurações de e-mail no backend.');
+    }
 };
 exports.sendVerificationEmail = sendVerificationEmail;
