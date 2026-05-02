@@ -5,7 +5,7 @@ import { User } from '../types';
 interface AuthCtx {
   user: User | null | undefined; // undefined = loading, null = not logged in
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string) => Promise<{ userId: string; message: string }>;
   setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -32,15 +32,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storage = remember ? localStorage : sessionStorage;
       storage.setItem('finix_token', data.token);
       setUser(data.user);
+
+      // Check if user is verified
+      if (!data.user.isVerified) {
+        throw new Error('E-mail não verificado. Verifique seu e-mail antes de continuar.');
+      }
     } catch (e) { throw new Error(apiErrorMessage(e)); }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<User> => {
+  const register = async (name: string, email: string, password: string): Promise<{ userId: string; message: string }> => {
     try {
-      const { data } = await api.post('/api/auth/register', { name, email, password });
-      localStorage.setItem('finix_token', data.token);
-      setUser(data.user);
-      return data.user;
+      const { data } = await api.post('/api/auth/signup', { name, email, password });
+      return data;
     } catch (e) { throw new Error(apiErrorMessage(e)); }
   };
 

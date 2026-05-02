@@ -4,12 +4,25 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { User, Building, Users, Upload, Palette, ArrowRight, Loader2, X } from 'lucide-react';
+import { User, Building, Users, Upload, Palette, ArrowRight, Loader2, X, Check } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Logo } from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
+
+const DEFAULT_CATEGORIES = [
+  'Alimentação',
+  'Transporte',
+  'Saúde',
+  'Salário',
+  'Investimento',
+  'Pagamento',
+  'Lazer',
+  'Educação',
+  'Moradia',
+  'Serviços'
+];
 
 const schema = yup.object({
   usageType: yup.string().oneOf(['pessoal', 'empresarial', 'organizar']).required(),
@@ -33,7 +46,7 @@ export default function Onboarding() {
   const nav = useNavigate();
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [newCategory, setNewCategory] = useState('');
 
   const onboardingChart = [
@@ -47,10 +60,18 @@ export default function Onboarding() {
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: yupResolver(schema),
-    defaultValues: { usageType: 'pessoal' },
+    defaultValues: { usageType: 'pessoal', categories: DEFAULT_CATEGORIES },
   });
 
   const usageType = watch('usageType');
+
+  const toggleCategory = (categoryName: string) => {
+    const updated = categories.includes(categoryName)
+      ? categories.filter(c => c !== categoryName)
+      : [...categories, categoryName];
+    setCategories(updated);
+    setValue('categories', updated);
+  };
 
   const addCategory = () => {
     if (newCategory.trim() && !categories.includes(newCategory.trim())) {
@@ -61,8 +82,8 @@ export default function Onboarding() {
     }
   };
 
-  const removeCategory = (index: number) => {
-    const updated = categories.filter((_, i) => i !== index);
+  const removeCategory = (categoryName: string) => {
+    const updated = categories.filter(c => c !== categoryName);
     setCategories(updated);
     setValue('categories', updated);
   };
@@ -84,8 +105,6 @@ export default function Onboarding() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setLogoPreview(data.logoUrl);
-        // Atualizar o form
-        // Como é opcional, não precisa
       } catch (e) {
         toast.error('Erro ao fazer upload do logo');
       }
@@ -94,18 +113,27 @@ export default function Onboarding() {
 
   const onSubmit = async (data: Form) => {
     try {
+      if (categories.length === 0) {
+        toast.error('Selecione pelo menos uma categoria');
+        return;
+      }
+
       const payload = {
-        ...data,
-        companyLogo: logoPreview,
+        usageType: data.usageType,
+        companyName: data.usageType !== 'pessoal' ? data.companyName : undefined,
+        companyLogo: data.usageType !== 'pessoal' ? logoPreview : undefined,
+        businessPurpose: data.usageType !== 'pessoal' ? data.businessPurpose : undefined,
+        primaryColor: data.primaryColor,
         categories: categories,
       };
 
       const { data: res } = await api.post('/api/onboarding', payload);
       setUser(res.user);
-      toast.success('Onboarding completado! 🎉');
+      toast.success('Onboarding completado!');
       nav('/app/dashboard');
     } catch (e: any) {
-      toast.error(e.message || 'Erro no onboarding');
+      console.error('Onboarding error:', e);
+      toast.error(e.response?.data?.error || e.message || 'Erro no onboarding');
     }
   };
 
@@ -271,46 +299,80 @@ export default function Onboarding() {
                 {/* Categorias personalizadas */}
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Categorias personalizadas
+                    Categorias de transações
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Adicione as categorias que você quer usar para organizar suas transações
+                  <p className="text-sm text-gray-600 mb-6">
+                    Selecione as categorias que você quer usar para organizar suas transações. Você pode adicionar novas categorias também.
                   </p>
 
-                  <div className="flex gap-2 mb-4">
-                    <input
-                      type="text"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Digite uma categoria..."
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                    />
-                    <button
-                      type="button"
-                      onClick={addCategory}
-                      className="px-4 py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 transition-colors"
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {categories.map((cat, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="font-medium">{cat}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeCategory(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
+                  {/* Default Categories Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {DEFAULT_CATEGORIES.map((cat) => (
+                      <motion.button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleCategory(cat)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${categories.includes(cat)
+                          ? 'border-brand-blue bg-brand-blue/10'
+                          : 'border-slate-200 bg-white hover:border-brand-blue/50'
+                          }`}
+                      >
+                        <span className="font-medium text-slate-900">{cat}</span>
+                        {categories.includes(cat) && (
+                          <Check className="w-5 h-5 text-brand-blue" />
+                        )}
+                      </motion.button>
                     ))}
                   </div>
 
-                  {errors.categories && <p className="text-red-500 text-sm mt-1">{errors.categories.message}</p>}
+                  {/* Add Custom Category */}
+                  <div className="border-t border-slate-200 pt-6">
+                    <p className="text-sm font-medium text-gray-700 mb-3">Adicionar categoria personalizada</p>
+                    <div className="flex gap-2 mb-4">
+                      <input
+                        type="text"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Digite uma nova categoria..."
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={addCategory}
+                        className="px-6 py-3 bg-brand-blue text-white rounded-2xl hover:bg-brand-blue/90 transition-colors font-medium"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Custom Categories List */}
+                    {categories.filter(c => !DEFAULT_CATEGORIES.includes(c)).length > 0 && (
+                      <div className="space-y-2">
+                        {categories.filter(c => !DEFAULT_CATEGORIES.includes(c)).map((cat) => (
+                          <motion.div
+                            key={cat}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200"
+                          >
+                            <span className="font-medium text-slate-900">{cat}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeCategory(cat)}
+                              className="text-red-500 hover:text-red-700 transition"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {errors.categories && <p className="text-red-500 text-sm mt-4">{errors.categories.message}</p>}
                 </div>
 
                 <button

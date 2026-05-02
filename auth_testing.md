@@ -14,7 +14,7 @@ Verify: bcrypt hash starts with `$2b$`, unique index on `users.email`.
 # Login
 curl -X POST http://localhost:8001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@finix.com","password":"Admin@123"}'
+  -d '{"email":"cvdinizramos@gmail.com","password":"Admin@123"}'
 
 # Get current user
 TOKEN="<access_token from login>"

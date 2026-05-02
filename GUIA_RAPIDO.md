@@ -83,7 +83,7 @@ Use uma das contas de teste:
 
 ### Opção 1: Admin
 ```
-Email: admin@finix.com
+Email: cvdinizramos@gmail.com
 Senha: Admin@123
 ```
 ✨ Acesso ao painel admin

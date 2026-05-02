@@ -1,3 +1,5 @@
+const plugin = require('tailwindcss/plugin');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
@@ -58,7 +60,7 @@ module.exports = {
     },
   },
   plugins: [
-    require('tailwindcss').plugin(function ({ addUtilities }) {
+    plugin(function ({ addUtilities }) {
       addUtilities({
         '.preserve-3d': { 'transform-style': 'preserve-3d' },
         '.perspective': { perspective: '1000px' },

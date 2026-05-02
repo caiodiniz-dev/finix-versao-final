@@ -13,6 +13,45 @@ Aplicativo frontend do Finix - Gestão Financeira Pessoal, desenvolvido com Reac
 - **Axios** - Cliente HTTP
 - **React Hook Form** - Formulários
 - **Recharts** - Gráficos
+- **React Hot Toast** - Notificações
+
+## Funcionalidades
+
+- ✅ **Autenticação completa** com verificação de e-mail OTP
+- ✅ **Interface moderna** estilo fintech
+- ✅ **Dashboard financeiro** com gráficos
+- ✅ **Gestão de transações** (receitas/despesas)
+- ✅ **Orçamentos** e controle de gastos
+- ✅ **Metas financeiras** com progresso visual
+- ✅ **Relatórios** em PDF e Excel
+- ✅ **Integração Stripe** para planos premium
+- ✅ **Design responsivo** mobile-first
+
+## Sistema de Verificação de E-mail
+
+### Fluxo de Cadastro
+
+1. **Signup**: Usuário preenche nome, email e senha
+2. **Verificação**: Sistema envia código OTP de 6 dígitos por e-mail
+3. **Confirmação**: Usuário digita código em interface moderna
+4. **Ativação**: Conta é ativada após verificação
+
+### Design do E-mail
+
+- Template HTML profissional estilo fintech
+- Gradientes modernos (roxo/azul)
+- Ícone de crescimento 📈
+- Código destacado e centralizado
+- Aviso de expiração (5 minutos)
+- Layout responsivo e acessível
+
+### Interface de Verificação
+
+- Inputs individuais para cada dígito
+- Auto-focus automático
+- Feedback visual (loading, erro, sucesso)
+- Design consistente com identidade visual
+- Animações suaves com Framer Motion
 
 ## Como executar
 
@@ -42,7 +81,7 @@ npm run preview
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-REACT_APP_BACKEND_URL=http://localhost:8000
+VITE_API_URL=http://localhost:3000
 ```
 
 Para produção, configure a URL do backend no painel da Vercel.

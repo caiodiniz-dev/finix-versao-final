@@ -56,7 +56,7 @@ const PLANS = [
 ];
 
 export default function Plans() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
   const API_BASE = import.meta.env.VITE_API_URL as string;
 
@@ -89,6 +89,37 @@ export default function Plans() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!user) return;
+
+    const confirmed = window.confirm('Deseja cancelar seu plano pago e voltar para o plano gratuito?');
+    if (!confirmed) return;
+
+    setLoading('cancel');
+    try {
+      const response = await axios.post(
+        `${API_BASE}/api/stripe/cancel-subscription`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('finix_token')}` },
+        }
+      );
+
+      if (response.data?.message) {
+        toast.success(response.data.message);
+        await refreshUser();
+      } else {
+        toast.success('Plano cancelado com sucesso.');
+        await refreshUser();
+      }
+    } catch (err: any) {
+      console.error('Erro ao cancelar plano:', err);
+      toast.error(err.response?.data?.error || err.message || 'Erro ao cancelar o plano');
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-12">
       {/* Header */}
@@ -98,20 +129,24 @@ export default function Plans() {
         className="max-w-3xl"
       >
         <h1 className="text-4xl font-display font-extrabold">Planos e Preços</h1>
-        <p className="mt-4 text-lg text-slate-600">
+        <p className="mt-4 text-lg text-slate-400 max-w-2xl">
           Escolha o plano perfeito para suas necessidades. Você pode mudar a qualquer momento.
         </p>
         {user && (
-          <div className="mt-6 inline-block px-4 py-2 rounded-xl bg-brand-blue/10 border border-brand-blue/20">
-            <p className="text-sm font-medium">
-              Plano atual: <span className="font-bold text-brand-blue">{user.plan || 'GRÁTIS'}</span>
-            </p>
+          <div className="mt-6 inline-flex flex-col gap-2 rounded-[2rem] border border-slate-700 bg-slate-950/80 px-5 py-4 shadow-soft text-white sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Plano atual</p>
+              <p className="mt-1 text-xl font-semibold text-white">{user.plan || 'GRÁTIS'}</p>
+            </div>
+            {user.plan !== 'FREE' && (
+              <p className="text-sm text-slate-400">O plano atual será mantido até a próxima cobrança.</p>
+            )}
           </div>
         )}
       </motion.div>
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid gap-8 md:grid-cols-3">
         {PLANS.map((plan, idx) => {
           const Icon = plan.icon;
           const isCurrent = plan.id === user?.plan;
@@ -133,36 +168,36 @@ export default function Plans() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`p-2.5 rounded-lg ${plan.highlighted
-                  ? 'bg-gradient-to-br from-brand-purple to-pink-500'
-                  : 'bg-gradient-to-br from-brand-blue to-brand-purple'
-                  } text-white`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-3xl ${plan.highlighted
+                  ? 'bg-gradient-to-br from-brand-purple to-pink-500 text-white'
+                  : 'bg-slate-900 text-white'}
+                `}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg">{plan.name}</h3>
-                  <p className="text-xs text-slate-500">{plan.description}</p>
+                  <h3 className="font-display font-bold text-lg text-white">{plan.name}</h3>
+                  <p className="text-sm text-slate-400">{plan.description}</p>
                 </div>
               </div>
 
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">
-                    {plan.price === 0 ? 'Grátis' : `R$ ${plan.price}`}
+              <div className="mb-8">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-white">
+                    {plan.price === 0 ? 'Grátis' : `R$ ${plan.price.toFixed(2).replace('.', ',')}`}
                   </span>
-                  {plan.price > 0 && <span className="text-slate-500">/mês</span>}
+                  {plan.price > 0 && <span className="text-slate-400">/mês</span>}
                 </div>
               </div>
 
               <button
                 onClick={() => handleUpgrade(plan.id)}
                 disabled={loading === plan.id || isCurrent}
-                className={`w-full py-3 rounded-lg font-semibold mb-8 transition-all ${isCurrent
-                  ? 'bg-slate-100 text-slate-500 cursor-default'
+                className={`w-full rounded-3xl px-5 py-3 text-sm font-semibold transition-all ${isCurrent
+                  ? 'bg-slate-800 text-slate-400 cursor-default'
                   : plan.highlighted
-                    ? 'btn-primary w-full'
-                    : 'btn-outline w-full'
+                    ? 'btn-primary'
+                    : 'btn-outline'
                   } disabled:opacity-50`}
               >
                 {isCurrent
@@ -172,11 +207,11 @@ export default function Plans() {
                     : 'Escolher'}
               </button>
 
-              <div className="space-y-3">
+              <div className="mt-8 space-y-3">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <Check className="w-4 h-4 text-brand-green mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-slate-600">{feature}</span>
+                    <span className="text-sm text-slate-400">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -184,6 +219,31 @@ export default function Plans() {
           );
         })}
       </div>
+
+      {user && user.plan !== 'FREE' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[2rem] border border-red-500/10 bg-red-500/5 p-8 shadow-soft"
+        >
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm uppercase tracking-[0.3em] text-red-600">Cancelar Plano</p>
+              <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">Interrompa a cobrança mensal</h2>
+              <p className="mt-4 text-slate-600 dark:text-slate-300">
+                Clique abaixo para cancelar sua assinatura atual. Seu plano será revertido ao plano gratuito e você não será mais cobrado.
+              </p>
+            </div>
+            <button
+              onClick={handleCancelSubscription}
+              disabled={loading === 'cancel'}
+              className="w-full rounded-3xl bg-red-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 md:w-auto"
+            >
+              {loading === 'cancel' ? 'Cancelando...' : 'Cancelar assinatura'}
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* FAQ Section */}
       <motion.div
@@ -221,6 +281,6 @@ export default function Plans() {
           ))}
         </div>
       </motion.div>
-    </div>
+    </div >
   );
 }

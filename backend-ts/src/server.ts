@@ -11,6 +11,9 @@ import { z } from 'zod';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 import Stripe from 'stripe';
+import authRoutes from './routes/authRoutes';
+import { authRateLimit } from './middlewares/rateLimit';
+import { signup } from './services/authService';
 
 dotenv.config();
 process.env.DATABASE_URL ||= 'file:./dev.db';
@@ -25,7 +28,11 @@ const JWT_EXPIRES_IN = '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixxapp.vercel.app';
 
 const corsOrigins = [
-  FRONTEND_URL
+  FRONTEND_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
 ];
 
 app.use(cors({
@@ -34,6 +41,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // ============================================================================
 // PLANS CONFIGURATION
@@ -56,6 +66,12 @@ export const PLANS: Record<string, {
     hasAI: true, hasAdvancedAI: false, hasPDF: true, hasExcel: false,
     hasPrioritySupport: false,
     stripePriceId: 'price_1TRjBSJjlHCvcKLJki6868NK',
+  },
+  TEST: {
+    id: 'TEST', name: 'Teste', price: 0.01, currency: 'BRL',
+    transactionsLimit: -1, categoriesLimit: 999, goalsLimit: -1,
+    hasAI: true, hasAdvancedAI: true, hasPDF: true, hasExcel: true,
+    hasPrioritySupport: true,
   },
   PRO: {
     id: 'PRO', name: 'Pro', price: 35, currency: 'BRL',
@@ -191,7 +207,7 @@ const userUpdateSchema = z.object({
   name: z.string().optional(),
   role: z.enum(['USER', 'ADMIN']).optional(),
   blocked: z.boolean().optional(),
-  plan: z.enum(['FREE', 'BASIC', 'PRO']).optional(),
+  plan: z.enum(['FREE', 'BASIC', 'PRO', 'TEST']).optional(),
   hasCompletedOnboarding: z.boolean().optional(),
   usageType: z.enum(['pessoal', 'empresarial', 'organizar']).optional(),
   companyName: z.string().optional().nullable(),
@@ -203,10 +219,10 @@ const userUpdateSchema = z.object({
 
 const onboardingSchema = z.object({
   usageType: z.enum(['pessoal', 'empresarial', 'organizar']),
-  companyName: z.string().optional(),
-  companyLogo: z.string().optional(),
-  businessPurpose: z.string().optional(),
-  primaryColor: z.string().optional(),
+  companyName: z.string().nullable().optional(),
+  companyLogo: z.string().nullable().optional(),
+  businessPurpose: z.string().nullable().optional(),
+  primaryColor: z.string().nullable().optional(),
   categories: z.array(z.string().min(1).max(50)).min(1),
 });
 
@@ -225,25 +241,11 @@ const userPublic = (u: any) => ({
 // ============================================================================
 // AUTH
 // ============================================================================
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authRateLimit, async (req, res) => {
   try {
     const data = registerSchema.parse(req.body);
-    const existing = await prisma.user.findUnique({ where: { email: data.email.toLowerCase() } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email já cadastrado' });
-    }
-    const user = await prisma.user.create({
-      data: {
-        id: uuidv4(),
-        name: data.name.trim(),
-        email: data.email.toLowerCase(),
-        passwordHash: await bcrypt.hash(data.password, 10),
-        plan: 'FREE',
-        transactionsMonth: currentMonthKey(),
-      },
-    });
-    const token = jwt.sign({ sub: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.json({ user: userPublic(user), token });
+    const result = await signup(data.email.toLowerCase(), data.password, data.name.trim());
+    res.status(201).json(result);
   } catch (err: any) {
     console.error('Register error:', err);
     if (err.name === 'ZodError') {
@@ -280,34 +282,67 @@ app.get('/api/auth/me', authenticate, (req, res) => {
 // ============================================================================
 // ONBOARDING
 // ============================================================================
+const DEFAULT_CATEGORIES = [
+  'Alimentação',
+  'Transporte',
+  'Saúde',
+  'Salário',
+  'Investimento',
+  'Pagamento',
+  'Lazer',
+  'Educação',
+  'Moradia',
+  'Serviços'
+];
+
 app.post('/api/onboarding', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
-    if (user.plan !== 'PRO') {
-      return res.status(403).json({ error: 'Onboarding disponível apenas para plano PRO' });
-    }
     if (user.hasCompletedOnboarding) {
       return res.status(400).json({ error: 'Onboarding já completado' });
     }
     const data = onboardingSchema.parse(req.body);
+
     const updateData: any = {
       hasCompletedOnboarding: true,
       usageType: data.usageType,
     };
+
+    // Only set company fields if not 'pessoal'
     if (data.usageType !== 'pessoal') {
-      updateData.companyName = data.companyName;
-      updateData.companyLogo = data.companyLogo;
-      updateData.businessPurpose = data.businessPurpose;
-      updateData.primaryColor = data.primaryColor;
+      updateData.companyName = data.companyName || null;
+      updateData.companyLogo = data.companyLogo || null;
+      updateData.businessPurpose = data.businessPurpose || null;
+      updateData.primaryColor = data.primaryColor || null;
+    } else {
+      // Clear company fields for personal use
+      updateData.companyName = null;
+      updateData.companyLogo = null;
+      updateData.businessPurpose = null;
+      updateData.primaryColor = null;
     }
+
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
     });
-    // Salvar categorias personalizadas
-    await prisma.category.createMany({
-      data: data.categories.map(name => ({ userId: user.id, name })),
+
+    // Delete any existing categories first
+    await prisma.category.deleteMany({
+      where: { userId: user.id }
     });
+
+    // Save categories
+    const categoriesToCreate = data.categories && data.categories.length > 0
+      ? data.categories
+      : DEFAULT_CATEGORIES;
+
+    if (categoriesToCreate.length > 0) {
+      await prisma.category.createMany({
+        data: categoriesToCreate.map(name => ({ userId: user.id, name }))
+      });
+    }
+
     res.json({ user: userPublic(updatedUser) });
   } catch (err: any) {
     console.error('Onboarding error:', err);
@@ -963,6 +998,34 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
 // ============================================================================
 // STRIPE CHECKOUT
 // ============================================================================
+app.post('/api/stripe/cancel-subscription', authenticate, async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe não configurado' });
+  }
+
+  const user = (req as any).user;
+  if (!user?.stripeSubscriptionId) {
+    return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
+  }
+
+  try {
+    await (stripe.subscriptions as any).del(user.stripeSubscriptionId);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        plan: 'FREE',
+        stripeSubscriptionId: null,
+        planExpiresAt: null,
+      },
+    });
+
+    return res.json({ message: 'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.' });
+  } catch (err: any) {
+    console.error('Stripe cancel subscription error:', err);
+    return res.status(500).json({ error: err.message || 'Erro ao cancelar a assinatura' });
+  }
+});
+
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
   if (!stripe) {
     return res.status(500).json({ error: 'Stripe não configurado' });
@@ -972,12 +1035,42 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     const { plan_id } = req.body;
     const user = (req as any).user;
 
-    if (!['BASIC', 'PRO'].includes(plan_id)) {
+    if (!['BASIC', 'PRO', 'TEST'].includes(plan_id)) {
       return res.status(400).json({ error: 'Plano inválido' });
     }
 
     const plan = PLANS[plan_id as keyof typeof PLANS];
+    if (!plan) {
+      return res.status(400).json({ error: 'Plano inválido' });
+    }
+
     if (!plan.stripePriceId) {
+      if (plan_id === 'TEST') {
+        const sessionId = `test-session-${Date.now()}`;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { plan: 'TEST' },
+        });
+
+        await prisma.paymentTransaction.create({
+          data: {
+            userId: user.id,
+            userEmail: user.email,
+            sessionId,
+            amount: plan.price,
+            currency: 'BRL',
+            plan: plan_id,
+            paymentStatus: 'paid',
+            stripePaymentId: sessionId,
+          },
+        });
+
+        return res.json({
+          url: `${FRONTEND_URL}/app/dashboard?success=true&session_id=${sessionId}`,
+          sessionId,
+        });
+      }
+
       return res.status(400).json({ error: 'Plano não configurado no Stripe' });
     }
 
@@ -1170,7 +1263,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 // SEED
 // ============================================================================
 const seedData = async () => {
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@finix.com';
+  const adminEmail = process.env.ADMIN_EMAIL || 'cvdinizramos@gmail.com';
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
   const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!admin) {
@@ -1182,16 +1275,25 @@ const seedData = async () => {
         passwordHash: await bcrypt.hash(adminPassword, 10),
         role: 'ADMIN',
         plan: 'PRO',
+        isVerified: true,
+        verificationCode: null,
+        verificationExpires: null,
         transactionsMonth: currentMonthKey(),
       },
     });
     console.log(`✅ Admin criado: ${adminEmail} / Admin@123`);
   } else {
-    // Ensure admin has ADMIN role and PRO plan
-    if (admin.role !== 'ADMIN' || admin.plan !== 'PRO') {
+    // Ensure admin has ADMIN role, PRO plan and is verified
+    const updateData: any = {};
+    if (admin.role !== 'ADMIN') updateData.role = 'ADMIN';
+    if (admin.plan !== 'PRO') updateData.plan = 'PRO';
+    if (!admin.isVerified) updateData.isVerified = true;
+    if (admin.verificationCode !== null) updateData.verificationCode = null;
+    if (admin.verificationExpires !== null) updateData.verificationExpires = null;
+    if (Object.keys(updateData).length > 0) {
       await prisma.user.update({
         where: { id: admin.id },
-        data: { role: 'ADMIN', plan: 'PRO' },
+        data: updateData,
       });
       console.log(`✅ Admin atualizado: ${adminEmail}`);
     } else {

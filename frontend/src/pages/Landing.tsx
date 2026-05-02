@@ -549,66 +549,96 @@ const testimonials = [
   },
 ];
 
-const [current, setCurrent] = useState(0);
+function TestimonialCarousel() {
+  const [current, setCurrent] = useState(0);
 
-useEffect(() => {
-  const timer = window.setInterval(() => {
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrent((prev) => (prev + 1) % testimonials.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const prev = () =>
+    setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+
+  const next = () =>
     setCurrent((prev) => (prev + 1) % testimonials.length);
-  }, 4500);
-  return () => window.clearInterval(timer);
-}, [testimonials.length]);
 
-const prev = () => setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-const next = () => setCurrent((prev) => (prev + 1) % testimonials.length);
+  return (
+    <div className="relative max-w-4xl mx-auto px-4 sm:px-0">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={testimonials[current].name}
+          initial={{ opacity: 0, y: 20, rotateX: 10 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          exit={{ opacity: 0, y: -20, rotateX: -10 }}
+          transition={{ duration: 0.45 }}
+          className="card p-6 sm:p-8 shadow-xl perspective"
+        >
+          <Quote className="absolute top-6 right-6 w-8 sm:w-10 h-8 sm:h-10 text-slate-100 opacity-20" />
 
-return (
-  <div className="relative max-w-4xl mx-auto px-4 sm:px-0">
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={testimonials[current].name}
-        initial={{ opacity: 0, y: 20, rotateX: 10 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0 }}
-        exit={{ opacity: 0, y: -20, rotateX: -10 }}
-        transition={{ duration: 0.45 }}
-        className="card p-6 sm:p-8 shadow-xl perspective"
-      >
-        <Quote className="absolute top-6 right-6 w-8 sm:w-10 h-8 sm:h-10 text-slate-100 opacity-20" />
-        <div className="flex items-center gap-2 text-amber-500 mb-4">
-          {[1, 2, 3, 4, 5].map((star) => <Star key={star} className="w-4 h-4 fill-current" />)}
-        </div>
-        <p className="text-base sm:text-lg lg:text-xl text-slate-700 leading-relaxed">"{testimonials[current].text}"</p>
-        <div className="mt-6 sm:mt-8 flex items-center gap-4">
-          <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ background: testimonials[current].color }}>
-            {testimonials[current].name.charAt(0)}
+          <div className="flex items-center gap-2 text-amber-500 mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className="w-4 h-4 fill-current" />
+            ))}
           </div>
-          <div className="min-w-0">
-            <div className="font-semibold text-slate-900 text-sm sm:text-base">{testimonials[current].name}</div>
-            <div className="text-xs sm:text-sm text-slate-500">{testimonials[current].role}</div>
+
+          <p className="text-base sm:text-lg lg:text-xl text-slate-700 leading-relaxed">
+            "{testimonials[current].text}"
+          </p>
+
+          <div className="mt-6 sm:mt-8 flex items-center gap-4">
+            <div
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+              style={{ background: testimonials[current].color }}
+            >
+              {testimonials[current].name.charAt(0)}
+            </div>
+
+            <div>
+              <div className="font-semibold text-slate-900 text-sm sm:text-base">
+                {testimonials[current].name}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-500">
+                {testimonials[current].role}
+              </div>
+            </div>
           </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500">
+        <button
+          onClick={prev}
+          className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm"
+        >
+          <ChevronLeft className="w-4 h-4" /> Anterior
+        </button>
+
+        <div className="flex items-center gap-2">
+          {testimonials.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrent(index)}
+              className={`w-3 h-3 rounded-full ${index === current ? 'bg-brand-green' : 'bg-slate-300'
+                }`}
+            />
+          ))}
         </div>
-      </motion.div>
-    </AnimatePresence>
-    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500">
-      <button onClick={prev} className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm w-full sm:w-auto justify-center">
-        <ChevronLeft className="w-4 h-4" /> Anterior
-      </button>
-      <div className="flex items-center gap-2 flex-wrap justify-center">
-        {testimonials.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrent(index)}
-            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${index === current ? 'bg-brand-green' : 'bg-slate-300'}`}
-            aria-label={`Depoimento ${index + 1}`}
-          />
-        ))}
+
+        <button
+          onClick={next}
+          className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm"
+        >
+          Próximo <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
-      <button onClick={next} className="btn-outline inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm w-full sm:w-auto justify-center">
-        Próximo <ChevronRight className="w-4 h-4" />
-      </button>
     </div>
-  </div>
-);
+  );
 }
+
 
 function HeroDashboard() {
   const bars = [40, 62, 50, 78, 55, 84, 70, 92, 66, 88, 75, 95];

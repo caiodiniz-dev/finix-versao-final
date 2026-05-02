@@ -6,6 +6,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -78,6 +80,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
           <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
+          <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
+          <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
           <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
           <Route path="/app" element={<OnboardingRequired><AppLayout /></OnboardingRequired>}>
             <Route index element={<Navigate to="/app/dashboard" replace />} />
