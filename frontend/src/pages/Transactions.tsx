@@ -183,10 +183,10 @@ export default function Transactions() {
                     </div>
                   )}
                 </div>
-                <div className={`font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                <div className={`min-w-[104px] text-right font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'} flex items-center justify-end text-base sm:text-lg`}>
                   {t.type === 'INCOME' ? '+' : '-'}{currency(t.amount)}
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 items-center">
                   <button className="btn-ghost !p-2" onClick={() => openEdit(t)} data-testid={`edit-${t.id}`} title="Editar">
                     <Edit2 className="w-4 h-4" />
                   </button>
