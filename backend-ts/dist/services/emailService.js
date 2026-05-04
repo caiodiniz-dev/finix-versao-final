@@ -14,6 +14,9 @@ const createTransporter = () => {
     return nodemailer_1.default.createTransport({
         service: 'gmail',
         auth: { user, pass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
     });
 };
 const sendVerificationEmail = async (email, code) => {
