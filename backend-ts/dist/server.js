@@ -29,9 +29,11 @@ const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage()
 const stripe = process.env.STRIPE_SECRET_KEY ? new stripe_1.default(process.env.STRIPE_SECRET_KEY) : null;
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixxapp.vercel.app';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixapp.vercel.app';
 const corsOrigins = [
-    FRONTEND_URL,
+    process.env.FRONTEND_URL || 'https://finixapp.vercel.app',
+    'https://finixapp.vercel.app',
+    'https://finixapp.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
@@ -743,37 +745,120 @@ app.get('/api/admin/stats', authenticate, requireAdmin, async (req, res) => {
 // ============================================================================
 app.post('/api/insights/ai', authenticate, requireFeature('hasAI'), async (req, res) => {
     const user = req.user;
-    const plan = exports.PLANS[user.plan];
+    const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
     const transactions = await prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: 'desc' } });
     const goals = await prisma.goal.findMany({ where: { userId: user.id } });
     if (transactions.length === 0) {
         return res.json({ insights: [{ type: 'info', title: 'Sem dados suficientes', message: 'Adicione algumas transações para receber análises personalizadas.' }] });
     }
+    const incomeTx = transactions.filter((t) => t.type === 'INCOME');
+    const expenseTx = transactions.filter((t) => t.type === 'EXPENSE');
+    const income = incomeTx.reduce((sum, t) => sum + t.amount, 0);
+    const expense = expenseTx.reduce((sum, t) => sum + t.amount, 0);
+    const balance = income - expense;
+    const spendRatio = income > 0 ? expense / income : 1;
+    const avgExpense = expenseTx.length > 0 ? expense / expenseTx.length : 0;
+    const topCategory = expenseTx.reduce((acc, t) => {
+        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        return acc;
+    }, {});
+    const bestCategory = Object.entries(topCategory).sort((a, b) => b[1] - a[1])[0];
+    const now = new Date();
+    const recentExpenses = expenseTx.filter((t) => {
+        const days = (now.getTime() - new Date(t.date).getTime()) / (1000 * 60 * 60 * 24);
+        return days <= 14;
+    });
+    const localInsights = [];
+    if (income === 0) {
+        localInsights.push({
+            type: 'warning',
+            title: 'Atenção, sem receita registrada',
+            message: 'Ainda não há nenhuma receita cadastrada. Registre sua renda para que o Finix saiba quanto você pode gastar com segurança.',
+        });
+    }
+    else if (spendRatio >= 0.9) {
+        localInsights.push({
+            type: 'warning',
+            title: 'Cuidado, seus gastos estão muito altos',
+            message: `Você já gastou ${(spendRatio * 100).toFixed(0)}% da sua renda registrada. Se continuar assim, falta pouco para o dinheiro do mês acabar.`,
+        });
+    }
+    else if (spendRatio >= 0.75) {
+        localInsights.push({
+            type: 'warning',
+            title: 'Atenção, a dívida do mês pode apertar',
+            message: `Seu ritmo de despesas consome ${(spendRatio * 100).toFixed(0)}% da renda. Reveja os próximos gastos antes de comprometer mais do seu salário.`,
+        });
+    }
+    else if (spendRatio >= 0.5) {
+        localInsights.push({
+            type: 'info',
+            title: 'Bom controle, mas fique atento',
+            message: `Você usou ${(spendRatio * 100).toFixed(0)}% da sua renda. Busque manter as próximas despesas abaixo de 30% para maior conforto financeiro.`,
+        });
+    }
+    else {
+        localInsights.push({
+            type: 'success',
+            title: 'Ótimo, seu orçamento está equilibrado',
+            message: `Suas despesas representam ${(spendRatio * 100).toFixed(0)}% da receita. Continue assim para ter mais folga até o próximo salário.`,
+        });
+    }
+    if (bestCategory && bestCategory[1] > 0 && expense > 0) {
+        const categoryRatio = (bestCategory[1] / expense) * 100;
+        if (categoryRatio >= 35) {
+            localInsights.push({
+                type: 'warning',
+                title: `Atenção: ${bestCategory[0]} domina seus gastos`,
+                message: `${bestCategory[0]} responde por ${categoryRatio.toFixed(0)}% das despesas. Avalie se dá para cortar ou controlar esse consumo.`,
+            });
+        }
+    }
+    if (recentExpenses.length >= 3 && avgExpense > 0) {
+        const recentAvg = recentExpenses.reduce((sum, t) => sum + t.amount, 0) / recentExpenses.length;
+        if (recentAvg > avgExpense) {
+            localInsights.push({
+                type: 'info',
+                title: 'Últimos gastos acima da média',
+                message: 'Nas últimas duas semanas você gastou mais do que a sua média habitual. Procure analisar cada saída e adiar compras não essenciais.',
+            });
+        }
+    }
+    if (balance < 0) {
+        localInsights.push({
+            type: 'warning',
+            title: 'Seu saldo está negativo',
+            message: 'As despesas superam sua renda registrada. Precisa reduzir saídas e equilibrar o fluxo o quanto antes.',
+        });
+    }
+    if (goals.length > 0 && spendRatio > 0.6) {
+        localInsights.push({
+            type: 'info',
+            title: 'Meta em risco de atraso',
+            message: 'Com gastos acima de 60% da renda, pode ficar mais difícil atingir metas financeiras. Ajuste o orçamento para priorizar seus objetivos.',
+        });
+    }
     try {
         const apiKey = process.env.EMERGENT_LLM_KEY;
         if (!apiKey) {
-            const income = transactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
-            const expense = transactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-            const balance = income - expense;
-            return res.json({
-                insights: [
-                    { type: 'success', title: 'Análise dos seus gastos', message: `Renda total: R$ ${income.toFixed(2)} | Despesas: R$ ${expense.toFixed(2)} | Saldo: R$ ${balance.toFixed(2)}` },
-                ],
-            });
+            return res.json({ insights: localInsights.slice(0, 4) });
         }
-        const summary = transactions.slice(0, 15).map(t => `${t.title}: R$ ${t.amount} (${t.type}/${t.category})`).join(', ');
-        const income = transactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
-        const expense = transactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
+        const summary = transactions.slice(0, 12).map((t) => `${t.title}: R$ ${t.amount.toFixed(2)} (${t.type}/${t.category})`).join(', ');
         const advanced = plan.hasAdvancedAI ? 'avançada, com recomendações específicas de investimento, economia e planejamento' : 'básica, com observações gerais';
-        const prompt = `Analise as finanças dessa pessoa e forneça ${plan.hasAdvancedAI ? 5 : 3} insights úteis (${advanced}).
+        const prompt = `Você é a assistente financeira do Finix. Analise os dados abaixo e gere 4 insights em português no estilo de uma conversa clara e prática.
+Sempre entregue pelo menos um alerta direto no formato "Cuidado, ..." quando houver risco de gastar demais ou de faltar dinheiro.
+Use também mensagens confiantes quando o usuário estiver no caminho certo.
+
 Renda total: R$ ${income.toFixed(2)}
 Despesas totais: R$ ${expense.toFixed(2)}
-Metas: ${goals.length}
+Saldo: R$ ${balance.toFixed(2)}
+Porcentagem de renda gasta: ${(spendRatio * 100).toFixed(0)}%
+Metas cadastradas: ${goals.length}
 Últimas transações: ${summary}
 
-Responda APENAS com um JSON válido no formato:
+Responda apenas com JSON válido no formato:
 { "insights": [{ "type": "success|warning|info", "title": "...", "message": "..." }] }
-Seja conciso, prático e em português.`;
+Limite o texto a frases curtas e diretas.`;
         const response = await fetch('https://integrations.emergentagent.com/llm/v1/messages', {
             method: 'POST',
             headers: {
@@ -788,21 +873,27 @@ Seja conciso, prático e em português.`;
             }),
         });
         const data = await response.json();
-        let insights = [{ type: 'success', title: 'Análise de IA', message: 'Análise concluída.' }];
+        let insights = localInsights.slice(0, 4);
         if (data.content && data.content[0]) {
             try {
                 const text = data.content[0].text;
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch)
-                    insights = JSON.parse(jsonMatch[0]).insights || insights;
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (parsed?.insights && Array.isArray(parsed.insights)) {
+                        insights = parsed.insights;
+                    }
+                }
             }
-            catch { }
+            catch (error) {
+                console.warn('AI insight parse failed, using fallback insights.', error);
+            }
         }
         res.json({ insights });
     }
     catch (err) {
         console.error('AI Error:', err);
-        res.json({ insights: [{ type: 'info', title: 'Análise indisponível', message: 'Não foi possível gerar análise de IA no momento.' }] });
+        res.json({ insights: localInsights.slice(0, 4) });
     }
 });
 // ============================================================================
@@ -1186,8 +1277,15 @@ app.use((err, _req, res, _next) => {
 // SEED
 // ============================================================================
 const seedData = async () => {
-    const adminEmail = process.env.ADMIN_EMAIL || 'cvdinizramos@gmail.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'finixappp@gmail.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    // Remove any other admin accounts so only the default admin remains
+    await prisma.user.deleteMany({
+        where: {
+            role: 'ADMIN',
+            email: { not: adminEmail },
+        },
+    });
     const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (!admin) {
         await prisma.user.create({
