@@ -14,6 +14,9 @@ import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Budgets from './pages/Budgets';
 import Plans from './pages/Plans';
+import Calendar from './pages/Calendar';
+import Alerts from './pages/Alerts';
+import Categories from './pages/Categories';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import AppLayout from './layouts/AppLayout';
@@ -89,6 +92,9 @@ export default function App() {
             <Route path="transactions" element={<Transactions />} />
             <Route path="goals" element={<Goals />} />
             <Route path="budgets" element={<Budgets />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="categories" element={<Categories />} />
             <Route path="plans" element={<Plans />} />
             <Route path="profile" element={<Profile />} />
             <Route path="admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />

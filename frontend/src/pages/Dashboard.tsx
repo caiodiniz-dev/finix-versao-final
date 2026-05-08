@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   TrendingUp, TrendingDown, Wallet, PiggyBank, FileDown, FileSpreadsheet,
   ArrowUpRight, ArrowDownRight, Info, AlertTriangle, CheckCircle2, Sparkles, Loader2
@@ -12,6 +12,7 @@ import { api, apiErrorMessage } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardData, Insight } from '../types';
 import { currency, dateBR, CATEGORY_COLORS } from '../utils/format';
+import { UpgradeModal } from '../components/UpgradeModal';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
@@ -21,6 +22,13 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<Insight[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [alerts, setAlerts] = useState<{ count: number; alerts: any[] } | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  const isFree = user?.plan === 'FREE';
+  const canExportPdf = user?.plan !== 'FREE';
+  const canExportExcel = user?.plan === 'PRO';
+  const canUseAi = user?.plan !== 'FREE';
 
   const fetchDashboard = useCallback(async () => {
     if (!user) return;
@@ -48,7 +56,29 @@ export default function Dashboard() {
     }
   }, [user, fetchDashboard]);
 
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      if (!user) return;
+      try {
+        const r = await api.get('/api/alerts');
+        setAlerts(r.data);
+      } catch (err: any) {
+        console.error('Failed to load alerts', err);
+      }
+    };
+    fetchAlerts();
+  }, [user]);
+
+  if (!user) return null;
+
+  const openUpgradeModal = () => setUpgradeOpen(true);
+
   const handleExport = async (kind: 'pdf' | 'excel') => {
+    if ((kind === 'pdf' && !canExportPdf) || (kind === 'excel' && !canExportExcel)) {
+      openUpgradeModal();
+      return;
+    }
+
     try {
       const r = await api.get(`/api/export/${kind}`, { responseType: 'blob' });
       const url = URL.createObjectURL(r.data);
@@ -62,6 +92,11 @@ export default function Dashboard() {
   };
 
   const generateAi = async () => {
+    if (!canUseAi) {
+      openUpgradeModal();
+      return;
+    }
+
     setAiLoading(true);
     try {
       const r = await api.post('/api/insights/ai');
@@ -87,7 +122,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="p-6 rounded-2xl border border-red-200 bg-red-50 text-red-900">
+        <div className="p-6 rounded-2xl border border-red-900/50 bg-red-950/30 text-red-300">
           <p className="font-semibold">Erro ao carregar dashboard</p>
           <p className="mt-2 text-sm">{error}</p>
           <button onClick={fetchDashboard} className="btn-primary mt-4">Tentar novamente</button>
@@ -98,7 +133,7 @@ export default function Dashboard() {
 
   if (!data) {
     return (
-      <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700">
+      <div className="p-6 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300">
         <p>Dashboard sem dados.</p>
       </div>
     );
@@ -139,15 +174,34 @@ export default function Dashboard() {
               </div>
             )}
             <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">Acompanhe seu progresso financeiro com análises atualizadas e visão clara por categoria.</p>
+            {alerts && alerts.count > 0 && (
+              <div className="inline-flex items-center gap-3 rounded-3xl border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">
+                <AlertTriangle className="w-4 h-4" />
+                Você tem {alerts.count} alerta{alerts.count > 1 ? 's' : ''} financeiros próximos
+              </div>
+            )}
+            {isFree && (
+              <div className="mt-4 rounded-3xl border border-brand-blue/20 bg-brand-blue/10 px-4 py-3 text-sm text-brand-blue/80">
+                Seu plano atual é Grátis. Para criar transações, acessar alertas e exportar relatórios, faça upgrade para o plano Básico ou Pro.
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
             <button onClick={generateAi} disabled={aiLoading} className="btn-primary text-sm" data-testid="ai-insights-btn">
               {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> {user.plan === 'PRO' ? 'Análise IA PRO' : 'Análise com IA'}</>}
             </button>
-            <button onClick={() => handleExport('pdf')} className="btn-outline text-sm" data-testid="export-pdf">
+            <button
+              onClick={() => handleExport('pdf')}
+              className={`btn-outline text-sm ${!canExportPdf ? 'opacity-70' : ''}`}
+              data-testid="export-pdf"
+            >
               <FileDown className="w-4 h-4" /> PDF
             </button>
-            <button onClick={() => handleExport('excel')} className="btn-outline text-sm" data-testid="export-excel">
+            <button
+              onClick={() => handleExport('excel')}
+              className={`btn-outline text-sm ${!canExportExcel ? 'opacity-70' : ''}`}
+              data-testid="export-excel"
+            >
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </button>
           </div>
@@ -181,9 +235,9 @@ export default function Dashboard() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.insights.map((ins, i) => {
             const cfg = {
-              info: { icon: Info, cls: 'border-blue-200 bg-blue-50 text-blue-900' },
-              warning: { icon: AlertTriangle, cls: 'border-amber-200 bg-amber-50 text-amber-900' },
-              success: { icon: CheckCircle2, cls: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
+              info: { icon: Info, cls: 'border-blue-900/50 bg-blue-950/30 text-blue-300' },
+              warning: { icon: AlertTriangle, cls: 'border-amber-900/50 bg-amber-950/30 text-amber-300' },
+              success: { icon: CheckCircle2, cls: 'border-emerald-900/50 bg-emerald-950/30 text-emerald-300' },
             }[ins.type];
             return (
               <motion.div
@@ -232,10 +286,10 @@ export default function Dashboard() {
             <div className="relative grid gap-3 md:grid-cols-2">
               {aiInsights.map((ins, i) => {
                 const cfg = {
-                  info: { icon: Info, cls: 'bg-white border-blue-200 text-blue-900 dark:bg-slate-900 dark:border-blue-500/30 dark:text-blue-200' },
-                  warning: { icon: AlertTriangle, cls: 'bg-white border-amber-200 text-amber-900 dark:bg-slate-900 dark:border-amber-500/30 dark:text-amber-200' },
-                  success: { icon: CheckCircle2, cls: 'bg-white border-emerald-200 text-emerald-900 dark:bg-slate-900 dark:border-emerald-500/30 dark:text-emerald-200' },
-                }[ins.type] || { icon: Info, cls: 'bg-white border-slate-200' };
+                  info: { icon: Info, cls: 'bg-slate-900 border-blue-900/50 text-blue-300' },
+                  warning: { icon: AlertTriangle, cls: 'bg-slate-900 border-amber-900/50 text-amber-300' },
+                  success: { icon: CheckCircle2, cls: 'bg-slate-900 border-emerald-900/50 text-emerald-300' },
+                }[ins.type] || { icon: Info, cls: 'bg-slate-900 border-slate-700' };
                 return (
                   <motion.div
                     key={i}
@@ -354,6 +408,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   );
 }

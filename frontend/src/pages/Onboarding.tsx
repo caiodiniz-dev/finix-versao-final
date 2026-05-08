@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { User, Building, Users, Upload, Palette, ArrowRight, Loader2, X, Check } from 'lucide-react';
+import { User, Building, Users, Upload, ArrowRight, Loader2, X, Check } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Logo } from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,7 +44,6 @@ type Form = yup.InferType<typeof schema>;
 export default function Onboarding() {
   const { user, setUser } = useAuth();
   const nav = useNavigate();
-  const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [newCategory, setNewCategory] = useState('');

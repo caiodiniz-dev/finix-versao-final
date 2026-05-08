@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
 import { Logo } from '../components/Logo';
@@ -14,7 +14,7 @@ export default function VerifyEmail() {
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const handleVerify = async (e: FormEvent) => {
     e.preventDefault();
     const fullCode = code.join('');
 

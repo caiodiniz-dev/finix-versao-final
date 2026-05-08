@@ -1,54 +1,74 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap, Crown, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
 const PLANS = [
   {
     id: 'FREE',
-    name: 'Grátis',
+    name: '🆓 Grátis',
     price: 0,
-    description: 'Perfeito para começar',
+    description: 'Trial 7 dias',
     features: [
-      '100 transações/mês',
-      '3 categorias',
-      '2 metas',
-      'Sem análise IA',
-      'Sem exportação PDF/Excel',
+      'Acesso apenas à Dashboard básica',
+      'Sem acesso a transações, cartões, relatórios ou categorias personalizadas',
+      'Exibir banner CTA para upgrade',
     ],
     icon: Zap,
     highlighted: false,
   },
   {
     id: 'BASIC',
-    name: 'Básico',
-    price: 10,
-    description: 'Para quem quer mais',
+    name: '📦 Finix Básico',
+    price: 67,
+    description: 'Para profissionais autônomos',
     features: [
-      '500 transações/mês',
-      'Categorias ilimitadas',
-      '5 metas',
-      'Análise IA simples',
-      'Exportar PDF',
+      '1 usuário',
+      '50 contatos',
+      '2 contas',
+      '500 movimentações bancárias/mês',
+      '2 cartões',
+      '50 movimentações de cartão/mês',
+      'Receitas, despesas e transferências',
+      'Contas a pagar e receber',
+      'Gestão de faturas de cartão',
+      'DRE Gerencial automático',
+      'Dashboard de KPIs',
+      'Calendário financeiro',
+      'Importação OFX / XLS / CSV / PDF',
+      'Conciliação bancária',
+      'Aviso de pendências e ações',
+      'Logs de atividades básico',
+      'Suporte comum via E-mail',
     ],
     icon: Crown,
     highlighted: false,
   },
   {
     id: 'PRO',
-    name: 'Pro',
-    price: 35,
-    description: 'Personalize sua empresa',
+    name: '🚀 Finix Pro',
+    price: 137,
+    description: 'Para pequenas empresas',
     features: [
-      'Transações ilimitadas',
-      'Categorias ilimitadas',
-      'Metas ilimitadas',
-      'Análise IA avançada',
-      'Exportar PDF e Excel',
-      'Personalização completa (logo, cores, nome)',
-      'Prioridade em suporte',
+      '5 usuários',
+      'Contatos ilimitados',
+      'Contas ilimitadas',
+      'Movimentações bancárias ilimitadas',
+      'Cartões ilimitados',
+      'Movimentações de cartão ilimitadas',
+      'Fingu AI: análise de dados e projeções',
+      'Chat inteligente para dúvidas financeiras',
+      'Categorização automática com IA',
+      'Análise comparativa de períodos',
+      'Centros de custo / projetos',
+      'DRE por centro de custo',
+      'Fluxo de caixa projetado',
+      'Alertas inteligentes por e-mail',
+      'Relatórios avançados em PDF',
+      'Logs de atividades avançado',
+      'Suporte prioritário via E-mail e WhatsApp',
     ],
     icon: Sparkles,
     highlighted: true,
@@ -58,7 +78,23 @@ const PLANS = [
 export default function Plans() {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
-  const API_BASE = import.meta.env.VITE_API_URL as string;
+  const [plans, setPlans] = useState(PLANS);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const response = await api.get('/api/plans');
+        const remotePlans = response.data;
+        setPlans((current) => current.map((plan) => {
+          const remote = remotePlans.find((p: any) => p.id === plan.id);
+          return remote ? { ...plan, price: remote.monthlyPrice ?? plan.price } : plan;
+        }));
+      } catch {
+        // fallback to local plan definitions
+      }
+    };
+    loadPlans();
+  }, []);
 
   const handleUpgrade = async (planId: string) => {
     if (planId === 'FREE' || planId === user?.plan) {
@@ -68,13 +104,7 @@ export default function Plans() {
 
     setLoading(planId);
     try {
-      const response = await axios.post(
-        `${API_BASE}/api/stripe/checkout`,
-        { plan_id: planId },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('finix_token')}` },
-        }
-      );
+      const response = await api.post('/api/stripe/checkout', { plan_id: planId });
 
       if (response.data?.url) {
         window.location.href = response.data.url;
@@ -97,13 +127,7 @@ export default function Plans() {
 
     setLoading('cancel');
     try {
-      const response = await axios.post(
-        `${API_BASE}/api/stripe/cancel-subscription`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('finix_token')}` },
-        }
-      );
+      const response = await api.post('/api/stripe/cancel-subscription', {});
 
       if (response.data?.message) {
         toast.success(response.data.message);
@@ -147,7 +171,7 @@ export default function Plans() {
 
       {/* Plans Grid */}
       <div className="grid gap-8 md:grid-cols-3">
-        {PLANS.map((plan, idx) => {
+        {plans.map((plan, idx) => {
           const Icon = plan.icon;
           const isCurrent = plan.id === user?.plan;
 

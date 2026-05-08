@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Plus, Search, Filter, Edit2, Trash2, X, Loader2, ArrowUpRight, ArrowDownRight, RefreshCw
+  Plus, Search, Filter, Edit2, Trash2, X, Loader2, ArrowUpRight, ArrowDownRight, RefreshCw, CheckCircle2, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -11,18 +11,11 @@ import { api, apiErrorMessage } from '../services/api';
 import { Budget, Transaction } from '../types';
 import { currency, dateBR, dateISOForInput } from '../utils/format';
 import { useAuth } from '../contexts/AuthContext';
+import { UpgradeModal } from '../components/UpgradeModal';
 
 const DEFAULT_CATEGORIES = [
-  'Alimentação',
-  'Transporte',
-  'Saúde',
-  'Salário',
-  'Investimento',
-  'Pagamento',
-  'Lazer',
-  'Educação',
-  'Moradia',
-  'Serviços',
+  'Alimentação', 'Transporte', 'Saúde', 'Salário', 'Investimento',
+  'Pagamento', 'Lazer', 'Educação', 'Moradia', 'Serviços',
 ];
 
 const schema = yup.object({
@@ -37,8 +30,41 @@ const schema = yup.object({
   paymentMethod: yup.string().oneOf(['credito', 'debito', 'pix']).default('pix'),
   installments: yup.number().min(1).max(60).default(1),
   currency: yup.string().oneOf(['BRL', 'USD', 'EUR', 'GBP']).default('BRL'),
+  dueDate: yup.string().nullable().default(null),
 });
 type Form = yup.InferType<typeof schema>;
+
+// ─── CORREÇÃO 1: groupInstallments ───────────────────────────────────────────
+// Agrupa todas as parcelas de um mesmo grupo em UMA linha.
+// Exibe a parcela com o menor installmentNumber (a próxima a vencer / mais recente a pagar).
+// Conta quantas já foram pagas e quantas estão pendentes com base nos dados do grupo.
+function groupInstallments(items: Transaction[]): Transaction[] {
+  // Separa parceladas de avulsas
+  const groups = new Map<string, Transaction[]>();
+  const standalone: Transaction[] = [];
+
+  for (const t of items) {
+    if (t.installmentGroupId && (t.totalInstallments ?? 0) > 1) {
+      const list = groups.get(t.installmentGroupId) ?? [];
+      list.push(t);
+      groups.set(t.installmentGroupId, list);
+    } else {
+      standalone.push(t);
+    }
+  }
+
+  // Para cada grupo, escolhe o representante (menor installmentNumber = mais atual a pagar)
+  const representatives: Transaction[] = [];
+  for (const [, group] of groups) {
+    group.sort((a, b) => (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0));
+    // O representante carrega metadados extras para a UI
+    const rep = { ...group[0], _groupSize: group.length } as Transaction & { _groupSize: number };
+    representatives.push(rep);
+  }
+
+  const all = [...standalone, ...representatives];
+  return all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
 
 export default function Transactions() {
   const [items, setItems] = useState<Transaction[]>([]);
@@ -51,31 +77,23 @@ export default function Transactions() {
   const { user } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [userCategories, setUserCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const isFree = user?.plan === 'FREE';
 
   const effectiveCategories = user?.plan === 'PRO' ? userCategories : DEFAULT_CATEGORIES;
 
   const fetchBudgets = async () => setBudgets((await api.get('/api/budgets')).data);
 
   const fetchCategories = async () => {
-    if (!user || user.plan !== 'PRO') {
-      setUserCategories(DEFAULT_CATEGORIES);
-      return;
-    }
-
+    if (!user || user.plan !== 'PRO') { setUserCategories(DEFAULT_CATEGORIES); return; }
     try {
       const r = await api.get('/api/categories');
-      if (r.data.length > 0) {
-        setUserCategories(r.data.map((c: any) => c.name));
-      } else {
-        setUserCategories(DEFAULT_CATEGORIES);
-      }
-    } catch (e) {
-      console.log('Erro ao buscar categorias:', e);
-      setUserCategories(DEFAULT_CATEGORIES);
-    }
+      setUserCategories(r.data.length > 0 ? r.data.map((c: any) => c.name) : DEFAULT_CATEGORIES);
+    } catch { setUserCategories(DEFAULT_CATEGORIES); }
   };
 
   const fetchData = useCallback(async () => {
+    if (isFree) { setItems([]); setLoading(false); return; }
     setLoading(true);
     try {
       const params: any = {};
@@ -84,25 +102,40 @@ export default function Transactions() {
       if (category) params.category = category;
       const r = await api.get('/api/transactions', { params });
       setItems(r.data);
-    } catch (e) {
+    } catch {
       toast.error('Erro ao carregar transações');
-      console.error('Erro ao carregar transações:', e);
     } finally {
       setLoading(false);
     }
-  }, [q, type, category]);
+  }, [q, type, category, isFree]);
 
   useEffect(() => { fetchData().catch(() => toast.error('Erro ao carregar')); }, [fetchData]);
   useEffect(() => { fetchBudgets().catch(() => toast.error('Erro ao carregar orçamentos')); }, []);
   useEffect(() => { fetchCategories(); }, [user]);
-  const openNew = () => { setEditing(null); setOpen(true); };
-  const openEdit = (t: Transaction) => { setEditing(t); setOpen(true); };
+
+  const openUpgrade = () => setUpgradeOpen(true);
+  const openNew = () => { if (isFree) { openUpgrade(); return; } setEditing(null); setOpen(true); };
+  const openEdit = (t: Transaction) => { if (isFree) { openUpgrade(); return; } setEditing(t); setOpen(true); };
 
   const onDelete = async (t: Transaction) => {
-    if (!window.confirm(`Excluir "${t.title}"?`)) return;
-    try { await api.delete(`/api/transactions/${t.id}`); toast.success('Excluído'); fetchData(); }
-    catch (e) { toast.error(apiErrorMessage(e)); }
+    const isInstallment = t.installmentGroupId && (t.totalInstallments ?? 0) > 1;
+    const msg = isInstallment
+      ? `Excluir todas as ${t.totalInstallments} parcelas de "${t.title}"?`
+      : `Excluir "${t.title}"?`;
+    if (!window.confirm(msg)) return;
+    try {
+      if (isInstallment) {
+        await api.delete(`/api/transactions/${t.id}?deleteGroup=true`);
+      } else {
+        await api.delete(`/api/transactions/${t.id}`);
+      }
+      toast.success('Excluído');
+      fetchData();
+    } catch (e) { toast.error(apiErrorMessage(e)); }
   };
+
+  // Agrupa exibição de parceladas — cada grupo aparece como 1 linha
+  const displayItems = groupInstallments(items);
 
   return (
     <div className="space-y-6" data-testid="transactions-page">
@@ -115,6 +148,14 @@ export default function Transactions() {
           <Plus className="w-4 h-4" /> Nova transação
         </button>
       </div>
+
+      {isFree && (
+        <div className="rounded-3xl border border-brand-blue/10 bg-brand-blue/5 p-5 text-brand-blue">
+          <h2 className="font-semibold">Plano Grátis: acesso básico</h2>
+          <p className="mt-2 text-sm text-slate-700">Você ainda não pode criar transações ou acessar recursos avançados. Faça upgrade para o plano Básico ou Pro e desbloqueie tudo.</p>
+          <button onClick={openUpgrade} className="btn-primary mt-4">Ver planos</button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="card !p-4">
@@ -137,11 +178,12 @@ export default function Transactions() {
           </select>
         </div>
       </div>
+
       {/* List */}
       <div className="card !p-0 overflow-hidden">
         {loading ? (
           <div className="p-8"><div className="skeleton h-16" /></div>
-        ) : items.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <div className="p-12 text-center">
             <Filter className="w-10 h-10 mx-auto text-slate-300" />
             <p className="mt-3 font-semibold">Nenhuma transação encontrada</p>
@@ -149,53 +191,102 @@ export default function Transactions() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {items.map((t) => (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
-                data-testid={`tx-row-${t.id}`}
-              >
-                <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                  {t.type === 'INCOME' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate flex items-center gap-2">
-                    {t.title}
-                    {t.recurring && <span className="chip bg-brand-purple/10 text-brand-purple !py-0.5 text-[10px]"><RefreshCw className="w-3 h-3" /> {t.recurringFrequency || 'recorrente'}</span>}
-                    {t.totalInstallments && t.totalInstallments > 1 && t.installmentNumber && (
-                      <span className="chip bg-blue-100 text-blue-600 !py-0.5 text-[10px]">
-                        Parcela {t.installmentNumber}/{t.totalInstallments}
+            {displayItems.map((t) => {
+              const isInstallment = t.installmentGroupId && (t.totalInstallments ?? 0) > 1;
+              const currentNum = t.installmentNumber ?? 1;   // parcela mais atual (ex: 1 de 4)
+              const totalNum = t.totalInstallments ?? 1;
+              // "Pago X de N" — o representante é o de menor número, então paidCount = currentNum - 1
+              // Se installmentNumber === totalNum, tudo pago.
+              const paidCount = currentNum - 1;             // parcelas já quitadas
+              const pendingCount = totalNum - paidCount;    // parcelas ainda por pagar (inclui a atual)
+              const allPaid = currentNum === totalNum;
+
+              return (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                  data-testid={`tx-row-${t.id}`}
+                >
+                  <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                    {t.type === 'INCOME' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate flex items-center gap-2 flex-wrap">
+                      {t.title}
+                      {t.recurring && (
+                        <span className="chip bg-brand-purple/10 text-brand-purple !py-0.5 text-[10px]">
+                          <RefreshCw className="w-3 h-3" /> {t.recurringFrequency || 'recorrente'}
+                        </span>
+                      )}
+                      {/* ── CORREÇÃO: chip único "Pago X de N" ── */}
+                      {isInstallment && (
+                        <span className="chip bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 !py-0.5 text-[10px] font-semibold">
+                          Pago {paidCount} de {totalNum}
+                        </span>
+                      )}
+                      {isInstallment && (
+                        allPaid ? (
+                          <span className="chip bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 !py-0.5 text-[10px] inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Quitado
+                          </span>
+                        ) : (
+                          <span className="chip bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 !py-0.5 text-[10px] inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {pendingCount} restante{pendingCount > 1 ? 's' : ''}
+                          </span>
+                        )
+                      )}
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap mt-0.5">
+                      <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.category}</span>
+                      <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.paymentMethod || 'pix'}</span>
+                      {t.currency !== 'BRL' && (
+                        <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.currency}</span>
+                      )}
+                      {dateBR(t.date)}
+                    </div>
+
+                    {/* Barra de progresso das parcelas */}
+                    {isInstallment && totalNum > 1 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden max-w-[120px]">
+                          <div
+                            className="h-full rounded-full bg-brand-blue transition-all"
+                            style={{ width: `${(paidCount / totalNum) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {paidCount}/{totalNum} pagas
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={`min-w-[104px] text-right font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'} flex flex-col items-end`}>
+                    <span className="text-base sm:text-lg">
+                      {t.type === 'INCOME' ? '+' : '-'}{currency(t.amount)}
+                    </span>
+                    {isInstallment && t.totalAmount && (
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        total {currency(t.totalAmount)}
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.category}</span>
-                    <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.paymentMethod || 'pix'}</span>
-                    {t.currency !== 'BRL' && <span className="chip bg-slate-100 dark:bg-slate-700 !py-0.5 text-slate-600 dark:text-slate-300">{t.currency}</span>}
-                    {dateBR(t.date)}
+
+                  <div className="flex gap-1 items-center">
+                    <button className="btn-ghost !p-2" onClick={() => openEdit(t)} data-testid={`edit-${t.id}`} title="Editar">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button className="btn-ghost !p-2 hover:!text-red-600" onClick={() => onDelete(t)} data-testid={`delete-${t.id}`} title="Excluir">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  {t.totalInstallments && t.totalInstallments > 1 && t.installmentNumber && t.installmentNumber < t.totalInstallments && (
-                    <div className="text-xs text-amber-600 mt-1">
-                      Faltam {t.totalInstallments - t.installmentNumber} parcelas de {currency(t.amount, t.currency)} cada
-                      {t.totalAmount && ` (total: ${currency(t.totalAmount, t.currency)})`}
-                    </div>
-                  )}
-                </div>
-                <div className={`min-w-[104px] text-right font-bold ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'} flex items-center justify-end text-base sm:text-lg`}>
-                  {t.type === 'INCOME' ? '+' : '-'}{currency(t.amount)}
-                </div>
-                <div className="flex gap-1 items-center">
-                  <button className="btn-ghost !p-2" onClick={() => openEdit(t)} data-testid={`edit-${t.id}`} title="Editar">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button className="btn-ghost !p-2 hover:!text-red-600" onClick={() => onDelete(t)} data-testid={`delete-${t.id}`} title="Excluir">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -212,14 +303,22 @@ export default function Transactions() {
           />
         )}
       </AnimatePresence>
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   );
 }
 
-function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: Transaction | null; budgets: Budget[]; categories: string[]; onClose: () => void; onSaved: () => void }) {
+function TxModal({ editing, onClose, onSaved, budgets, categories }: {
+  editing: Transaction | null;
+  budgets: Budget[];
+  categories: string[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const categoryOptions = categories.length ? categories : DEFAULT_CATEGORIES;
   const transactionCategories = Array.from(new Set([...(categoryOptions || []), ...(editing ? [editing.category] : [])]));
   const defaultCategory = editing ? editing.category : (transactionCategories[0] || DEFAULT_CATEGORIES[0]);
+
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: yupResolver(schema) as any,
     defaultValues: editing
@@ -235,12 +334,12 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
         paymentMethod: editing.paymentMethod || 'pix',
         installments: editing.installments || 1,
         currency: editing.currency || 'BRL',
+        dueDate: (editing as any).dueDate ? dateISOForInput((editing as any).dueDate) : null,
       }
-      : { type: 'EXPENSE', category: defaultCategory, date: dateISOForInput(), description: '', recurring: false, recurringFrequency: null, paymentMethod: 'pix', installments: 1, currency: 'BRL' } as any,
+      : { type: 'EXPENSE', category: defaultCategory, date: dateISOForInput(), description: '', recurring: false, recurringFrequency: null, paymentMethod: 'pix', installments: 1, currency: 'BRL', dueDate: null } as any,
   });
 
-  const recurring = (editing?.recurring) ?? false;
-  const [isRec, setIsRec] = React.useState<boolean>(recurring);
+  const [isRec, setIsRec] = useState<boolean>(editing?.recurring ?? false);
 
   const watchedCategory = watch('category');
   const watchedAmount = Number(watch('amount') || 0);
@@ -259,23 +358,22 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
         ...data,
         date: new Date(data.date).toISOString(),
         recurring: isRec,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
       };
-      if (isRec) {
-        payload.recurringFrequency = data.recurringFrequency || 'monthly';
-      }
+      if (isRec) payload.recurringFrequency = data.recurringFrequency || 'monthly';
 
-      if (payload.type === 'EXPENSE' && selectedBudget) {
-        if (currentSpent + payload.amount > selectedBudget.limit) {
-          const confirmed = window.confirm(
-            `Você já chegou ao seu limite de ${currency(selectedBudget.limit)} para ${selectedBudget.category}. Tem certeza disso?`
-          );
-          if (!confirmed) return;
-        }
+      if (payload.type === 'EXPENSE' && selectedBudget && currentSpent + payload.amount > selectedBudget.limit) {
+        const confirmed = window.confirm(
+          `Você já chegou ao seu limite de ${currency(selectedBudget.limit)} para ${selectedBudget.category}. Tem certeza disso?`
+        );
+        if (!confirmed) return;
       }
 
       if (editing) await api.put(`/api/transactions/${editing.id}`, payload);
       else await api.post('/api/transactions', payload);
       toast.success(editing ? 'Atualizado' : 'Criado');
+      // Notifica o Calendário para atualizar imediatamente
+      window.dispatchEvent(new Event('transaction-saved'));
       onSaved();
     } catch (e) { toast.error(apiErrorMessage(e)); }
   };
@@ -284,73 +382,78 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
+      role="dialog" aria-modal="true"
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6"
+        className="bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
         data-testid="tx-modal"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">{editing ? 'Editar transação' : 'Nova transação'}</h2>
+          <h2 className="font-display text-xl font-bold text-slate-100">{editing ? 'Editar transação' : 'Nova transação'}</h2>
           <button onClick={onClose} className="btn-ghost !p-2"><X className="w-4 h-4" /></button>
         </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-3" data-testid="tx-form">
           <div>
-            <label className="text-sm font-medium">Título</label>
-            <input {...register('title')} className="input mt-1" data-testid="tx-title" />
-            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
+            <label className="text-sm font-medium text-slate-300">Título</label>
+            <input {...register('title')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-title" />
+            {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title.message}</p>}
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Valor (R$)</label>
-              <input type="number" step="0.01" {...register('amount')} className="input mt-1" data-testid="tx-amount" />
-              {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount.message}</p>}
+              <label className="text-sm font-medium text-slate-300">Valor (R$)</label>
+              <input type="number" step="0.01" {...register('amount')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-amount" />
+              {errors.amount && <p className="text-xs text-red-400 mt-1">{errors.amount.message}</p>}
             </div>
             <div>
-              <label className="text-sm font-medium">Data</label>
-              <input type="date" {...register('date')} className="input mt-1" data-testid="tx-date" />
-              {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date.message}</p>}
+              <label className="text-sm font-medium text-slate-300">Data</label>
+              <input type="date" {...register('date')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-date" />
+              {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date.message}</p>}
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Tipo</label>
-              <select {...register('type')} className="input mt-1" data-testid="tx-type">
+              <label className="text-sm font-medium text-slate-300">Tipo</label>
+              <select {...register('type')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-type">
                 <option value="EXPENSE">Despesa</option>
                 <option value="INCOME">Receita</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium">Categoria</label>
-              <select {...register('category')} className="input mt-1" data-testid="tx-category" disabled={transactionCategories.length === 0}>
-                {transactionCategories.length === 0 ? (
-                  <option value="">Configure categorias no onboarding</option>
-                ) : (
-                  transactionCategories.map((c) => <option key={c} value={c}>{c}</option>)
-                )}
+              <label className="text-sm font-medium text-slate-300">Categoria</label>
+              <select {...register('category')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-category" disabled={transactionCategories.length === 0}>
+                {transactionCategories.length === 0
+                  ? <option value="">Configure categorias no onboarding</option>
+                  : transactionCategories.map((c) => <option key={c} value={c}>{c}</option>)
+                }
               </select>
               {selectedBudget && (
-                <p className="text-xs mt-2 text-slate-500">
-                  Orçamento: {currency(selectedBudget.limit)} · Gasto atual: {currency(currentSpent)}
-                  {overLimit && ' · Ultrapassará o limite'}
+                <p className={`text-xs mt-2 ${overLimit ? 'text-rose-400' : 'text-slate-400'}`}>
+                  Orçamento: {currency(selectedBudget.limit)} · Gasto: {currency(currentSpent)}
+                  {overLimit && ' · ⚠ Ultrapassará o limite'}
+                  {(selectedBudget as any).dueDate && (
+                    <> · Vence: {dateBR((selectedBudget as any).dueDate)}</>
+                  )}
                 </p>
               )}
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Método de Pagamento</label>
-              <select {...register('paymentMethod')} className="input mt-1" data-testid="tx-payment-method">
+              <label className="text-sm font-medium text-slate-300">Método de Pagamento</label>
+              <select {...register('paymentMethod')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-payment-method">
                 <option value="pix">PIX</option>
                 <option value="debito">Débito</option>
                 <option value="credito">Crédito</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium">Moeda</label>
-              <select {...register('currency')} className="input mt-1" data-testid="tx-currency">
+              <label className="text-sm font-medium text-slate-300">Moeda</label>
+              <select {...register('currency')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-currency">
                 <option value="BRL">Real (BRL)</option>
                 <option value="USD">Dólar (USD)</option>
                 <option value="EUR">Euro (EUR)</option>
@@ -358,20 +461,49 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
               </select>
             </div>
           </div>
+
           {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium">Parcelas</label>
-              <input type="number" min="1" max="60" {...register('installments')} className="input mt-1" data-testid="tx-installments" />
-              {errors.installments && <p className="text-xs text-red-500 mt-1">{errors.installments.message}</p>}
+              <label className="text-sm font-medium text-slate-300">Parcelas</label>
+              <input type="number" min="1" max="60" {...register('installments')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-installments" />
+              {errors.installments && <p className="text-xs text-red-400 mt-1">{errors.installments.message}</p>}
+              <p className="text-xs text-slate-500 mt-1">Aparece como 1 linha com progresso "Pago X de N".</p>
             </div>
           )}
-          {watchedPaymentMethod === 'credito' && watchedInstallments > 1 && (
+
+          {/* Data limite de pagamento — só para crédito */}
+          {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium">Valor Total</label>
-              <input type="text" value={currency(watchedAmount * watchedInstallments, watchedCurrency)} readOnly className="input mt-1 bg-slate-50 dark:bg-slate-800" />
+              <label className="text-sm font-medium text-slate-300">
+                Data limite de pagamento
+                <span className="ml-1 text-slate-500 font-normal">(opcional)</span>
+              </label>
+              <input
+                type="date"
+                {...register('dueDate')}
+                className="input mt-1 bg-slate-800 border-slate-700 text-slate-100"
+                data-testid="tx-due-date"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Data de vencimento da fatura / última parcela. Aparece nos alertas.
+              </p>
             </div>
           )}
-          <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-3">
+
+          {watchedPaymentMethod === 'credito' && watchedInstallments > 1 && (
+            <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-3 space-y-1">
+              <div className="flex justify-between text-sm text-slate-300">
+                <span>Valor por parcela</span>
+                <span className="font-semibold">{currency(watchedAmount, watchedCurrency)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-300">
+                <span>Total ({watchedInstallments}x)</span>
+                <span className="font-semibold text-rose-400">{currency(watchedAmount * watchedInstallments, watchedCurrency)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl bg-slate-800 p-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -380,13 +512,13 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
                 className="w-4 h-4 rounded accent-brand-blue"
                 data-testid="tx-recurring"
               />
-              <span className="text-sm font-medium">Transação recorrente</span>
+              <span className="text-sm font-medium text-slate-300">Transação recorrente</span>
               <RefreshCw className="w-4 h-4 text-brand-purple ml-auto" />
             </label>
             {isRec && (
               <div className="mt-2">
                 <label className="text-xs text-slate-500">Frequência</label>
-                <select {...register('recurringFrequency')} className="input mt-1" data-testid="tx-recurring-frequency" defaultValue={editing?.recurringFrequency || 'monthly'}>
+                <select {...register('recurringFrequency')} className="input mt-1 bg-slate-700 border-slate-600 text-slate-100" data-testid="tx-recurring-frequency" defaultValue={editing?.recurringFrequency || 'monthly'}>
                   <option value="monthly">Mensal</option>
                   <option value="weekly">Semanal</option>
                   <option value="yearly">Anual</option>
@@ -394,17 +526,12 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: { editing: 
               </div>
             )}
           </div>
+
           <div>
-            <label className="text-sm font-medium">Descrição (opcional)</label>
-            <textarea {...register('description')} rows={2} className="input mt-1" data-testid="tx-description" />
+            <label className="text-sm font-medium text-slate-300">Descrição (opcional)</label>
+            <textarea {...register('description')} rows={2} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-description" />
           </div>
-          {editing && watchedPaymentMethod === 'credito' && watchedInstallments > 1 && (
-            <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3 border border-amber-200 dark:border-amber-800">
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                Faltam {watchedInstallments - 1} parcelas de {currency(watchedAmount / watchedInstallments, watchedCurrency)}
-              </p>
-            </div>
-          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="btn-outline">Cancelar</button>
             <button type="submit" className="btn-primary" disabled={isSubmitting || transactionCategories.length === 0} data-testid="tx-save">

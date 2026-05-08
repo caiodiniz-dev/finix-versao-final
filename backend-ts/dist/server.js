@@ -2,7 +2,6 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PLANS = void 0;
 const express_1 = __importDefault(require("express"));
@@ -22,7 +21,9 @@ const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const rateLimit_1 = require("./middlewares/rateLimit");
 const authService_1 = require("./services/authService");
 dotenv_1.default.config();
-(_a = process.env).DATABASE_URL || (_a.DATABASE_URL = 'file:./dev.db');
+if (!process.env.DATABASE_URL) {
+    console.warn('WARNING: DATABASE_URL is not set. Configure your .env file with DATABASE_URL.');
+}
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
@@ -52,29 +53,41 @@ app.use('/api/auth', authRoutes_1.default);
 // ============================================================================
 exports.PLANS = {
     FREE: {
-        id: 'FREE', name: 'Grátis', price: 0, currency: 'BRL',
-        transactionsLimit: 100, categoriesLimit: 3, goalsLimit: 2,
+        id: 'FREE', name: 'Grátis', description: 'Trial 7 dias - Acesso apenas à Dashboard básica', price: 0, currency: 'BRL', monthlyPrice: 0, yearlyPrice: 0, yearlySavings: 0, trialDays: 7,
+        transactionsLimit: 0, categoriesLimit: 0, goalsLimit: 2,
+        contactsLimit: 0, accountsLimit: 0, cardsLimit: 0, cardMovementsLimit: 0,
+        canUseTransactions: false, canUseCards: false, canUseReports: false, canUseAlerts: false,
+        canEditCategories: false, canCreateCategories: false,
         hasAI: false, hasAdvancedAI: false, hasPDF: false, hasExcel: false,
-        hasPrioritySupport: false,
+        hasPrioritySupport: false, hasCalendar: false, hasInstallments: false,
     },
     BASIC: {
-        id: 'BASIC', name: 'Básico', price: 10, currency: 'BRL',
+        id: 'BASIC', name: 'Finix Básico', description: 'Para profissionais autônomos - Cobrado R$804/ano (Economia de R$360)', price: 67, currency: 'BRL', monthlyPrice: 67, yearlyPrice: 804, yearlySavings: 360,
         transactionsLimit: 500, categoriesLimit: 999, goalsLimit: 5,
+        contactsLimit: 50, accountsLimit: 2, cardsLimit: 2, cardMovementsLimit: 50,
+        canUseTransactions: true, canUseCards: true, canUseReports: true, canUseAlerts: true,
+        canEditCategories: false, canCreateCategories: false,
         hasAI: true, hasAdvancedAI: false, hasPDF: true, hasExcel: false,
-        hasPrioritySupport: false,
+        hasPrioritySupport: false, hasCalendar: true, hasInstallments: true,
         stripePriceId: 'price_1TRjBSJjlHCvcKLJki6868NK',
     },
     TEST: {
-        id: 'TEST', name: 'Teste', price: 0.01, currency: 'BRL',
+        id: 'TEST', name: 'Teste', description: 'Plano de testes com todos os recursos', price: 0.01, currency: 'BRL', monthlyPrice: 0.01,
         transactionsLimit: -1, categoriesLimit: 999, goalsLimit: -1,
+        contactsLimit: 999, accountsLimit: 999, cardsLimit: 999, cardMovementsLimit: 999,
+        canUseTransactions: true, canUseCards: true, canUseReports: true, canUseAlerts: true,
+        canEditCategories: true, canCreateCategories: true,
         hasAI: true, hasAdvancedAI: true, hasPDF: true, hasExcel: true,
-        hasPrioritySupport: true,
+        hasPrioritySupport: true, hasCalendar: true, hasInstallments: true,
     },
     PRO: {
-        id: 'PRO', name: 'Pro', price: 35, currency: 'BRL',
+        id: 'PRO', name: 'Finix Pro', description: 'Para pequenas empresas - Cobrado R$1.644/ano (Economia de R$720)', price: 137, currency: 'BRL', monthlyPrice: 137, yearlyPrice: 1644, yearlySavings: 720,
         transactionsLimit: -1, categoriesLimit: 999, goalsLimit: -1,
+        contactsLimit: 999, accountsLimit: 999, cardsLimit: 999, cardMovementsLimit: 999,
+        canUseTransactions: true, canUseCards: true, canUseReports: true, canUseAlerts: true,
+        canEditCategories: true, canCreateCategories: true,
         hasAI: true, hasAdvancedAI: true, hasPDF: true, hasExcel: true,
-        hasPrioritySupport: true,
+        hasPrioritySupport: true, hasCalendar: true, hasInstallments: true,
         stripePriceId: 'price_1TRjBTJjlHCvcKLJICo0Js1Y',
     },
 };
@@ -129,7 +142,6 @@ const requireAdmin = (req, res, next) => {
     }
     next();
 };
-// Require specific feature gated by plan
 const requireFeature = (feature) => (req, res, next) => {
     const user = req.user;
     const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
@@ -168,6 +180,81 @@ const transactionSchema = zod_1.z.object({
     installments: zod_1.z.number().min(1).max(60).optional().default(1),
     currency: zod_1.z.enum(['BRL', 'USD', 'EUR', 'GBP']).optional().default('BRL'),
 });
+const installmentSchema = zod_1.z.object({
+    description: zod_1.z.string().min(1).max(120),
+    totalAmount: zod_1.z.number().positive(),
+    installments: zod_1.z.number().min(2).max(60),
+    dueDay: zod_1.z.number().min(1).max(31),
+    startDate: zod_1.z.string().transform((str) => new Date(str)),
+    category: zod_1.z.string().optional().default('Cartão de Crédito'),
+    paymentMethod: zod_1.z.enum(['credito', 'debito', 'pix']).optional().default('credito'),
+    note: zod_1.z.string().optional(),
+});
+const getSafeDueDay = (year, month, day) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Math.min(day, daysInMonth);
+};
+const diffDays = (dateA, dateB) => {
+    const a = new Date(dateA);
+    const b = new Date(dateB);
+    a.setHours(0, 0, 0, 0);
+    b.setHours(0, 0, 0, 0);
+    return Math.floor((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
+};
+const buildInstallmentSchedule = async (user, data) => {
+    const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+    if (!plan.hasInstallments) {
+        throw new Error('Parcelamento disponível apenas no plano pago. Faça upgrade para ativar.');
+    }
+    if (plan.transactionsLimit !== -1 && user.transactionsUsed + data.installments > plan.transactionsLimit) {
+        throw new Error(`Limite mensal de ${plan.transactionsLimit} transações atingido. Faça upgrade do seu plano.`);
+    }
+    const installment = await prisma.installment.create({
+        data: {
+            id: (0, uuid_1.v4)(),
+            userId: user.id,
+            description: data.description,
+            totalAmount: data.totalAmount,
+            numberOfParcels: data.installments,
+            dueDay: data.dueDay,
+            startDate: data.startDate,
+            status: 'active',
+        },
+    });
+    const perParcel = Number((data.totalAmount / data.installments).toFixed(2));
+    const remainder = Number((data.totalAmount - perParcel * data.installments).toFixed(2));
+    const transactionsData = [];
+    for (let i = 0; i < data.installments; i++) {
+        const installmentDate = new Date(data.startDate);
+        installmentDate.setMonth(installmentDate.getMonth() + i);
+        installmentDate.setDate(getSafeDueDay(installmentDate.getFullYear(), installmentDate.getMonth(), data.dueDay));
+        const amount = i === data.installments - 1 ? perParcel + remainder : perParcel;
+        transactionsData.push({
+            id: (0, uuid_1.v4)(),
+            userId: user.id,
+            title: `${data.description} • ${i + 1}/${data.installments}`,
+            amount,
+            type: 'EXPENSE',
+            category: data.category,
+            description: data.note || `Parcela ${i + 1} de ${data.installments}`,
+            date: installmentDate,
+            recurring: false,
+            paymentMethod: data.paymentMethod,
+            installments: data.installments,
+            installmentNumber: i + 1,
+            totalInstallments: data.installments,
+            totalAmount: data.totalAmount,
+            currency: 'BRL',
+            installmentId: installment.id,
+        });
+    }
+    await prisma.transaction.createMany({ data: transactionsData });
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { transactionsUsed: { increment: data.installments } },
+    });
+    return { installment, transactions: transactionsData };
+};
 const goalSchema = zod_1.z.object({
     title: zod_1.z.string().min(1).max(120),
     targetAmount: zod_1.z.number().positive(),
@@ -186,6 +273,20 @@ const profileUpdateSchema = zod_1.z.object({
 });
 const categoriesUpdateSchema = zod_1.z.object({
     categories: zod_1.z.array(zod_1.z.string().min(1).max(50)).min(1),
+});
+const categorySchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(60),
+    icon: zod_1.z.string().optional(),
+    color: zod_1.z.string().optional(),
+    type: zod_1.z.enum(['income', 'expense', 'both']).optional().default('expense'),
+    isActive: zod_1.z.boolean().optional().default(true),
+});
+const categoryUpdateSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(60).optional(),
+    icon: zod_1.z.string().optional(),
+    color: zod_1.z.string().optional(),
+    type: zod_1.z.enum(['income', 'expense', 'both']).optional(),
+    isActive: zod_1.z.boolean().optional(),
 });
 const userUpdateSchema = zod_1.z.object({
     name: zod_1.z.string().optional(),
@@ -217,7 +318,8 @@ const userPublic = (u) => ({
     stripeCustomerId: u.stripeCustomerId, stripeSubscriptionId: u.stripeSubscriptionId,
     planExpiresAt: u.planExpiresAt, hasCompletedOnboarding: u.hasCompletedOnboarding,
     usageType: u.usageType, companyName: u.companyName, companyLogo: u.companyLogo,
-    businessPurpose: u.businessPurpose, primaryColor: u.primaryColor, createdAt: u.createdAt,
+    businessPurpose: u.businessPurpose, primaryColor: u.primaryColor, isVerified: u.isVerified,
+    createdAt: u.createdAt,
 });
 // ============================================================================
 // AUTH
@@ -363,16 +465,13 @@ app.put('/api/categories', authenticate, async (req, res) => {
     try {
         const user = req.user;
         const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
-        if (plan.categoriesLimit === 3) {
-            return res.status(403).json({ error: 'Atualização de categorias disponível apenas para planos avançados' });
+        if (!plan.canEditCategories) {
+            return res.status(403).json({ error: 'Atualização de categorias disponível apenas no plano Pro' });
         }
         const data = categoriesUpdateSchema.parse(req.body);
         const uniqueCategories = Array.from(new Set(data.categories.map((cat) => cat.trim()).filter(Boolean)));
         if (uniqueCategories.length === 0) {
             return res.status(400).json({ error: 'Adicione pelo menos uma categoria' });
-        }
-        if (plan.categoriesLimit !== 999 && uniqueCategories.length > plan.categoriesLimit) {
-            return res.status(400).json({ error: `Plano ${plan.name} permite até ${plan.categoriesLimit} categorias.` });
         }
         await prisma.category.deleteMany({ where: { userId: user.id } });
         await prisma.category.createMany({ data: uniqueCategories.map((name) => ({ userId: user.id, name })) });
@@ -385,6 +484,77 @@ app.put('/api/categories', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Dados de categoria inválidos' });
         }
         res.status(500).json({ error: err.message || 'Erro ao atualizar categorias' });
+    }
+});
+app.post('/api/categories', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+        if (!plan.canCreateCategories) {
+            return res.status(403).json({ error: 'Criação de categorias personalizada disponível apenas no plano Pro' });
+        }
+        const data = categorySchema.parse(req.body);
+        const category = await prisma.category.create({
+            data: { id: (0, uuid_1.v4)(), userId: user.id, ...data },
+        });
+        res.json(category);
+    }
+    catch (err) {
+        console.error('Create category error:', err);
+        if (err.name === 'ZodError') {
+            return res.status(400).json({ error: 'Dados de categoria inválidos' });
+        }
+        res.status(500).json({ error: err.message || 'Erro ao criar categoria' });
+    }
+});
+app.put('/api/categories/:id', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+        if (!plan.canEditCategories) {
+            return res.status(403).json({ error: 'Edição de categorias disponível apenas no plano Pro' });
+        }
+        const data = categoryUpdateSchema.parse(req.body);
+        const updated = await prisma.category.updateMany({
+            where: { id: String(req.params.id), userId: user.id },
+            data,
+        });
+        if (updated.count === 0) {
+            return res.status(404).json({ error: 'Categoria não encontrada' });
+        }
+        const category = await prisma.category.findUnique({ where: { id: String(req.params.id) } });
+        res.json(category);
+    }
+    catch (err) {
+        console.error('Update category error:', err);
+        if (err.name === 'ZodError') {
+            return res.status(400).json({ error: 'Dados de categoria inválidos' });
+        }
+        res.status(500).json({ error: err.message || 'Erro ao atualizar categoria' });
+    }
+});
+app.delete('/api/categories/:id', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+        if (!plan.canEditCategories) {
+            return res.status(403).json({ error: 'Exclusão de categorias disponível apenas no plano Pro' });
+        }
+        const categoryId = String(req.params.id);
+        const category = await prisma.category.findUnique({ where: { id: categoryId } });
+        if (!category || category.userId !== user.id) {
+            return res.status(404).json({ error: 'Categoria não encontrada' });
+        }
+        const linked = await prisma.transaction.count({ where: { userId: user.id, category: category.name } });
+        if (linked > 0) {
+            return res.status(400).json({ error: 'Não é possível excluir categoria vinculada a transações' });
+        }
+        await prisma.category.delete({ where: { id: categoryId } });
+        res.json({ ok: true });
+    }
+    catch (err) {
+        console.error('Delete category error:', err);
+        res.status(500).json({ error: err.message || 'Erro ao excluir categoria' });
     }
 });
 app.get('/api/categories', authenticate, async (req, res) => {
@@ -403,6 +573,14 @@ app.get('/api/categories', authenticate, async (req, res) => {
 });
 app.get('/api/transactions', authenticate, async (req, res) => {
     const user = req.user;
+    const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+    if (!plan.canUseTransactions) {
+        return res.status(403).json({
+            error: 'Acesso a transações não disponível no seu plano. Faça upgrade para acessar.',
+            upgrade: true,
+            currentPlan: user.plan,
+        });
+    }
     const { type, category, search, startDate, endDate } = req.query;
     const where = { userId: user.id };
     if (type)
@@ -425,6 +603,13 @@ app.post('/api/transactions', authenticate, async (req, res) => {
     const user = req.user;
     const data = transactionSchema.parse(req.body);
     const plan = exports.PLANS[user.plan] || exports.PLANS.FREE;
+    if (!plan.canUseTransactions) {
+        return res.status(403).json({
+            error: 'Acesso a transações não disponível no seu plano. Faça upgrade para criar movimentos.',
+            upgrade: true,
+            currentPlan: user.plan,
+        });
+    }
     // Enforce transaction limit (monthly)
     if (plan.transactionsLimit !== -1 && user.transactionsUsed >= plan.transactionsLimit) {
         return res.status(403).json({
@@ -450,34 +635,164 @@ app.post('/api/transactions', authenticate, async (req, res) => {
             });
         }
     }
-    let transaction;
-    if (data.installments > 1) {
-        const totalAmount = data.amount * data.installments;
-        const pricePerInstallment = data.amount;
-        const formattedTitle = `${data.title} (Total: R$ ${totalAmount.toFixed(2)} - ${data.installments}x de R$ ${pricePerInstallment.toFixed(2)})`;
-        transaction = await prisma.transaction.create({
-            data: {
-                ...data,
-                id: (0, uuid_1.v4)(),
-                userId: user.id,
-                title: formattedTitle,
-                amount: pricePerInstallment,
-                totalInstallments: data.installments,
-                totalAmount,
-            },
-        });
-    }
-    else {
-        transaction = await prisma.transaction.create({
+    try {
+        if (data.installments > 1 && data.type === 'EXPENSE') {
+            const response = await buildInstallmentSchedule(user, {
+                description: data.title,
+                totalAmount: data.amount * data.installments,
+                installments: data.installments,
+                dueDay: new Date(data.date).getDate(),
+                startDate: data.date,
+                category: data.category,
+                paymentMethod: data.paymentMethod,
+                note: data.description,
+            });
+            return res.json(response.transactions);
+        }
+        const transaction = await prisma.transaction.create({
             data: { ...data, id: (0, uuid_1.v4)(), userId: user.id },
         });
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { transactionsUsed: { increment: 1 } },
+        });
+        res.json(transaction);
     }
-    // Increment counter
-    await prisma.user.update({
-        where: { id: user.id },
-        data: { transactionsUsed: { increment: 1 } },
-    });
-    res.json(transaction);
+    catch (err) {
+        console.error('Transaction creation error:', err);
+        if (err.message?.includes('Limite mensal')) {
+            return res.status(403).json({ error: err.message, upgrade: true });
+        }
+        throw err;
+    }
+});
+app.get('/api/installments', authenticate, async (req, res) => {
+    try {
+        const user = req.user;
+        const installments = await prisma.installment.findMany({
+            where: { userId: user.id },
+            orderBy: { startDate: 'desc' },
+            include: { transactions: true },
+        });
+        const now = new Date();
+        const result = installments.map((inst) => {
+            const nextTransaction = inst.transactions
+                .filter((t) => new Date(t.date) >= now)
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+            const paid = inst.transactions.filter((t) => new Date(t.date) < now).length;
+            return {
+                ...inst,
+                nextDueDate: nextTransaction?.date || null,
+                paidInstallments: paid,
+                remainingInstallments: inst.numberOfParcels - paid,
+            };
+        });
+        res.json(result);
+    }
+    catch (err) {
+        console.error('Installments error:', err);
+        res.status(500).json({ error: 'Erro ao carregar parcelamentos' });
+    }
+});
+app.get('/api/alerts', authenticate, requireFeature('canUseAlerts'), async (req, res) => {
+    try {
+        const user = req.user;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const futureLimit = new Date(today);
+        futureLimit.setDate(futureLimit.getDate() + 7);
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                userId: user.id,
+                type: 'EXPENSE',
+                date: { gte: today, lte: futureLimit },
+                totalInstallments: { not: null },
+            },
+            orderBy: { date: 'asc' },
+        });
+        const alerts = transactions.map((tx) => {
+            const dueDate = new Date(tx.date);
+            const daysUntilDue = diffDays(dueDate, today);
+            const installmentsLeft = tx.totalInstallments && tx.installmentNumber ? tx.totalInstallments - tx.installmentNumber : 0;
+            const title = daysUntilDue === 0
+                ? `Parcela ${tx.title} vence hoje — R$ ${tx.amount.toFixed(2)}`
+                : `Parcela ${tx.title} vence em ${daysUntilDue} dia${daysUntilDue > 1 ? 's' : ''} — R$ ${tx.amount.toFixed(2)}`;
+            const description = installmentsLeft > 0
+                ? `${installmentsLeft} parcela${installmentsLeft > 1 ? 's' : ''} restantes` : 'Última parcela';
+            return {
+                id: tx.id,
+                title,
+                description,
+                dueDate: tx.date,
+                amount: tx.amount,
+                daysUntilDue,
+                severity: daysUntilDue === 0 ? 'danger' : 'warning',
+                installmentNumber: tx.installmentNumber,
+                totalInstallments: tx.totalInstallments,
+            };
+        });
+        res.json({ alerts, count: alerts.length });
+    }
+    catch (err) {
+        console.error('Alerts error:', err);
+        res.status(500).json({ error: 'Erro ao buscar alertas' });
+    }
+});
+app.get('/api/calendar', authenticate, requireFeature('hasCalendar'), async (req, res) => {
+    try {
+        const user = req.user;
+        const monthParam = String(req.query.month || '');
+        const [year, month] = monthParam.split('-').map(Number);
+        const selected = Number.isInteger(year) && Number.isInteger(month)
+            ? new Date(year, month - 1, 1)
+            : new Date();
+        const startOfMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
+        const endOfMonth = new Date(selected.getFullYear(), selected.getMonth() + 1, 0, 23, 59, 59, 999);
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                userId: user.id,
+                date: { gte: startOfMonth, lte: endOfMonth },
+            },
+            orderBy: { date: 'asc' },
+        });
+        const dailyMap = {};
+        const monthDays = new Date(selected.getFullYear(), selected.getMonth() + 1, 0).getDate();
+        for (let day = 1; day <= monthDays; day += 1) {
+            const dateKey = new Date(selected.getFullYear(), selected.getMonth(), day).toISOString().split('T')[0];
+            dailyMap[dateKey] = { revenue: 0, expense: 0, net: 0, transactions: [] };
+        }
+        const monthlyTotal = { revenue: 0, expense: 0, net: 0 };
+        transactions.forEach((tx) => {
+            const dateKey = new Date(tx.date).toISOString().split('T')[0];
+            const values = dailyMap[dateKey] ?? { revenue: 0, expense: 0, net: 0, transactions: [] };
+            if (tx.type === 'INCOME') {
+                values.revenue += Number(tx.amount);
+                monthlyTotal.revenue += Number(tx.amount);
+            }
+            else {
+                values.expense += Number(tx.amount);
+                monthlyTotal.expense += Number(tx.amount);
+            }
+            values.net = values.revenue - values.expense;
+            monthlyTotal.net = monthlyTotal.revenue - monthlyTotal.expense;
+            values.transactions.push(tx);
+            dailyMap[dateKey] = values;
+        });
+        const dailySummary = Object.entries(dailyMap).map(([date, data]) => ({
+            date,
+            ...data,
+        }));
+        res.json({
+            month: selected.getMonth() + 1,
+            year: selected.getFullYear(),
+            monthlyTotal,
+            dailySummary,
+        });
+    }
+    catch (err) {
+        console.error('Calendar error:', err);
+        res.status(500).json({ error: 'Erro ao carregar calendário' });
+    }
 });
 app.put('/api/transactions/:id', authenticate, async (req, res) => {
     const user = req.user;

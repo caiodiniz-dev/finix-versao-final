@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import {
-  ArrowRight, CheckCircle2, PieChart, Target, Shield, Zap, TrendingUp, BarChart3, Sparkles,
-  Wallet, FileDown, RefreshCw, Brain, LineChart, Users, Star, Quote, ChevronRight, ChevronLeft, Play,
-  ShieldCheck, Lock, Clock, MousePointer2, PiggyBank, Loader2
+  ArrowRight, CheckCircle2, Target, TrendingUp, BarChart3, Sparkles,
+  Wallet, FileDown, RefreshCw, Brain, Star, Quote, ChevronRight, ChevronLeft, Play,
+  ShieldCheck, Clock, PiggyBank, Loader2, Crown
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
@@ -329,79 +329,176 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <div className="chip bg-brand-blue/10 text-brand-blue mb-3 mx-auto border border-brand-blue/20 w-fit">Preço</div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Grátis durante o lançamento</h2>
-            <p className="mt-3 text-slate-600 text-sm sm:text-lg">Teste o Finix sem compromisso. O plano Pro traz personalização para sua empresa e recursos premium.</p>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Escolha seu plano perfeito</h2>
+            <p className="mt-3 text-slate-600 text-sm sm:text-lg">Crescimento financeiro para profissionais autônomos e pequenas empresas. Sem cartão no plano gratuito.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto items-center">
-            <PricingCard
-              icon={Sparkles}
-              title="Grátis"
-              price="0"
-              period="Para sempre"
-              features={['Até 100 transações/mês', 'Dashboard básico', '3 categorias', 'Gráficos simples', 'Sem IA']}
-              buttonText="Iniciar"
-              buttonColor="bg-brand-green"
-              borderColor="border-emerald-200"
-              bgGradient="from-emerald-50 to-green-50"
-              planId="BASIC"
-              onCheckout={() => { }}
-              isHighlighted={false}
-            />
-
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-10 max-w-5xl mx-auto items-stretch">
+            {/* Finix Básico */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              whileHover={{ y: -8 }}
-              className="relative card hover:shadow-glow transition-all rounded-2xl border-2 border-brand-purple bg-gradient-to-br from-blue-50 via-purple-50 to-purple-100 shadow-2xl h-full md:scale-105"
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="relative rounded-3xl border border-slate-200 bg-white shadow-lg hover:shadow-xl transition-all p-8 sm:p-10 flex flex-col"
             >
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-gradient-to-r from-brand-blue to-brand-purple text-white px-4 sm:px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">✨ MAIS POPULAR</span>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-100">
+                  <PiggyBank className="w-7 h-7 text-slate-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold">Finix Solo</h3>
+                  <p className="text-xs sm:text-sm text-slate-600">Para profissionais autônomos</p>
+                </div>
               </div>
-              <div className="flex items-center justify-center w-12 sm:w-14 h-12 sm:h-14 rounded-xl bg-gradient-to-br from-brand-blue to-brand-purple mx-auto mb-4">
-                <PiggyBank className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
+
+              <div className="mb-8">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-5xl sm:text-6xl font-display font-extrabold text-slate-900">R$67</span>
+                  <span className="text-sm text-slate-600">/mês</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Cobrado R$804/ano — Economia de R$360</p>
               </div>
-              <h3 className="text-xl sm:text-2xl font-display font-bold text-center">Plano Pro</h3>
-              <div className="text-4xl sm:text-5xl font-display font-extrabold text-center mt-4">R$ 35</div>
-              <div className="text-slate-600 text-sm text-center mt-2">/mês</div>
-              <div className="text-center text-sm text-brand-blue font-semibold mt-3">Personalize para sua empresa</div>
-              <ul className="mt-8 space-y-3 text-left text-sm">
-                {['Transações ilimitadas', 'Dashboard completo', 'Análise com IA detalhada', 'Personalização completa da marca', 'Exportação PDF + Excel', 'Suporte prioritário'].map(f => (
-                  <li key={f} className="flex items-start gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-brand-blue mt-0.5 flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
+
+              <div className="space-y-4 mb-8 flex-1">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">LIMITES</h4>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>1 usuário</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>Até 500 transações/mês</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>Dashboard completo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>Análise com IA</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>Exportação PDF</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">•</span>
+                      <span>Até 5 metas</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">RECURSOS INCLUSOS</h4>
+                  <div className="space-y-2">
+                    {['Receitas, despesas e transferências', 'Contas a pagar e receber', 'Gestão de faturas de cartão', 'DRE Gerencial automático', 'Dashboard de KPIs', 'Calendário financeiro', 'Importação OFX / XLS / CSV / PDF', 'Conciliação bancária', 'Aviso de pendências e ações', 'Logs de atividades básico', 'Suporte comum via E-mail'].map(f => (
+                      <div key={f} className="flex items-start gap-2 text-xs">
+                        <CheckCircle2 className="w-4 h-4 text-slate-700 mt-0.5 flex-shrink-0" />
+                        <span className="text-slate-700">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <button
-                onClick={() => handleCheckout('PRO')}
-                disabled={loadingPlan === 'PRO'}
-                className="w-full mt-8 inline-flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-r from-brand-blue to-brand-purple text-white rounded-xl font-bold hover:shadow-2xl transition-all hover:scale-105 disabled:opacity-50"
+                onClick={() => handleCheckout('BASIC')}
+                disabled={loadingPlan === 'BASIC'}
+                className="w-full mt-auto py-3 px-6 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
               >
-                {loadingPlan === 'PRO' ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Assinar agora <ArrowRight className="w-4 h-4" /></>}
+                {loadingPlan === 'BASIC' ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                {loadingPlan === 'BASIC' ? 'Processando...' : 'Experimente grátis por 7 dias'}
               </button>
             </motion.div>
 
-            <PricingCard
-              icon={Wallet}
-              title="Plano Básico"
-              price="10"
-              period="/mês"
-              features={['Até 500 transações/mês', 'Dashboard completo', 'Análise com IA', 'Exportação PDF', 'Até 5 metas']}
-              buttonText="Assinar agora"
-              buttonColor="bg-gradient-to-r from-brand-blue to-brand-purple"
-              borderColor="border-slate-200"
-              bgGradient="bg-white"
-              planId="BASIC"
-              onCheckout={() => handleCheckout('BASIC')}
-              isHighlighted={false}
-              isLoading={loadingPlan === 'BASIC'}
-            />
+            {/* Finix Pro - DESTACADO */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="relative rounded-3xl bg-gradient-to-br from-[#2a003f] via-[#4b0082] to-[#6a0dad] border border-[#d946ef] shadow-[0_0_35px_rgba(217,70,239,0.45)] backdrop-blur-sm transition-all p-8 sm:p-10 flex flex-col"
+            >
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-yellow-300 text-purple-900 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider"> MAIS POPULAR</span>
+              </div>
+
+              <div className="flex items-center gap-3 mb-6 mt-4">
+                <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-700">
+                  <Crown className="w-7 h-7 text-yellow-300" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold text-white">Finix Pro</h3>
+                  <p className="text-xs sm:text-sm text-purple-100">Para pequenas empresas</p>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-5xl sm:text-6xl font-display font-extrabold text-white">R$137</span>
+                  <span className="text-sm text-purple-200">/mês</span>
+                </div>
+                <p className="text-xs text-purple-200 mt-2">Cobrado R$1.644/ano — Economia de R$720</p>
+              </div>
+
+              <div className="space-y-4 mb-8 flex-1">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-yellow-300 mb-3">LIMITES</h4>
+                  <div className="grid grid-cols-2 gap-3 text-xs text-purple-100">
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>5 usuários</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>Transações ilimitadas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>Dashboard completo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>Análise com IA detalhada</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>Personalização completa da marca</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>•</span>
+                      <span>Suporte prioritário</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-fuchsia-500/40 pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-yellow-300 mb-3">TUDO DO SOLO, MAIS:</h4>
+                  <div className="space-y-2">
+                    {['Finix I.A: análise de dados e projeções', 'Graficos comparativos', 'Configuração personalizada', 'Análise comparativa de períodos', 'Centros de custo / projetos', 'alertas de pagamentos pendenters', 'Relatórios avançados em PDF', 'Logs de atividades avançado', 'Suporte prioritário via E-mail e WhatsApp'].map(f => (
+                      <div key={f} className="flex items-start gap-2 text-xs">
+                        <CheckCircle2 className="w-4 h-4 text-yellow-300 mt-0.5 flex-shrink-0" />
+                        <span className="text-purple-100">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleCheckout('PRO')}
+                disabled={loadingPlan === 'PRO'}
+                className="w-full mt-auto py-3 px-6 bg-yellow-300 text-purple-900 rounded-2xl font-bold hover:bg-yellow-200 transition-all disabled:opacity-50"
+              >
+                {loadingPlan === 'PRO' ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                {loadingPlan === 'PRO' ? 'Processando...' : 'Experimente grátis por 7 dias'}
+              </button>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Big CTA */}
-      <section className="py-12 sm:py-16 bg-slate-50 border-t border-slate-100">
+      < section className="py-12 sm:py-16 bg-slate-50 border-t border-slate-100" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -426,7 +523,7 @@ export default function Landing() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section >
 
       <footer className="border-t border-slate-100 py-8 sm:py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
@@ -436,7 +533,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   );
 }
 
@@ -483,6 +580,7 @@ function PricingCard({
   bgGradient: string;
   isHighlighted?: boolean;
   isLoading?: boolean;
+  planId?: string;
   onCheckout: () => void;
 }) {
   return (
