@@ -73,8 +73,8 @@ function Home() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Toaster position="top-right" toastOptions={{
           style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
           success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
@@ -101,7 +101,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

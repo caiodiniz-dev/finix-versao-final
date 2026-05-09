@@ -25,7 +25,7 @@ api.interceptors.response.use(
       localStorage.removeItem('finix_token');
       sessionStorage.removeItem('finix_token');
       if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register') && window.location.pathname !== '/') {
-        window.location.href = '/login';
+        window.dispatchEvent(new Event('finix-auth-unauthorized'));
       }
     }
     return Promise.reject(err);

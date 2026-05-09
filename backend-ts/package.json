@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:studio\"",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:studio": "concurrently \"npm run dev:server\" \"npm run dev:studio\"",
     "dev:server": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "dev:studio": "prisma studio",
     "build": "tsc",
     "start": "node dist/server.js",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
+    "db:seed": "prisma db seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
@@ -25,7 +28,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.15",
     "pdfkit": "^0.18.0",
-    "stripe": "^22.1.0",
+    "stripe": "^22.1.1",
     "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },

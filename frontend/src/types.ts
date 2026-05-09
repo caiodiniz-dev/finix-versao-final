@@ -33,10 +33,23 @@ export interface Transaction {
   paymentMethod?: 'credito' | 'debito' | 'pix';
   installments?: number;
   installmentNumber?: number;
+  installmentGroupId?: string;
   totalInstallments?: number;
   totalAmount?: number;
   currency?: 'BRL' | 'USD' | 'EUR' | 'GBP';
   createdAt: string;
+}
+
+export interface CalendarDay {
+  date: string;
+  revenue?: number;
+  expense?: number;
+  net?: number;
+  transactions?: Transaction[];
+}
+
+export interface CalendarData {
+  dailySummary: CalendarDay[];
 }
 
 export interface Goal {

@@ -141,8 +141,8 @@ export default function Transactions() {
     <div className="space-y-6" data-testid="transactions-page">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-extrabold tracking-tight">Transações</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Organize seus ganhos e gastos</p>
+          <h1 className="text-2xl md:text-3xl font-display font-extrabold tracking-tight">Transações</h1>
+          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-1">Organize seus ganhos e gastos</p>
         </div>
         <button onClick={openNew} className="btn-primary" data-testid="new-transaction-btn">
           <Plus className="w-4 h-4" /> Nova transação
@@ -372,8 +372,10 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
       if (editing) await api.put(`/api/transactions/${editing.id}`, payload);
       else await api.post('/api/transactions', payload);
       toast.success(editing ? 'Atualizado' : 'Criado');
-      // Notifica o Calendário para atualizar imediatamente
-      window.dispatchEvent(new Event('transaction-saved'));
+      // Notifica o Calendário para atualizar imediatamente com a data da transação
+      window.dispatchEvent(new CustomEvent('transaction-saved', {
+        detail: { date: payload.date },
+      }));
       onSaved();
     } catch (e) { toast.error(apiErrorMessage(e)); }
   };

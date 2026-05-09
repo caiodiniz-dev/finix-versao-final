@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Download, Upload, ShieldCheck, Loader2 } from 'lucide-react';
+import { ArrowRight, Download, Upload, ShieldCheck, Loader2, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, apiErrorMessage } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,7 +20,6 @@ type Tab = 'Perfil' | 'Segurança' | 'Assinatura' | 'Notificações' | 'Empresa'
 export default function Profile() {
   const { user, refreshUser } = useAuth();
   const [tab, setTab] = useState<Tab>('Perfil');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [planInfo, setPlanInfo] = useState<any>(null);
@@ -49,6 +48,7 @@ export default function Profile() {
     }
   };
 
+  // Lê o arquivo e converte para base64, depois envia direto
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -60,28 +60,23 @@ export default function Profile() {
       toast.error('Selecione uma imagem válida');
       return;
     }
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
 
-  const handleUploadPhoto = async () => {
-    if (!selectedFile) return;
-    setUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        await api.put('/api/profile', { photo: e.target?.result });
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPreview(base64);
+      setUploading(true);
+      try {
+        await api.put('/api/profile', { photo: base64 });
         toast.success('Foto atualizada!');
         await refreshUser();
-      };
-      reader.readAsDataURL(selectedFile);
-    } catch (err: any) {
-      toast.error(apiErrorMessage(err));
-    } finally {
-      setUploading(false);
-    }
+      } catch (err: any) {
+        toast.error(apiErrorMessage(err));
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const onSaveName = async (data: { name: string }) => {
@@ -121,10 +116,40 @@ export default function Profile() {
 
   if (!user) return null;
 
+  const photoSrc = preview || user.photo || null;
+  const initials = user.name.charAt(0).toUpperCase();
+
   const planName = planInfo?.planDetails?.name || (user.plan === 'PRO' ? 'Finix Pro' : user.plan === 'BASIC' ? 'Finix Básico' : 'Grátis');
   const transactionLimit = planInfo?.planDetails?.transactionsLimit ?? (user.plan === 'BASIC' ? 500 : user.plan === 'PRO' ? -1 : 0);
   const usedTransactions = planInfo?.transactionsUsed ?? user.transactionsUsed ?? 0;
   const planUsedPercent = transactionLimit === -1 ? 100 : transactionLimit === 0 ? 0 : Math.min(100, Math.round((usedTransactions / transactionLimit) * 100));
+
+  // Avatar reutilizável
+  const Avatar = ({ size = 56 }: { size?: number }) => (
+    <div
+      style={{ width: size, height: size, borderRadius: '999px', overflow: 'hidden', flexShrink: 0, position: 'relative' }}
+    >
+      {photoSrc ? (
+        <img src={photoSrc} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontSize: size * 0.4,
+            fontWeight: 700,
+          }}
+        >
+          {initials}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6" data-testid="profile-page">
@@ -132,9 +157,7 @@ export default function Profile() {
         {/* Sidebar */}
         <aside className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-3xl bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center text-white text-xl font-semibold">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+            <Avatar size={56} />
             <div>
               <p className="text-sm text-slate-400">Bom te ver de novo,</p>
               <h2 className="text-xl font-bold text-slate-100">{user.name}</h2>
@@ -147,9 +170,7 @@ export default function Profile() {
               <button
                 key={item}
                 onClick={() => setTab(item)}
-                className={`w-full rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${tab === item
-                    ? 'bg-brand-blue/10 text-brand-blue'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                className={`w-full rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${tab === item ? 'bg-brand-blue/10 text-brand-blue' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
               >
                 {item}
@@ -195,21 +216,79 @@ export default function Profile() {
                   </form>
                 </motion.div>
 
+                {/* Card de foto */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
                   <h2 className="font-display font-bold text-lg text-slate-100">Foto de perfil</h2>
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-20 w-20 rounded-3xl overflow-hidden bg-slate-800">
-                        <img src={preview || user.photo || ''} alt="Profile" className="h-full w-full object-cover" />
+                  <div className="mt-6 flex flex-col items-center gap-6">
+                    {/* Avatar grande com botão de câmera */}
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <div
+                        style={{
+                          width: 100,
+                          height: 100,
+                          borderRadius: '999px',
+                          overflow: 'hidden',
+                          border: '3px solid #6366f1',
+                        }}
+                      >
+                        {photoSrc ? (
+                          <img src={photoSrc} alt="Foto de perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#fff',
+                              fontSize: 40,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {initials}
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm text-slate-400">Use uma imagem clara e profissional.</p>
-                        <input type="file" accept="image/*" onChange={handleFileSelect} className="mt-3" />
-                      </div>
+
+                      {/* Botão de câmera sobreposto */}
+                      <label
+                        htmlFor="photo-upload"
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: 32,
+                          height: 32,
+                          borderRadius: '999px',
+                          background: '#6366f1',
+                          border: '2px solid #0F172A',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {uploading
+                          ? <Loader2 style={{ width: 16, height: 16, color: '#fff', animation: 'spin 1s linear infinite' }} />
+                          : <Camera style={{ width: 16, height: 16, color: '#fff' }} />
+                        }
+                      </label>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        style={{ display: 'none' }}
+                      />
                     </div>
-                    <button onClick={handleUploadPhoto} className="btn-primary w-full" disabled={!selectedFile || uploading}>
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar foto'}
-                    </button>
+
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-slate-100">{user.name}</p>
+                      <p className="text-xs text-slate-400 mt-1">Clique no ícone de câmera para trocar a foto</p>
+                      <p className="text-xs text-slate-500 mt-1">JPG, PNG ou GIF • máx 5MB</p>
+                    </div>
                   </div>
                 </motion.div>
               </div>

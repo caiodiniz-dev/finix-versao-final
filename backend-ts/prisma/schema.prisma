@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,7 +17,7 @@ model User {
   passwordHash           String
   role                   String    @default("USER")
   blocked                Boolean   @default(false)
-  photo                  String?
+  photo                  String?   @db.Text
   plan                   String    @default("FREE") // FREE | BASIC | PRO | TEST
   stripeCustomerId       String?
   stripeSubscriptionId   String?
@@ -27,7 +27,7 @@ model User {
   hasCompletedOnboarding Boolean   @default(false)
   usageType              String?
   companyName            String?
-  companyLogo            String?
+  companyLogo            String?   @db.LongText
   businessPurpose        String?
   primaryColor           String?
   phone                  String?
@@ -50,7 +50,7 @@ model User {
 }
 
 model Transaction {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   userId             String
   title              String
   amount             Float
@@ -58,16 +58,17 @@ model Transaction {
   category           String
   description        String?
   date               DateTime
-  recurring          Boolean  @default(false)
+  recurring          Boolean   @default(false)
   recurringFrequency String?
-  paymentMethod      String?  @default("pix")
-  installments       Int      @default(1)
+  paymentMethod      String?   @default("pix")
+  installments       Int       @default(1)
   installmentNumber  Int?
   totalInstallments  Int?
   totalAmount        Float?
   installmentId      String?
-  currency           String   @default("BRL")
-  createdAt          DateTime @default(now())
+  currency           String    @default("BRL")
+  dueDate            DateTime?
+  createdAt          DateTime  @default(now())
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   installment Installment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)

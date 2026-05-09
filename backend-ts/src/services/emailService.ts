@@ -5,7 +5,9 @@ const createTransporter = () => {
   const pass = process.env.GMAIL_APP_PASSWORD;
 
   if (!user || !pass) {
-    throw new Error('Configuração de e-mail inválida. Defina GMAIL_USER e GMAIL_APP_PASSWORD.');
+    throw new Error(
+      'Configuração de e-mail inválida. Defina GMAIL_USER e GMAIL_APP_PASSWORD.'
+    );
   }
 
   return nodemailer.createTransport({
@@ -17,221 +19,199 @@ const createTransporter = () => {
   });
 };
 
+const getVerificationTemplate = (code: string) => {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finix – Código de Verificação</title>
+</head>
+<body style="margin:0;padding:0;background:#07080f;font-family:'Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#07080f;padding:48px 16px;">
+    <tr><td align="center">
+    <table width="100%" style="max-width:580px;" cellpadding="0" cellspacing="0">
+
+      <!-- ══ LOGO ══ -->
+      <tr>
+        <td align="center" style="padding-bottom:28px;">
+          <table cellpadding="0" cellspacing="0"><tr>
+            <td style="padding-right:12px;vertical-align:middle;">
+              <table cellpadding="0" cellspacing="0"><tr><td style="
+                width:50px;height:50px;border-radius:14px;
+                background:linear-gradient(135deg,#6d5afc,#3b82f6);
+                text-align:center;vertical-align:middle;
+                font-size:24px;font-weight:900;color:#fff;
+                line-height:50px;
+              ">F</td></tr></table>
+            </td>
+            <td style="vertical-align:middle;">
+              <span style="font-size:26px;font-weight:900;letter-spacing:.2em;color:#fff;">FINIX</span>
+            </td>
+          </tr></table>
+        </td>
+      </tr>
+
+      <!-- ══ CARD ══ -->
+      <tr>
+        <td style="
+          background:#10121c;
+          border:1px solid rgba(255,255,255,.07);
+          border-radius:28px;
+          overflow:hidden;
+          box-shadow:0 40px 80px rgba(0,0,0,.6);
+        ">
+
+          <!-- hero -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="
+              background:#10121c;
+              padding:52px 48px 44px;
+              text-align:center;
+              border-bottom:1px solid rgba(255,255,255,.06);
+            ">
+              <!-- badge pill -->
+              <table cellpadding="0" cellspacing="0" align="center" style="margin-bottom:24px;">
+                <tr><td style="
+                  background:rgba(109,90,252,.18);
+                  border:1px solid rgba(109,90,252,.38);
+                  border-radius:999px;
+                  padding:6px 18px;
+                  font-size:11px;font-weight:700;
+                  letter-spacing:.14em;text-transform:uppercase;
+                  color:#c4b5fd;
+                ">🔐 &nbsp;Verificação de identidade</td></tr>
+              </table>
+
+              <h1 style="margin:0 0 18px;font-size:38px;font-weight:900;line-height:1.1;letter-spacing:-.03em;color:#ffffff;">
+                Seu código de<br/>
+                <span style="color:#818cf8;">acesso seguro</span>
+              </h1>
+
+              <p style="margin:0 auto;max-width:400px;font-size:15px;color:#94a3b8;line-height:1.8;">
+                Estamos confirmando sua identidade antes de liberar o acesso
+                à plataforma. Use o código abaixo para concluir o login.
+              </p>
+            </td></tr>
+          </table>
+
+          <!-- code section -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:44px 48px 36px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="
+                  background:rgba(109,90,252,.08);
+                  border:1px solid rgba(109,90,252,.22);
+                  border-radius:22px;
+                  padding:40px 20px;
+                  text-align:center;
+                ">
+                  <div style="
+                    font-size:10px;font-weight:700;
+                    letter-spacing:.28em;text-transform:uppercase;
+                    color:#a78bfa;margin-bottom:20px;
+                  ">Código de verificação</div>
+
+                  <table cellpadding="0" cellspacing="0" align="center">
+                    <tr><td style="
+                      background:#1a1730;
+                      border:1.5px solid rgba(109,90,252,.45);
+                      border-radius:18px;
+                      padding:22px 40px;
+                      font-size:54px;font-weight:900;
+                      letter-spacing:16px;
+                      color:#ddd6fe;
+                      text-align:center;
+                    ">${code}</td></tr>
+                  </table>
+
+                  <p style="margin:20px 0 0;font-size:14px;color:#64748b;">
+                    Válido por <strong style="color:#a78bfa;">5 minutos</strong> &mdash; não compartilhe.
+                  </p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+
+          <!-- divider -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:0 48px;">
+              <div style="height:1px;background:rgba(255,255,255,.05);"></div>
+            </td></tr>
+          </table>
+
+          <!-- warning -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:28px 48px 36px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="
+                  background:rgba(239,68,68,.07);
+                  border:1px solid rgba(239,68,68,.18);
+                  border-left:3px solid #ef4444;
+                  border-radius:14px;
+                  padding:20px 22px;
+                ">
+                  <div style="
+                    font-size:10px;font-weight:800;
+                    letter-spacing:.14em;text-transform:uppercase;
+                    color:#fca5a5;margin-bottom:8px;
+                  ">⚠ &nbsp;Aviso de segurança</div>
+                  <p style="margin:0;font-size:14px;color:#94a3b8;line-height:1.75;">
+                    Nunca compartilhe este código com ninguém. A Finix
+                    <strong style="color:#fca5a5;">jamais</strong>
+                    solicitará este código por WhatsApp, ligação telefônica ou redes sociais.
+                    Se você não solicitou este acesso, ignore este e-mail com segurança.
+                  </p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+
+          <!-- footer -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="
+              border-top:1px solid rgba(255,255,255,.05);
+              padding:26px 48px 38px;
+              text-align:center;
+            ">
+              <p style="margin:0;font-size:13px;color:#475569;line-height:1.7;">
+                Se tiver dúvidas, acesse nosso
+                <a href="#" style="color:#818cf8;text-decoration:none;">suporte</a>.
+              </p>
+              <p style="margin:8px 0 0;font-size:12px;color:#334155;">
+                © 2026 Finix &mdash; Controle financeiro inteligente.
+              </p>
+            </td></tr>
+          </table>
+
+        </td>
+      </tr>
+
+    </table>
+    </td></tr>
+  </table>
+
+</body>
+</html>`;
+};
+
 export const sendVerificationEmail = async (email: string, code: string) => {
-  const html = `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verifique seu e-mail - Finix</title>
-      <style>
-        body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: linear-gradient(135deg, #0b1220 0%, #111827 55%, #1f2937 100%);
-          margin: 0;
-          padding: 20px;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #f8fafc;
-        }
-        .container {
-          max-width: 620px;
-          width: 100%;
-          background: #0f172a;
-          border-radius: 32px;
-          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.35);
-          overflow: hidden;
-          border: 1px solid rgba(148, 163, 184, 0.18);
-        }
-        .header {
-          background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-          padding: 44px 34px;
-          text-align: center;
-          color: white;
-        }
-        .logo {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          font-size: 30px;
-          font-weight: 900;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-        }
-        .logo-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.18);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 22px;
-          font-weight: 700;
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-        }
-        .subtitle {
-          font-size: 15px;
-          opacity: 0.95;
-          margin-top: 14px;
-          line-height: 1.6;
-        }
-        .content {
-          padding: 40px 34px 32px;
-          text-align: center;
-          background: radial-gradient(circle at top, rgba(37, 99, 235, 0.08), transparent 40%), #ffffff;
-        }
-        .content-inner {
-          background: #f8fafc;
-          border-radius: 28px;
-          padding: 32px 28px;
-          color: #0f172a;
-          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
-        }
-        .title {
-          font-size: 30px;
-          font-weight: 900;
-          margin-bottom: 16px;
-          letter-spacing: -0.04em;
-        }
-        .message {
-          font-size: 16px;
-          line-height: 1.85;
-          margin-bottom: 28px;
-          color: #475569;
-        }
-        .code-container {
-          background: linear-gradient(135deg, #eff6ff 0%, #e2e8f0 100%);
-          border-radius: 24px;
-          padding: 28px 24px;
-          margin: 32px 0;
-          border: 1px solid #cbd5e1;
-        }
-        .code {
-          font-size: 52px;
-          font-weight: 900;
-          letter-spacing: 12px;
-          color: #1d4ed8;
-          background: #ffffff;
-          padding: 20px 34px;
-          border-radius: 22px;
-          display: inline-block;
-          box-shadow: 0 16px 40px rgba(37, 99, 235, 0.16);
-          margin-bottom: 12px;
-        }
-        .code-label {
-          font-size: 13px;
-          color: #64748b;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-        }
-        .note-box {
-          background: #f1f5f9;
-          border-radius: 20px;
-          border: 1px solid #e2e8f0;
-          padding: 20px 22px;
-          margin-top: 20px;
-          text-align: left;
-          color: #334155;
-        }
-        .note-box strong {
-          color: #0f172a;
-        }
-        .footer {
-          background: #111827;
-          padding: 28px 34px 34px;
-          text-align: center;
-          font-size: 14px;
-          color: #94a3b8;
-        }
-        .footer a {
-          color: #7dd3fc;
-          text-decoration: none;
-          font-weight: 700;
-        }
-        .footer a:hover {
-          text-decoration: underline;
-        }
-        .divider {
-          height: 1px;
-          background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.4) 50%, transparent 100%);
-          margin: 18px 0;
-        }
-        @media (max-width: 640px) {
-          .content {
-            padding: 32px 20px 20px;
-          }
-          .content-inner {
-            padding: 28px 20px;
-          }
-          .code {
-            font-size: 44px;
-            padding: 18px 28px;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">
-            <span class="logo-icon">F</span>
-            FINIX
-          </div>
-          <div class="subtitle">Seu app financeiro com proteção e clareza.</div>
-        </div>
-        <div class="content">
-          <div class="content-inner">
-            <h1 class="title">Valide seu e-mail</h1>
-            <p class="message">
-              Para manter sua conta segura, use o código abaixo no Finix. Isso garante que só você consiga finalizar o cadastro.
-            </p>
-            <div class="code-container">
-              <div class="code">${code}</div>
-              <div class="code-label">Código de verificação</div>
-            </div>
-            <p class="message">
-              Insira o código na tela de verificação do app. Se ele expirar em 5 minutos, basta pedir um novo código.
-            </p>
-            <div class="note-box">
-              <p><strong>Atenção:</strong> não compartilhe este código com ninguém. A Finix nunca pedirá esta informação fora do app.</p>
-            </div>
-          </div>
-        </div>
-        <div class="footer">
-          <div class="divider"></div>
-          <p>
-            Se você não pediu essa verificação, apenas ignore este e-mail.
-          </p>
-          <p style="margin-top: 14px;">
-            Precisando de ajuda? <a href="mailto:suporte@finix.com">suporte@finix.com</a>
-          </p>
-          <p style="margin-top: 20px; font-size: 12px; color: #6b7280;">
-            © 2026 Finix. Todos os direitos reservados.
-          </p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  const transporter = createTransporter();
+  const html = getVerificationTemplate(code);
 
   const mailOptions = {
     from: '"Finix" <finixappp@gmail.com>',
     to: email,
-    subject: 'Verifique seu e-mail - Código de ativação',
+    subject: '🔐 Seu código de verificação – Finix',
     html,
   };
 
-  const transporter = createTransporter();
-
   try {
     await transporter.sendMail(mailOptions);
-  } catch (error: any) {
-    throw new Error('Erro ao enviar e-mail de verificação. Verifique as configurações de e-mail no backend.');
+    console.log('✅ E-mail enviado com sucesso para:', email);
+  } catch (error) {
+    console.error('❌ Erro ao enviar e-mail:', error);
+    throw new Error('Erro ao enviar e-mail de verificação.');
   }
 };

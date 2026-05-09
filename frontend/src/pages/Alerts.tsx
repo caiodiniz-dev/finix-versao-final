@@ -1,13 +1,41 @@
 import { useEffect, useState } from 'react';
-import { Loader2, RefreshCcw, CalendarClock, CheckCircle2 } from 'lucide-react';
+import { Loader2, RefreshCcw, CalendarClock, CheckCircle2, CreditCard } from 'lucide-react';
 import { api, apiErrorMessage } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Budget } from '../types';
 import { currency, dateBR } from '../utils/format';
 
+// Tipo local para transações parceladas agrupadas
+interface InstallmentGroup {
+  installmentGroupId: string;
+  title: string;
+  category: string;
+  paymentMethod?: string;
+  totalInstallments: number;
+  paidInstallments: number;        // parcelas já pagas (data <= hoje)
+  remainingInstallments: number;   // parcelas restantes
+  amountPerInstallment: number;
+  nextPaymentDate: string | null;  // data da próxima parcela futura
+  daysUntilNext: number | null;
+  totalPaid: number;
+  totalRemaining: number;
+}
+
+const getTodayStr = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const toDateStr = (raw: string): string => {
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return raw.slice(0, 10);
+};
+
 export default function Alerts() {
   const { user } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [installmentGroups, setInstallmentGroups] = useState<InstallmentGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,8 +44,72 @@ export default function Alerts() {
     setLoading(true);
     setError(null);
     try {
-      const budgetsRes = await api.get('/api/budgets');
+      const [budgetsRes, txRes] = await Promise.all([
+        api.get('/api/budgets'),
+        // Busca todas as transações parceladas (ajuste o endpoint conforme sua API)
+        api.get('/api/transactions?installment=true&limit=500'),
+      ]);
+
       setBudgets(budgetsRes.data || []);
+
+      // ── Agrupa parcelas por installmentGroupId ────────────────────────────
+      const transactions: any[] = txRes.data?.transactions ?? txRes.data ?? [];
+      const todayStr = getTodayStr();
+
+      const groups: Record<string, any[]> = {};
+      for (const tx of transactions) {
+        if (!tx.installmentGroupId || (tx.totalInstallments ?? 0) <= 1) continue;
+        if (!groups[tx.installmentGroupId]) groups[tx.installmentGroupId] = [];
+        groups[tx.installmentGroupId].push(tx);
+      }
+
+      const grouped: InstallmentGroup[] = Object.entries(groups).map(([groupId, txs]) => {
+        // Ordena por número da parcela
+        txs.sort((a, b) => (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0));
+
+        const first = txs[0];
+        const totalInstallments = first.totalInstallments ?? txs.length;
+        const amountPerInstallment = first.amount ?? 0;
+
+        const paid = txs.filter((t) => toDateStr(t.date) <= todayStr);
+        const upcoming = txs.filter((t) => toDateStr(t.date) > todayStr);
+        upcoming.sort((a, b) => toDateStr(a.date).localeCompare(toDateStr(b.date)));
+
+        const nextPaymentDate = upcoming.length > 0 ? toDateStr(upcoming[0].date) : null;
+        let daysUntilNext: number | null = null;
+        if (nextPaymentDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const next = new Date(nextPaymentDate + 'T12:00:00');
+          daysUntilNext = Math.floor((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        return {
+          installmentGroupId: groupId,
+          title: first.title ?? 'Compra parcelada',
+          category: first.category ?? '—',
+          paymentMethod: first.paymentMethod,
+          totalInstallments,
+          paidInstallments: paid.length,
+          remainingInstallments: upcoming.length,
+          amountPerInstallment,
+          nextPaymentDate,
+          daysUntilNext,
+          totalPaid: paid.reduce((s, t) => s + (t.amount ?? 0), 0),
+          totalRemaining: upcoming.reduce((s, t) => s + (t.amount ?? 0), 0),
+        };
+      });
+
+      // Mostra: grupos com parcelas restantes, ordenados por próxima data
+      const active = grouped
+        .filter((g) => g.remainingInstallments > 0)
+        .sort((a, b) => {
+          if (a.daysUntilNext === null) return 1;
+          if (b.daysUntilNext === null) return -1;
+          return a.daysUntilNext - b.daysUntilNext;
+        });
+
+      setInstallmentGroups(active);
     } catch (err: any) {
       setError(apiErrorMessage(err));
     } finally {
@@ -27,10 +119,10 @@ export default function Alerts() {
 
   useEffect(() => { fetchAlerts(); }, [user]);
 
-  // Todos os orçamentos — com ou sem dueDate — para exibição
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // ── Budget alerts ─────────────────────────────────────────────────────────
   const budgetAlerts = budgets
     .map((b) => {
       const usedPercent = b.limit > 0 ? Math.round((b.spent / b.limit) * 100) : 0;
@@ -42,12 +134,16 @@ export default function Alerts() {
       }
       return { ...b, dueDate: (b as any).dueDate ?? null, diffDays, usedPercent };
     })
-    // Ordena: estourados primeiro, depois por % usado
     .sort((a, b) => b.usedPercent - a.usedPercent);
 
   const overLimitCount = budgetAlerts.filter((b) => b.usedPercent >= 100).length;
   const nearingCount = budgetAlerts.filter((b) => b.usedPercent >= 80 && b.usedPercent < 100).length;
   const dueSoonCount = budgetAlerts.filter((b) => b.diffDays !== null && b.diffDays <= 7).length;
+
+  // ── Installment summary counts ────────────────────────────────────────────
+  const installmentDueSoon = installmentGroups.filter(
+    (g) => g.daysUntilNext !== null && g.daysUntilNext <= 7,
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -58,7 +154,7 @@ export default function Alerts() {
             Alertas Financeiros
           </h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400">
-            Acompanhe o uso dos seus orçamentos e prazos de vencimento.
+            Acompanhe o uso dos seus orçamentos, prazos de vencimento e parcelas de crédito.
           </p>
         </div>
         <button
@@ -70,7 +166,7 @@ export default function Alerts() {
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
           <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Limite estourado</div>
           <div className="mt-4 text-3xl font-bold text-rose-600 dark:text-rose-400">{overLimitCount}</div>
@@ -83,9 +179,131 @@ export default function Alerts() {
           <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Vencem em 7 dias</div>
           <div className="mt-4 text-3xl font-bold text-slate-700 dark:text-slate-200">{dueSoonCount}</div>
         </div>
+        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
+          <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Parcelas próximas</div>
+          <div className="mt-4 text-3xl font-bold text-blue-600 dark:text-blue-400">{installmentDueSoon}</div>
+        </div>
       </div>
 
-      {/* Lista de orçamentos */}
+      {/* ── SEÇÃO: Parcelas de crédito ──────────────────────────────────────── */}
+      <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <CreditCard className="w-5 h-5 text-blue-500" />
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Compras parceladas em aberto</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-3 text-slate-500 dark:text-slate-400 py-8">
+            <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
+          </div>
+        ) : error ? (
+          <div className="rounded-3xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-4 text-rose-700 dark:text-rose-300">
+            {error}
+          </div>
+        ) : installmentGroups.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-8 text-center">
+            <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400">Nenhuma compra parcelada em andamento.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {installmentGroups.map((g) => {
+              const progressPercent = Math.round((g.paidInstallments / g.totalInstallments) * 100);
+              const isDanger = g.daysUntilNext !== null && g.daysUntilNext <= 1;
+              const isWarning = !isDanger && g.daysUntilNext !== null && g.daysUntilNext <= 7;
+
+              return (
+                <div
+                  key={g.installmentGroupId}
+                  className={`rounded-2xl border p-4 transition-all ${isDanger
+                    ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30'
+                    : isWarning
+                      ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A]'
+                    }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Título + badges */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{g.title}</span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                          {g.paidInstallments}/{g.totalInstallments}x
+                        </span>
+                        {g.paymentMethod && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                            {g.paymentMethod}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-slate-400 mt-0.5">{g.category}</p>
+
+                      {/* Barra de progresso das parcelas */}
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden max-w-[200px]">
+                          <div
+                            className="h-full rounded-full bg-blue-500 transition-all"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {g.remainingInstallments} parcela{g.remainingInstallments !== 1 ? 's' : ''} restante{g.remainingInstallments !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      {/* Valores */}
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span>
+                          Por parcela:{' '}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {currency(g.amountPerInstallment)}
+                          </span>
+                        </span>
+                        <span>
+                          Restante:{' '}
+                          <span className="font-semibold text-rose-600 dark:text-rose-400">
+                            {currency(g.totalRemaining)}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Próximo pagamento */}
+                    <div className="flex flex-col items-end gap-1 shrink-0 text-right">
+                      {g.nextPaymentDate ? (
+                        <>
+                          <div className={`text-sm font-semibold ${isDanger
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : isWarning
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-slate-600 dark:text-slate-300'
+                            }`}>
+                            {g.daysUntilNext === 0
+                              ? 'Vence hoje'
+                              : g.daysUntilNext === 1
+                                ? 'Vence amanhã'
+                                : `Próxima em ${g.daysUntilNext} dias`}
+                          </div>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 rounded-xl bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                            {dateBR(g.nextPaymentDate)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                          Quitado ✓
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── SEÇÃO: Orçamentos ───────────────────────────────────────────────── */}
       <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
         <div className="flex items-center gap-3 mb-5">
           <CalendarClock className="w-5 h-5 text-brand-blue" />
@@ -116,10 +334,10 @@ export default function Alerts() {
                 <div
                   key={b.id}
                   className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all ${isDanger
-                      ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30'
-                      : isWarning
-                        ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A]'
+                    ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30'
+                    : isWarning
+                      ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A]'
                     }`}
                 >
                   <div className="flex-1 min-w-0">

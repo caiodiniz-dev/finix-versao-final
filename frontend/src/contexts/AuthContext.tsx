@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../services/api';
 import { User } from '../types';
 
@@ -14,6 +15,7 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
@@ -25,6 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     });
   }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      localStorage.removeItem('finix_token');
+      sessionStorage.removeItem('finix_token');
+      setUser(null);
+      navigate('/login', { replace: true });
+    };
+
+    window.addEventListener('finix-auth-unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('finix-auth-unauthorized', handleUnauthorized);
+  }, [navigate]);
 
   const login = async (email: string, password: string, remember = true) => {
     try {
@@ -51,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('finix_token');
     sessionStorage.removeItem('finix_token');
     setUser(null);
-    window.location.href = '/';
+    navigate('/login', { replace: true });
   };
 
   const refreshUser = async () => {

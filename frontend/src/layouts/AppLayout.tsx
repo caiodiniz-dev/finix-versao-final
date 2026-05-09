@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ArrowLeftRight, Target, Shield, LogOut, Menu, Sun, Moon, Wallet, User as UserIcon, Crown, Bell, CalendarDays, Tag
 } from 'lucide-react';
@@ -202,15 +201,11 @@ export default function AppLayout() {
           <div className="w-10" />
         </header>
 
-        <motion.main
-          key={window.location.pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+        <main
           className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"
         >
           <Outlet />
-        </motion.main>
+        </main>
       </div>
     </div>
   );

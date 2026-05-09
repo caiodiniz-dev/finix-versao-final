@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Lock, RefreshCcw, Loader2, CheckCircle2, Tag } from 'lucide-react';
+import { Edit2, Trash2, RefreshCcw, Loader2, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, apiErrorMessage } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,27 @@ export default function Categories() {
   const [error, setError] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState({ name: '', type: 'expense', icon: 'Tag', color: '#7C3AED' });
   const [editing, setEditing] = useState<Category | null>(null);
+
+  const [hiddenDefaults, setHiddenDefaults] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hiddenDefaultCategories') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const hideDefault = (name: string) => {
+    const updated = [...hiddenDefaults, name];
+    setHiddenDefaults(updated);
+    localStorage.setItem('hiddenDefaultCategories', JSON.stringify(updated));
+  };
+
+  const restoreDefaults = () => {
+    setHiddenDefaults([]);
+    localStorage.removeItem('hiddenDefaultCategories');
+  };
+
+  const visibleDefaults = DEFAULT_CATEGORIES.filter((n) => !hiddenDefaults.includes(n));
 
   const canManage = user?.plan === 'PRO';
 
@@ -53,7 +74,6 @@ export default function Categories() {
       return;
     }
     if (!user) return;
-
     setSaving(true);
     try {
       if (editing) {
@@ -129,12 +149,81 @@ export default function Categories() {
                 ? 'Para criar, editar e excluir categorias você precisa atualizar para o Plano Pro.'
                 : 'Use a área ao lado para adicionar ou editar categorias.'}
             </div>
+
             <div className="rounded-3xl bg-slate-800/60 p-4 text-sm text-slate-200">
-              Categorias padrão:
-              <div className="mt-2 flex flex-wrap gap-2">
-                {DEFAULT_CATEGORIES.slice(0, 5).map((name) => (
-                  <span key={name} className="chip bg-slate-700 text-slate-200">{name}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '10px',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Categorias padrão:</span>
+                {hiddenDefaults.length > 0 && (
+                  <button
+                    onClick={restoreDefaults}
+                    style={{
+                      fontSize: '12px',
+                      color: '#60a5fa',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Restaurar padrões
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {visibleDefaults.map((name) => (
+                  <span
+                    key={name}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#1e293b',
+                      color: '#e2e8f0',
+                      border: '1px solid #334155',
+                      borderRadius: '9999px',
+                      padding: '4px 8px 4px 12px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {name}
+                    <button
+                      onClick={() => hideDefault(name)}
+                      title={`Remover ${name}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '9999px',
+                        background: '#ef4444',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#fff',
+                        fontSize: '12px',
+                        lineHeight: 1,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
                 ))}
+                {visibleDefaults.length === 0 && (
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                    Nenhuma categoria padrão visível. Clique em "Restaurar padrões" para exibir novamente.
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -146,7 +235,11 @@ export default function Categories() {
               <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Nova categoria</p>
               <h2 className="mt-2 text-lg font-semibold text-slate-100">Adicionar ou editar</h2>
             </div>
-            {editing && <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">Modo edição</span>}
+            {editing && (
+              <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">
+                Modo edição
+              </span>
+            )}
           </div>
           <div className="space-y-4">
             <div>
@@ -201,7 +294,13 @@ export default function Categories() {
                 disabled={!canManage || saving}
                 className="btn-primary flex-1"
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editing ? 'Salvar alterações' : 'Adicionar categoria'}
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : editing ? (
+                  'Salvar alterações'
+                ) : (
+                  'Adicionar categoria'
+                )}
               </button>
               <button
                 type="button"
@@ -227,11 +326,15 @@ export default function Categories() {
         </div>
 
         {loading ? (
-          <div className="mt-6 flex items-center justify-center gap-3 text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /> Carregando categorias...</div>
+          <div className="mt-6 flex items-center justify-center gap-3 text-slate-400">
+            <Loader2 className="w-5 h-5 animate-spin" /> Carregando categorias...
+          </div>
         ) : error ? (
           <div className="mt-6 rounded-3xl border border-rose-800 bg-rose-950 p-4 text-rose-400">{error}</div>
         ) : categories.length === 0 ? (
-          <div className="mt-6 rounded-3xl border border-dashed border-slate-700 bg-slate-800/40 p-8 text-center text-slate-500">Nenhuma categoria encontrada.</div>
+          <div className="mt-6 rounded-3xl border border-dashed border-slate-700 bg-slate-800/40 p-8 text-center text-slate-500">
+            Nenhuma categoria encontrada.
+          </div>
         ) : (
           <div className="mt-6 grid gap-4">
             {categories.map((category) => (
@@ -244,12 +347,17 @@ export default function Categories() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-3 text-slate-100">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-3xl" style={{ backgroundColor: category.color || '#E0E7FF' }}>
+                      <span
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-3xl"
+                        style={{ backgroundColor: category.color || '#E0E7FF' }}
+                      >
                         <Tag className="w-5 h-5 text-white" />
                       </span>
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-100 truncate">{category.name}</p>
-                        <p className="text-sm text-slate-400">{category.type === 'income' ? 'Receita' : category.type === 'expense' ? 'Despesa' : 'Ambos'}</p>
+                        <p className="text-sm text-slate-400">
+                          {category.type === 'income' ? 'Receita' : category.type === 'expense' ? 'Despesa' : 'Ambos'}
+                        </p>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
@@ -257,7 +365,6 @@ export default function Categories() {
                       <span className="chip bg-slate-700 text-slate-300">Ativa: {category.isActive ? 'Sim' : 'Não'}</span>
                     </div>
                   </div>
-
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => startEdit(category)}

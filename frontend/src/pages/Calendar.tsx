@@ -11,44 +11,173 @@ const getMonthKey = (value: Date) =>
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-// ── FIX 2: normaliza qualquer formato de data para "YYYY-MM-DD" ─────────────
 const toDateStr = (raw: string): string => {
   if (!raw) return '';
-  // Se já for YYYY-MM-DD, retorna direto
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  // ISO datetime ou outro formato → pega só a parte da data
   return raw.slice(0, 10);
 };
 
-const getTodayStr = (): string => {
+const getTodayStr = (): string =>
+  new Intl.DateTimeFormat('en-CA').format(new Date());
+
+const getYesterdayStr = (): string => {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  d.setDate(d.getDate() - 1);
+  return new Intl.DateTimeFormat('en-CA').format(d);
 };
 
+// Retorna YYYY-MM-DD do dia anterior a uma data
+const getPrevDateStr = (dateStr: string): string => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() - 1);
+  return new Intl.DateTimeFormat('en-CA').format(dt);
+};
+
+// Retorna YYYY-MM-DD do dia seguinte a uma data
+const getNextDateStr = (dateStr: string): string => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + 1);
+  return new Intl.DateTimeFormat('en-CA').format(dt);
+};
+
+const WEEKDAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
 const isPastOrToday = (raw: string): boolean => toDateStr(raw) <= getTodayStr();
+
+interface DayTransaction {
+  id: string;
+  title: string;
+  type: 'INCOME' | 'EXPENSE';
+  amount: number;
+  date: string;
+  category?: string;
+  paymentMethod?: string;
+  description?: string;
+  currency?: string;
+  recurring?: boolean;
+  recurringFrequency?: string;
+  installmentGroupId?: string;
+  installmentNumber?: number;
+  totalInstallments?: number;
+}
+
+// ─── Normaliza a data de uma transação para o fuso local do browser ──────────
+// O servidor salva new Date("2026-05-09") como UTC 00:00Z, que em UTC-3 é
+// 2026-05-08T21:00:00. O banco retorna esse valor, e tx.date vem como
+// "2026-05-08T21:00:00.000Z". Para exibir corretamente precisamos converter
+// esse ISO para a data LOCAL do browser, não cortar cegamente os 10 primeiros chars.
+const txDateToLocal = (raw: string): string => {
+  if (!raw) return '';
+  // Se já é só YYYY-MM-DD, usa direto
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // ISO com timezone → converte para local
+  const d = new Date(raw);
+  return new Intl.DateTimeFormat('en-CA').format(d);
+};
 
 export default function Calendar() {
   const { user } = useAuth();
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+
+  const [dayTransactions, setDayTransactions] = useState<DayTransaction[]>([]);
+  const [dayTotals, setDayTotals] = useState<{ revenue: number; expense: number; net: number }>({
+    revenue: 0,
+    expense: 0,
+    net: 0,
+  });
+
   const [loading, setLoading] = useState(false);
+  const [loadingDay, setLoadingDay] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(new Date()));
 
-  const isFirstLoad = useRef(true);
-  // ── FIX 3: ref para sempre ter a versão mais recente de fetchCalendar ─────
+  const shouldAutoSelectRef = useRef(true);
   const fetchCalendarRef = useRef<(force?: boolean) => void>(() => { });
 
+  // ─── Busca transações do dia ─────────────────────────────────────────────
+  // ESTRATÉGIA: busca o dia pedido + o dia anterior (que é onde o servidor
+  // pode ter salvo por causa do UTC shift). Depois filtra localmente pelo
+  // dia correto usando a data convertida para o fuso do browser.
+  const fetchDayTransactions = useCallback(async (date: string) => {
+    if (!date || !user) return;
+    setLoadingDay(true);
+    try {
+      const prevDate = getPrevDateStr(date);
+
+      // Busca os dois dias em paralelo
+      const [resDay, resPrev] = await Promise.all([
+        api.get(`/api/transactions?date=${date}&_t=${Date.now()}`),
+        api.get(`/api/transactions?date=${prevDate}&_t=${Date.now()}`),
+      ]);
+
+      const fromDay: any[] = resDay.data?.transactions ?? resDay.data ?? [];
+      const fromPrev: any[] = resPrev.data?.transactions ?? resPrev.data ?? [];
+
+      // Junta e normaliza, convertendo a data de cada tx para o fuso local
+      const allRaw = [...fromDay, ...fromPrev];
+      const seenIds = new Set<string>();
+
+      const txs: DayTransaction[] = allRaw
+        .map((tx: any) => ({
+          ...tx,
+          // ← aqui está o fix: usa o fuso local do browser, não corte cego
+          date: txDateToLocal(String(tx.date)),
+        }))
+        // Filtra só as que pertencem ao dia selecionado (após conversão local)
+        .filter((tx) => {
+          if (tx.date !== date) return false;
+          if (seenIds.has(tx.id)) return false;
+          seenIds.add(tx.id);
+          return true;
+        });
+
+      setDayTransactions(txs);
+
+      const revenue = txs.filter(t => t.type === 'INCOME').reduce((a, t) => a + t.amount, 0);
+      const expense = txs.filter(t => t.type === 'EXPENSE').reduce((a, t) => a + t.amount, 0);
+      setDayTotals({ revenue, expense, net: revenue - expense });
+
+      // Mantém o grid sincronizado
+      setCalendar((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          dailySummary: prev.dailySummary.map((d) =>
+            d.date === date
+              ? { ...d, revenue, expense, net: revenue - expense, transactions: txs }
+              : d
+          ),
+        };
+      });
+    } catch {
+      // silencioso
+    } finally {
+      setLoadingDay(false);
+    }
+  }, [user]);
+
+  const handleSelectDate = useCallback((date: string) => {
+    if (!date) return;
+    setSelectedDate(date);
+    setDayTransactions([]);
+    setDayTotals({ revenue: 0, expense: 0, net: 0 });
+    fetchDayTransactions(date);
+  }, [fetchDayTransactions]);
+
+  // ─── Busca dados do mês ───────────────────────────────────────────────────
   const fetchCalendar = useCallback(async (_forceRefresh = false) => {
     if (!user) return;
     setLoading(true);
     setError(null);
     try {
-      const cacheBust = `&_t=${Date.now()}`;
-      const response = await api.get(`/api/calendar?month=${monthKey}${cacheBust}`);
-      const data: CalendarData = response.data;
+      const res = await api.get(`/api/calendar?month=${monthKey}&_t=${Date.now()}`);
+      const data: CalendarData = res.data;
 
-      // ── FIX 2: normaliza as datas de cada dia para YYYY-MM-DD ──────────
+      // O calendário do servidor já usa toLocalDateKey (new Date(tx.date) convertido
+      // para local no servidor). Então o dailySummary já vem com datas corretas.
       const normalized: CalendarData = {
         ...data,
         dailySummary: (data.dailySummary as any[]).map((d) => ({
@@ -56,78 +185,110 @@ export default function Calendar() {
           date: toDateStr(d.date),
           transactions: (d.transactions || []).map((tx: any) => ({
             ...tx,
-            date: toDateStr(tx.date),
+            date: txDateToLocal(String(tx.date)),
           })),
         })),
       };
 
       setCalendar(normalized);
 
-      if (isFirstLoad.current) {
-        isFirstLoad.current = false;
+      if (shouldAutoSelectRef.current) {
+        shouldAutoSelectRef.current = false;
+
+        const todayStr = getTodayStr();
+        const yesterdayStr = getYesterdayStr();
         const pastDays = normalized.dailySummary.filter((d) => isPastOrToday(d.date));
+
         if (pastDays.length) {
-          const todayStr = getTodayStr();
-          const today = pastDays.find((d) => d.date === todayStr);
-          setSelectedDate(today ? today.date : pastDays[pastDays.length - 1].date);
+          const todayDay = pastDays.find((d) => d.date === todayStr);
+          const yesterdayDay = pastDays.find((d) => d.date === yesterdayStr);
+
+          let target: string;
+
+          if (todayDay && ((todayDay.revenue ?? 0) > 0 || (todayDay.expense ?? 0) > 0)) {
+            target = todayStr;
+          } else if (todayDay) {
+            target = todayStr;
+          } else if (yesterdayDay) {
+            target = yesterdayStr;
+          } else {
+            target = pastDays[pastDays.length - 1].date;
+          }
+
+          setSelectedDate(target);
+          setDayTransactions([]);
+          setDayTotals({ revenue: 0, expense: 0, net: 0 });
+          fetchDayTransactions(target);
         }
+      } else if (_forceRefresh) {
+        setSelectedDate((prev) => {
+          if (prev) {
+            setDayTransactions([]);
+            setDayTotals({ revenue: 0, expense: 0, net: 0 });
+            fetchDayTransactions(prev);
+          }
+          return prev;
+        });
       }
     } catch (err: any) {
       setError(apiErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [user, monthKey]);
+  }, [user, monthKey, fetchDayTransactions]);
 
-  // Mantém ref sempre atualizada
-  useEffect(() => {
-    fetchCalendarRef.current = fetchCalendar;
-  }, [fetchCalendar]);
+  useEffect(() => { fetchCalendarRef.current = fetchCalendar; }, [fetchCalendar]);
+  useEffect(() => { fetchCalendar(); }, [fetchCalendar]);
 
-  // Carga inicial e ao trocar de mês
   useEffect(() => {
-    fetchCalendar();
-  }, [fetchCalendar]);
-
-  // Polling a cada 15s
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchCalendarRef.current(true);
-    }, 15_000);
-    return () => clearInterval(interval);
-  }, []); // ← sem dependência: usa sempre o ref mais recente
-
-  // ── FIX 3: listener usa ref — nunca fica com closure stale ───────────────
-  useEffect(() => {
-    const handler = () => fetchCalendarRef.current(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { date?: string } | undefined;
+      if (detail?.date) {
+        // Converte a data do evento para local (pode vir como ISO UTC)
+        const txDate = txDateToLocal(String(detail.date));
+        if (txDate.slice(0, 7) === monthKey) {
+          setSelectedDate(txDate);
+          setDayTransactions([]);
+          setDayTotals({ revenue: 0, expense: 0, net: 0 });
+          fetchCalendarRef.current(true);
+          fetchDayTransactions(txDate);
+        } else {
+          fetchCalendarRef.current(true);
+        }
+      } else {
+        fetchCalendarRef.current(true);
+      }
+    };
     window.addEventListener('transaction-saved', handler);
     return () => window.removeEventListener('transaction-saved', handler);
-  }, []); // ← registro único, sem re-registrar a cada mudança
+  }, [monthKey, fetchDayTransactions]);
 
   const handlePrevMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
-    isFirstLoad.current = true;
+    shouldAutoSelectRef.current = true;
     setMonthKey(getMonthKey(new Date(year, month - 2, 1)));
     setSelectedDate('');
+    setDayTransactions([]);
+    setDayTotals({ revenue: 0, expense: 0, net: 0 });
   };
 
   const handleNextMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
-    isFirstLoad.current = true;
+    shouldAutoSelectRef.current = true;
     setMonthKey(getMonthKey(new Date(year, month, 1)));
     setSelectedDate('');
+    setDayTransactions([]);
+    setDayTotals({ revenue: 0, expense: 0, net: 0 });
   };
 
   const currentMonthLabel = useMemo(() => {
     const [year, month] = monthKey.split('-').map(Number);
-    return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', {
-      month: 'long', year: 'numeric',
-    });
+    return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   }, [monthKey]);
 
   const isCurrentMonth = monthKey === getMonthKey(new Date());
+  const todayStr = getTodayStr();
 
-  // ── FIX 2: filtragem agora funciona pois as datas foram normalizadas ──────
   const monthlyTotals = useMemo(() => {
     if (!calendar) return { revenue: 0, expense: 0, net: 0 };
     const past = calendar.dailySummary.filter((d) => isPastOrToday(d.date));
@@ -136,20 +297,32 @@ export default function Calendar() {
     return { revenue, expense, net: revenue - expense };
   }, [calendar]);
 
-  const selectedDay = useMemo(() => {
-    if (!selectedDate || !calendar) return null;
-    return calendar.dailySummary.find((d) => d.date === selectedDate) ?? null;
-  }, [calendar, selectedDate]);
+  const calendarGridDays = useMemo(() => {
+    if (!calendar) return [];
+    const [year, month] = monthKey.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const leadingEmpty = (firstDay + 6) % 7;
+    const allDays = [...Array(leadingEmpty).fill(null)];
+    const dayMap = new Map(calendar.dailySummary.map((day) => [day.date, day]));
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      allDays.push(dayMap.get(date) ?? { date, revenue: 0, expense: 0, net: 0, transactions: [] });
+    }
+
+    while (allDays.length % 7 !== 0) allDays.push(null);
+    return allDays;
+  }, [calendar, monthKey]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl md:text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
             Calendário Financeiro
           </h1>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-sm md:text-base text-slate-500 dark:text-slate-400">
             Visualize receitas, despesas e saldo diário com navegação mensal.
           </p>
         </div>
@@ -177,7 +350,6 @@ export default function Calendar() {
         </div>
       ) : (
         <>
-          {/* Cards de totais */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
               { label: 'Receita', value: monthlyTotals.revenue, color: 'text-emerald-600 dark:text-emerald-400' },
@@ -185,98 +357,97 @@ export default function Calendar() {
               {
                 label: 'Saldo líquido',
                 value: monthlyTotals.net,
-                color: monthlyTotals.net >= 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-rose-600 dark:text-rose-400',
+                color: monthlyTotals.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
               },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6 shadow-sm"
-              >
-                <div className="text-sm uppercase tracking-[0.3em] text-slate-400">{item.label}</div>
-                <div className={`mt-3 text-3xl font-bold ${item.color}`}>
-                  {formatCurrency(item.value)}
-                </div>
-                {isCurrentMonth && (
-                  <p className="mt-1 text-xs text-slate-400">Acumulado até hoje</p>
-                )}
+              <div key={item.label} className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 md:p-6 shadow-sm">
+                <div className="text-xs md:text-sm uppercase tracking-[0.3em] text-slate-400">{item.label}</div>
+                <div className={`mt-3 text-2xl md:text-3xl font-bold ${item.color}`}>{formatCurrency(item.value)}</div>
+                {isCurrentMonth && <p className="mt-1 text-xs text-slate-400">Acumulado até hoje</p>}
               </div>
             ))}
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
-            {/* Grid de dias */}
             <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
               {loading && (
                 <div className="mb-3 flex items-center gap-2 text-xs text-slate-400">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Atualizando...
+                  <Loader2 className="h-3 w-3 animate-spin" /> Atualizando...
                 </div>
               )}
+              <div className="grid gap-2">
+                <div className="grid grid-cols-7 gap-2 text-center text-[11px] uppercase tracking-[0.25em] text-slate-400">
+                  {WEEKDAY_LABELS.map((label) => (
+                    <div key={label} className="py-2">{label}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {calendarGridDays.map((day, index) => {
+                    if (!day) {
+                      return (
+                        <div
+                          key={`empty-${index}`}
+                          className="min-h-[98px] rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20"
+                        />
+                      );
+                    }
 
-              <div className="grid gap-2 sm:grid-cols-7">
-                {calendar?.dailySummary.map((day) => {
-                  // FIX 2: data já normalizada — parse seguro com T12:00:00 para evitar UTC shift
-                  const date = new Date(day.date + 'T12:00:00');
-                  const past = isPastOrToday(day.date);
-                  const isActive = day.date === selectedDate;
-                  const isToday = day.date === getTodayStr();
+                    const date = new Date(day.date + 'T12:00:00');
+                    const past = isPastOrToday(day.date);
+                    const isActive = day.date === selectedDate;
+                    const isToday = day.date === todayStr;
 
-                  return (
-                    <button
-                      key={day.date}
-                      onClick={() => past && setSelectedDate(day.date)}
-                      disabled={!past}
-                      title={!past ? 'Dados disponíveis somente após o dia ocorrer' : undefined}
-                      className={[
-                        'group flex flex-col gap-2 rounded-3xl border p-3 text-left transition-all',
-                        !past
-                          ? 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 opacity-35 cursor-not-allowed'
-                          : isActive
-                            ? 'border-brand-blue/50 bg-brand-blue/10 dark:bg-brand-blue/10 shadow-sm cursor-pointer'
-                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] hover:border-brand-blue/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer',
-                      ].join(' ')}
-                    >
-                      <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                        {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
-                      </span>
-
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-xl font-semibold ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
-                          {date.getDate()}
+                    return (
+                      <button
+                        key={day.date}
+                        onClick={() => past && handleSelectDate(day.date)}
+                        disabled={!past}
+                        title={!past ? 'Dados disponíveis somente após o dia ocorrer' : undefined}
+                        className={[
+                          'group flex flex-col gap-2 rounded-3xl border p-2 md:p-3 text-left transition-all min-h-[120px] md:min-h-[98px]',
+                          !past
+                            ? 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 opacity-35 cursor-not-allowed'
+                            : isActive
+                              ? 'border-brand-blue/50 bg-brand-blue/10 dark:bg-brand-blue/10 shadow-sm cursor-pointer'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] hover:border-brand-blue/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer',
+                        ].join(' ')}
+                      >
+                        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                          {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                         </span>
-                        {isToday && <span className="h-1.5 w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
-                      </div>
-
-                      {past ? (
-                        <>
-                          <div className="space-y-0.5 text-xs">
-                            {(day.revenue ?? 0) > 0 && (
-                              <div className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                +{formatCurrency(day.revenue)}
-                              </div>
-                            )}
-                            {(day.expense ?? 0) > 0 && (
-                              <div className="text-rose-600 dark:text-rose-400 font-medium">
-                                -{formatCurrency(day.expense)}
-                              </div>
-                            )}
-                            {(day.revenue ?? 0) === 0 && (day.expense ?? 0) === 0 && (
-                              <div className="text-slate-300 dark:text-slate-600 text-xs">—</div>
-                            )}
-                          </div>
-                          <div className={`mt-auto h-1.5 rounded-full ${(day.net ?? 0) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                        </>
-                      ) : (
-                        <div className="mt-auto h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50" />
-                      )}
-                    </button>
-                  );
-                })}
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-lg md:text-xl font-semibold ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
+                            {date.getDate()}
+                          </span>
+                          {isToday && <span className="h-1.5 w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
+                        </div>
+                        {past ? (
+                          <>
+                            <div className="space-y-0.5 text-xs md:text-sm">
+                              {(day.revenue ?? 0) > 0 && (
+                                <div className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                  +{formatCurrency(day.revenue)}
+                                </div>
+                              )}
+                              {(day.expense ?? 0) > 0 && (
+                                <div className="text-rose-600 dark:text-rose-400 font-medium">
+                                  -{formatCurrency(day.expense)}
+                                </div>
+                              )}
+                              {(day.revenue ?? 0) === 0 && (day.expense ?? 0) === 0 && (
+                                <div className="text-slate-300 dark:text-slate-600 text-xs">—</div>
+                              )}
+                            </div>
+                            <div className={`mt-auto h-1.5 rounded-full ${(day.net ?? 0) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                          </>
+                        ) : (
+                          <div className="mt-auto h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Legenda */}
               <div className="mt-4 flex flex-wrap items-center gap-4 px-1 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Receita</span>
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-400" /> Despesa</span>
@@ -285,78 +456,72 @@ export default function Calendar() {
               </div>
             </div>
 
-            {/* Painel de detalhes do dia */}
-            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6 shadow-sm">
+            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 md:p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Detalhes do dia</p>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-800 dark:text-slate-100">
-                    {selectedDay ? dateBR(selectedDay.date) : 'Selecione um dia'}
+                  <h2 className="mt-2 text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
+                    {selectedDate ? dateBR(selectedDate) : 'Selecione um dia'}
                   </h2>
                 </div>
-                {selectedDay && (
-                  <div className={`rounded-2xl px-3 py-1 text-sm font-semibold ${(selectedDay.net ?? 0) >= 0
+                {selectedDate && (
+                  <div className={`rounded-2xl px-3 py-1 text-sm font-semibold ${dayTotals.net >= 0
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                     : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'}`}>
-                    {(selectedDay.net ?? 0) >= 0 ? 'Positivo' : 'Negativo'}
+                    {dayTotals.net >= 0 ? 'Positivo' : 'Negativo'}
                   </div>
                 )}
               </div>
 
               <div className="mt-6 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
+                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
                     <div className="text-xs text-slate-400">Receita</div>
-                    <div className="mt-1.5 text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(selectedDay?.revenue ?? 0)}
+                    <div className="mt-1.5 text-lg md:text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(dayTotals.revenue)}
                     </div>
                   </div>
-                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
+                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
                     <div className="text-xs text-slate-400">Despesa</div>
-                    <div className="mt-1.5 text-xl font-semibold text-rose-600 dark:text-rose-400">
-                      {formatCurrency(selectedDay?.expense ?? 0)}
+                    <div className="mt-1.5 text-lg md:text-xl font-semibold text-rose-600 dark:text-rose-400">
+                      {formatCurrency(dayTotals.expense)}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
+                <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
                   <div className="text-xs text-slate-400">Saldo do dia</div>
-                  <div className={`mt-1.5 text-2xl font-semibold ${(selectedDay?.net ?? 0) >= 0
+                  <div className={`mt-1.5 text-xl md:text-2xl font-semibold ${dayTotals.net >= 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-rose-600 dark:text-rose-400'}`}>
-                    {formatCurrency(selectedDay?.net ?? 0)}
+                    {formatCurrency(dayTotals.net)}
                   </div>
                 </div>
 
-                {/* ── FIX 3: lista de transações do dia com detalhes ── */}
                 <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4">
                   <div className="flex items-center justify-between gap-2 mb-4">
                     <p className="font-semibold text-slate-800 dark:text-slate-100">Transações</p>
-                    <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-500">
-                      {selectedDay?.transactions?.length ?? 0} itens
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {loadingDay && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
+                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-500">
+                        {dayTransactions.length} itens
+                      </span>
+                    </div>
                   </div>
-
                   <div className="space-y-3">
-                    {selectedDay?.transactions?.length ? (
-                      selectedDay.transactions.map((tx) => (
-                        <div
-                          key={tx.id}
-                          className="rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4"
-                        >
+                    {dayTransactions.length > 0 ? (
+                      dayTransactions.map((tx) => (
+                        <div key={tx.id} className="rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{tx.title}</p>
+                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-sm md:text-base">{tx.title}</p>
                               <p className="text-xs text-slate-400 mt-1">
                                 {tx.category}
                                 {tx.paymentMethod && <> · {tx.paymentMethod}</>}
                                 {' · '}{dateBR(tx.date)}
                               </p>
-                              {/* ── FIX: detalhes extras ao visualizar no calendário ── */}
                               {tx.description && (
-                                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                                  {tx.description}
-                                </p>
+                                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{tx.description}</p>
                               )}
                               {tx.recurring && (
                                 <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
@@ -369,7 +534,7 @@ export default function Calendar() {
                                 </span>
                               )}
                             </div>
-                            <div className={`font-bold whitespace-nowrap flex-shrink-0 text-right ${tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <div className={`font-bold whitespace-nowrap flex-shrink-0 text-right text-sm md:text-base ${tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                               <div>{tx.type === 'INCOME' ? '+' : '-'}{currency(tx.amount)}</div>
                               {tx.currency && tx.currency !== 'BRL' && (
                                 <div className="text-[10px] text-slate-400 font-normal">{tx.currency}</div>
@@ -380,9 +545,11 @@ export default function Calendar() {
                       ))
                     ) : (
                       <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-6 text-center text-slate-400 text-sm">
-                        {selectedDay
-                          ? 'Nenhuma transação registrada para este dia.'
-                          : 'Selecione um dia para ver as transações.'}
+                        {loadingDay
+                          ? 'Carregando transações...'
+                          : selectedDate
+                            ? 'Nenhuma transação registrada para este dia.'
+                            : 'Selecione um dia para ver as transações.'}
                       </div>
                     )}
                   </div>
