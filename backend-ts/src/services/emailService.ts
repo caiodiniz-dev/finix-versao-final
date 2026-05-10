@@ -1,23 +1,6 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const createTransporter = () => {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-
-  if (!user || !pass) {
-    throw new Error(
-      'Configuração de e-mail inválida. Defina GMAIL_USER e GMAIL_APP_PASSWORD.'
-    );
-  }
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const getVerificationTemplate = (code: string) => {
   return `<!DOCTYPE html>
@@ -197,18 +180,13 @@ const getVerificationTemplate = (code: string) => {
 };
 
 export const sendVerificationEmail = async (email: string, code: string) => {
-  const transporter = createTransporter();
-  const html = getVerificationTemplate(code);
-
-  const mailOptions = {
-    from: '"Finix" <finixappp@gmail.com>',
-    to: email,
-    subject: '🔐 Seu código de verificação – Finix',
-    html,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await resend.emails.send({
+      from: 'Finix <onboarding@resend.dev>',
+      to: email,
+      subject: '🔐 Seu código de verificação – Finix',
+      html: getVerificationTemplate(code),
+    });
     console.log('✅ E-mail enviado com sucesso para:', email);
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail:', error);
