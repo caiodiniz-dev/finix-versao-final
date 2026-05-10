@@ -6,7 +6,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:studio": "concurrently \"npm run dev:server\" \"npm run dev:studio\"",
     "dev:server": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "start": "node dist/server.js",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",

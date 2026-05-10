@@ -85,12 +85,18 @@ export default function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(new Date()));
 
+  // FIX: guarda a última data buscada para evitar race conditions
+  const lastFetchedDateRef = useRef<string>('');
   const shouldAutoSelectRef = useRef(true);
   const fetchCalendarRef = useRef<(force?: boolean) => void>(() => { });
 
   const fetchDayTransactions = useCallback(async (date: string) => {
     if (!date || !user) return;
+
+    // FIX: marca qual data está sendo buscada agora
+    lastFetchedDateRef.current = date;
     setLoadingDay(true);
+
     try {
       const prevDate = getPrevDateStr(date);
 
@@ -98,6 +104,9 @@ export default function Calendar() {
         api.get(`/api/transactions?date=${date}&_t=${Date.now()}`),
         api.get(`/api/transactions?date=${prevDate}&_t=${Date.now()}`),
       ]);
+
+      // FIX: se o usuário clicou em outro dia enquanto carregava, ignora esse resultado
+      if (lastFetchedDateRef.current !== date) return;
 
       const fromDay: any[] = resDay.data?.transactions ?? resDay.data ?? [];
       const fromPrev: any[] = resPrev.data?.transactions ?? resPrev.data ?? [];
@@ -117,12 +126,16 @@ export default function Calendar() {
           return true;
         });
 
+      // FIX: só atualiza se ainda for a data selecionada
+      if (lastFetchedDateRef.current !== date) return;
+
       setDayTransactions(txs);
 
-      const revenue = txs.filter(t => t.type === 'INCOME').reduce((a, t) => a + t.amount, 0);
-      const expense = txs.filter(t => t.type === 'EXPENSE').reduce((a, t) => a + t.amount, 0);
+      const revenue = txs.filter((t) => t.type === 'INCOME').reduce((a, t) => a + t.amount, 0);
+      const expense = txs.filter((t) => t.type === 'EXPENSE').reduce((a, t) => a + t.amount, 0);
       setDayTotals({ revenue, expense, net: revenue - expense });
 
+      // Atualiza o resumo do calendário para esse dia
       setCalendar((prev) => {
         if (!prev) return prev;
         return {
@@ -135,17 +148,24 @@ export default function Calendar() {
         };
       });
     } catch {
-      // silencioso
+      // silencioso — não reseta as transações em caso de erro
     } finally {
-      setLoadingDay(false);
+      // FIX: só limpa loading se ainda for a mesma data
+      if (lastFetchedDateRef.current === date) {
+        setLoadingDay(false);
+      }
     }
   }, [user]);
 
   const handleSelectDate = useCallback((date: string) => {
     if (!date) return;
+
+    // FIX: atualiza a data selecionada ANTES de buscar — evita flash de "nenhuma transação"
     setSelectedDate(date);
-    setDayTransactions([]);
-    setDayTotals({ revenue: 0, expense: 0, net: 0 });
+    lastFetchedDateRef.current = date;
+
+    // FIX: não reseta as transações imediatamente — mantém as anteriores até carregar as novas
+    setLoadingDay(true);
     fetchDayTransactions(date);
   }, [fetchDayTransactions]);
 
@@ -183,10 +203,7 @@ export default function Calendar() {
           const yesterdayDay = pastDays.find((d) => d.date === yesterdayStr);
 
           let target: string;
-
-          if (todayDay && ((todayDay.revenue ?? 0) > 0 || (todayDay.expense ?? 0) > 0)) {
-            target = todayStr;
-          } else if (todayDay) {
+          if (todayDay) {
             target = todayStr;
           } else if (yesterdayDay) {
             target = yesterdayStr;
@@ -195,19 +212,14 @@ export default function Calendar() {
           }
 
           setSelectedDate(target);
-          setDayTransactions([]);
-          setDayTotals({ revenue: 0, expense: 0, net: 0 });
           fetchDayTransactions(target);
         }
       } else if (_forceRefresh) {
-        setSelectedDate((prev) => {
-          if (prev) {
-            setDayTransactions([]);
-            setDayTotals({ revenue: 0, expense: 0, net: 0 });
-            fetchDayTransactions(prev);
-          }
-          return prev;
-        });
+        // FIX: no refresh, re-busca o dia selecionado sem resetar as transações
+        const currentDate = lastFetchedDateRef.current;
+        if (currentDate) {
+          fetchDayTransactions(currentDate);
+        }
       }
     } catch (err: any) {
       setError(apiErrorMessage(err));
@@ -226,8 +238,7 @@ export default function Calendar() {
         const txDate = txDateToLocal(String(detail.date));
         if (txDate.slice(0, 7) === monthKey) {
           setSelectedDate(txDate);
-          setDayTransactions([]);
-          setDayTotals({ revenue: 0, expense: 0, net: 0 });
+          lastFetchedDateRef.current = txDate;
           fetchCalendarRef.current(true);
           fetchDayTransactions(txDate);
         } else {
@@ -244,6 +255,7 @@ export default function Calendar() {
   const handlePrevMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
     shouldAutoSelectRef.current = true;
+    lastFetchedDateRef.current = '';
     setMonthKey(getMonthKey(new Date(year, month - 2, 1)));
     setSelectedDate('');
     setDayTransactions([]);
@@ -253,6 +265,7 @@ export default function Calendar() {
   const handleNextMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
     shouldAutoSelectRef.current = true;
+    lastFetchedDateRef.current = '';
     setMonthKey(getMonthKey(new Date(year, month, 1)));
     setSelectedDate('');
     setDayTransactions([]);
@@ -342,7 +355,6 @@ export default function Calendar() {
             ].map((item) => (
               <div key={item.label} className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 md:p-6 shadow-sm">
                 <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-400 truncate">
-                  {/* Show short label on mobile */}
                   <span className="sm:hidden">{item.label}</span>
                   <span className="hidden sm:inline">{item.label === 'Saldo' ? 'Saldo líquido' : item.label}</span>
                 </div>
@@ -370,7 +382,6 @@ export default function Calendar() {
                 <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.25em] text-slate-400">
                   {WEEKDAY_LABELS.map((label) => (
                     <div key={label} className="py-1 sm:py-2">
-                      {/* Short on mobile */}
                       <span className="sm:hidden">{label.charAt(0)}</span>
                       <span className="hidden sm:inline">{label}</span>
                     </div>
@@ -409,12 +420,10 @@ export default function Calendar() {
                               : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] hover:border-brand-blue/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer',
                         ].join(' ')}
                       >
-                        {/* Weekday — hidden on very small screens */}
                         <span className="hidden md:block text-[10px] uppercase tracking-[0.2em] text-slate-400">
                           {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                         </span>
 
-                        {/* Day number + today dot */}
                         <div className="flex items-center gap-1">
                           <span className={`text-sm sm:text-base md:text-xl font-semibold leading-none ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
                             {date.getDate()}
@@ -422,7 +431,6 @@ export default function Calendar() {
                           {isToday && <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
                         </div>
 
-                        {/* Amounts */}
                         {past ? (
                           <>
                             <div className="space-y-0.5 text-[10px] sm:text-xs leading-tight">
@@ -471,8 +479,9 @@ export default function Calendar() {
                 </div>
                 {selectedDate && (
                   <div className={`rounded-xl sm:rounded-2xl px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold flex-shrink-0 ${dayTotals.net >= 0
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'}`}>
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                    }`}>
                     {dayTotals.net >= 0 ? 'Positivo' : 'Negativo'}
                   </div>
                 )}
@@ -499,8 +508,9 @@ export default function Calendar() {
                 <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
                   <div className="text-[10px] sm:text-xs text-slate-400">Saldo do dia</div>
                   <div className={`mt-1 sm:mt-1.5 text-sm sm:text-base md:text-xl font-semibold break-all ${dayTotals.net >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'}`}>
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-600 dark:text-rose-400'
+                    }`}>
                     {formatCurrency(dayTotals.net)}
                   </div>
                 </div>
@@ -518,7 +528,17 @@ export default function Calendar() {
                   </div>
 
                   <div className="space-y-2 sm:space-y-3 max-h-[40vh] xl:max-h-none overflow-y-auto">
-                    {dayTransactions.length > 0 ? (
+                    {/* FIX: mostra skeleton enquanto carrega, não reseta para vazio */}
+                    {loadingDay && dayTransactions.length === 0 ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 animate-pulse">
+                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2" />
+                            <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : dayTransactions.length > 0 ? (
                       dayTransactions.map((tx) => (
                         <div key={tx.id} className="rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
                           <div className="flex items-start justify-between gap-2 sm:gap-3">
@@ -556,11 +576,9 @@ export default function Calendar() {
                       ))
                     ) : (
                       <div className="rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-4 sm:p-6 text-center text-slate-400 text-xs sm:text-sm">
-                        {loadingDay
-                          ? 'Carregando transações...'
-                          : selectedDate
-                            ? 'Nenhuma transação registrada para este dia.'
-                            : 'Selecione um dia para ver as transações.'}
+                        {selectedDate
+                          ? 'Nenhuma transação registrada para este dia.'
+                          : 'Selecione um dia para ver as transações.'}
                       </div>
                     )}
                   </div>
