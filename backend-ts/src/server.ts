@@ -18,7 +18,7 @@ import { signup } from './services/authService';
 dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  console.warn('WARNING: DATABASE_URL is not set. Configure your .env file with DATABASE_URL.');
+  console.warn('WARNING: DATABAapp.useSE_URL is not set. Configure your .env file with DATABASE_URL.');
 }
 
 const app = express();
@@ -104,7 +104,7 @@ app.post(
 
 app.use(express.json({ limit: '10mb' }));
 
-app.use('/api/auth', authRoutes);
+app.use(authRoutes);
 
 // ============================================================================
 // PLANS CONFIGURATION
