@@ -26,20 +26,6 @@ const getYesterdayStr = (): string => {
   return new Intl.DateTimeFormat('en-CA').format(d);
 };
 
-const getPrevDateStr = (dateStr: string): string => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() - 1);
-  return new Intl.DateTimeFormat('en-CA').format(dt);
-};
-
-const getNextDateStr = (dateStr: string): string => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + 1);
-  return new Intl.DateTimeFormat('en-CA').format(dt);
-};
-
 const WEEKDAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 const isPastOrToday = (raw: string): boolean => toDateStr(raw) <= getTodayStr();
@@ -61,11 +47,13 @@ interface DayTransaction {
   totalInstallments?: number;
 }
 
+// FIX: normaliza qualquer formato de data para YYYY-MM-DD local, sem converter timezone
 const txDateToLocal = (raw: string): string => {
   if (!raw) return '';
+  // já está no formato correto
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  const d = new Date(raw);
-  return new Intl.DateTimeFormat('en-CA').format(d);
+  // ISO com timezone: pega só a parte da data sem converter
+  return raw.slice(0, 10);
 };
 
 export default function Calendar() {
@@ -85,49 +73,42 @@ export default function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(new Date()));
 
-  // FIX: guarda a última data buscada para evitar race conditions
-  const lastFetchedDateRef = useRef<string>('');
+  // Controla qual é a última requisição disparada; qualquer resposta de requisição
+  // anterior é descartada silenciosamente.
+  const fetchCounterRef = useRef(0);
   const shouldAutoSelectRef = useRef(true);
   const fetchCalendarRef = useRef<(force?: boolean) => void>(() => { });
 
   const fetchDayTransactions = useCallback(async (date: string) => {
     if (!date || !user) return;
 
-    // FIX: marca qual data está sendo buscada agora
-    lastFetchedDateRef.current = date;
+    // FIX: incrementa o contador e captura o valor desta requisição
+    const myCounter = ++fetchCounterRef.current;
+
+    // FIX: mostra loading SEM limpar as transações atuais (evita flash vazio)
     setLoadingDay(true);
 
     try {
-      const prevDate = getPrevDateStr(date);
+      // FIX: busca APENAS o dia selecionado — não precisa do dia anterior
+      const res = await api.get(`/api/transactions?date=${date}&_t=${Date.now()}`);
 
-      const [resDay, resPrev] = await Promise.all([
-        api.get(`/api/transactions?date=${date}&_t=${Date.now()}`),
-        api.get(`/api/transactions?date=${prevDate}&_t=${Date.now()}`),
-      ]);
+      // FIX: ignora resultado se já foi disparada uma requisição mais recente
+      if (myCounter !== fetchCounterRef.current) return;
 
-      // FIX: se o usuário clicou em outro dia enquanto carregava, ignora esse resultado
-      if (lastFetchedDateRef.current !== date) return;
+      const raw: any[] = res.data?.transactions ?? res.data ?? [];
 
-      const fromDay: any[] = resDay.data?.transactions ?? resDay.data ?? [];
-      const fromPrev: any[] = resPrev.data?.transactions ?? resPrev.data ?? [];
-
-      const allRaw = [...fromDay, ...fromPrev];
-      const seenIds = new Set<string>();
-
-      const txs: DayTransaction[] = allRaw
+      const txs: DayTransaction[] = raw
         .map((tx: any) => ({
           ...tx,
           date: txDateToLocal(String(tx.date)),
         }))
-        .filter((tx) => {
-          if (tx.date !== date) return false;
-          if (seenIds.has(tx.id)) return false;
-          seenIds.add(tx.id);
-          return true;
-        });
+        // FIX: filtra pelo date correto (já normalizado)
+        .filter((tx) => tx.date === date)
+        // FIX: remove duplicatas por id
+        .filter((tx, idx, arr) => arr.findIndex((t) => t.id === tx.id) === idx);
 
-      // FIX: só atualiza se ainda for a data selecionada
-      if (lastFetchedDateRef.current !== date) return;
+      // FIX: só aplica se ainda for a requisição mais recente
+      if (myCounter !== fetchCounterRef.current) return;
 
       setDayTransactions(txs);
 
@@ -148,10 +129,11 @@ export default function Calendar() {
         };
       });
     } catch {
-      // silencioso — não reseta as transações em caso de erro
+      // FIX: em caso de erro, não limpa as transações — mantém o que estava sendo exibido
+      // Só reseta o loading se ainda for a requisição ativa
+      if (myCounter !== fetchCounterRef.current) return;
     } finally {
-      // FIX: só limpa loading se ainda for a mesma data
-      if (lastFetchedDateRef.current === date) {
+      if (myCounter === fetchCounterRef.current) {
         setLoadingDay(false);
       }
     }
@@ -160,12 +142,11 @@ export default function Calendar() {
   const handleSelectDate = useCallback((date: string) => {
     if (!date) return;
 
-    // FIX: atualiza a data selecionada ANTES de buscar — evita flash de "nenhuma transação"
+    // FIX: atualiza selectedDate imediatamente para feedback visual instantâneo
     setSelectedDate(date);
-    lastFetchedDateRef.current = date;
 
-    // FIX: não reseta as transações imediatamente — mantém as anteriores até carregar as novas
-    setLoadingDay(true);
+    // FIX: NÃO limpa dayTransactions aqui — o skeleton só aparece se não houver nada
+    // Isso evita o flash de "lista vazia" entre cliques
     fetchDayTransactions(date);
   }, [fetchDayTransactions]);
 
@@ -215,11 +196,14 @@ export default function Calendar() {
           fetchDayTransactions(target);
         }
       } else if (_forceRefresh) {
-        // FIX: no refresh, re-busca o dia selecionado sem resetar as transações
-        const currentDate = lastFetchedDateRef.current;
-        if (currentDate) {
-          fetchDayTransactions(currentDate);
-        }
+        // No refresh forçado, re-busca o dia selecionado sem resetar transações
+        // Usa o selectedDate via closure — se não houver dia selecionado, não faz nada
+        setSelectedDate((currentDate) => {
+          if (currentDate) {
+            fetchDayTransactions(currentDate);
+          }
+          return currentDate;
+        });
       }
     } catch (err: any) {
       setError(apiErrorMessage(err));
@@ -238,7 +222,6 @@ export default function Calendar() {
         const txDate = txDateToLocal(String(detail.date));
         if (txDate.slice(0, 7) === monthKey) {
           setSelectedDate(txDate);
-          lastFetchedDateRef.current = txDate;
           fetchCalendarRef.current(true);
           fetchDayTransactions(txDate);
         } else {
@@ -255,7 +238,7 @@ export default function Calendar() {
   const handlePrevMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
     shouldAutoSelectRef.current = true;
-    lastFetchedDateRef.current = '';
+    fetchCounterRef.current++; // FIX: cancela qualquer fetch em andamento
     setMonthKey(getMonthKey(new Date(year, month - 2, 1)));
     setSelectedDate('');
     setDayTransactions([]);
@@ -265,7 +248,7 @@ export default function Calendar() {
   const handleNextMonth = () => {
     const [year, month] = monthKey.split('-').map(Number);
     shouldAutoSelectRef.current = true;
-    lastFetchedDateRef.current = '';
+    fetchCounterRef.current++; // FIX: cancela qualquer fetch em andamento
     setMonthKey(getMonthKey(new Date(year, month, 1)));
     setSelectedDate('');
     setDayTransactions([]);
@@ -479,8 +462,8 @@ export default function Calendar() {
                 </div>
                 {selectedDate && (
                   <div className={`rounded-xl sm:rounded-2xl px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold flex-shrink-0 ${dayTotals.net >= 0
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
                     }`}>
                     {dayTotals.net >= 0 ? 'Positivo' : 'Negativo'}
                   </div>
@@ -508,8 +491,8 @@ export default function Calendar() {
                 <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
                   <div className="text-[10px] sm:text-xs text-slate-400">Saldo do dia</div>
                   <div className={`mt-1 sm:mt-1.5 text-sm sm:text-base md:text-xl font-semibold break-all ${dayTotals.net >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-rose-600 dark:text-rose-400'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-600 dark:text-rose-400'
                     }`}>
                     {formatCurrency(dayTotals.net)}
                   </div>
@@ -528,8 +511,8 @@ export default function Calendar() {
                   </div>
 
                   <div className="space-y-2 sm:space-y-3 max-h-[40vh] xl:max-h-none overflow-y-auto">
-                    {/* FIX: mostra skeleton enquanto carrega, não reseta para vazio */}
                     {loadingDay && dayTransactions.length === 0 ? (
+                      // Skeleton só aparece se não há nada para mostrar ainda
                       <div className="space-y-2">
                         {[1, 2, 3].map((i) => (
                           <div key={i} className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 animate-pulse">
