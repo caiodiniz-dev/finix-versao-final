@@ -18,16 +18,16 @@ import { signup } from './services/authService';
 dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  console.warn('WARNING: DATABAapp.useSE_URL is not set. Configure your .env file with DATABASE_URL.');
+  console.warn('WARNING: DATABASE_URL is not set. Configure your .env file.');
 }
 
 const app = express();
 const prisma = new PrismaClient();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-04-22.dahlia",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
+  : null;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
@@ -42,16 +42,14 @@ const allowedOrigins = [
 ];
 
 // ============================================================================
-// CORS - DEVE VIR PRIMEIRO, ANTES DE QUALQUER ROTA
+// CORS — deve vir ANTES de qualquer rota
 // ============================================================================
-const corsOptions = {
-  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+const corsOptions: cors.CorsOptions = {
+  origin(origin, callback) {
     // Permite requisições sem origin (mobile, Insomnia, Postman)
     if (!origin) return callback(null, true);
-
-    // Verifica origens permitidas ou terminadas com .vercel.app
-    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
-
+    const isAllowed =
+      allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -66,10 +64,15 @@ const corsOptions = {
   maxAge: 86400,
 };
 
+// FIX 1: aplica cors() globalmente
 app.use(cors(corsOptions));
 
+// FIX 2: responde imediatamente a todo preflight OPTIONS
+// Sem isso, o browser recebe 404 no preflight e bloqueia a requisição real.
+app.options('*', cors(corsOptions));
+
 // ============================================================================
-// STRIPE WEBHOOK - precisa do body RAW, antes do express.json()
+// STRIPE WEBHOOK — precisa do body RAW, antes do express.json()
 // ============================================================================
 app.post(
   '/api/stripe/webhook',
@@ -107,7 +110,7 @@ app.use(express.json({ limit: '10mb' }));
 // ============================================================================
 // HEALTH CHECK
 // ============================================================================
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -116,15 +119,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     name: 'Finix API',
     version: '1.0.0',
     status: 'running',
-    endpoints: {
-      auth: '/api/auth/login',
-      health: '/health',
-    },
+    endpoints: { auth: '/api/auth/login', health: '/health' },
   });
 });
 
@@ -202,8 +202,7 @@ export const PLANS: Record<
   BASIC: {
     id: 'BASIC',
     name: 'Finix Básico',
-    description:
-      'Para profissionais autônomos - R$10/mês (ou R$100/ano com economia de R$20)',
+    description: 'Para profissionais autônomos - R$10/mês (ou R$100/ano com economia de R$20)',
     price: 10,
     currency: 'BRL',
     monthlyPrice: 10,
@@ -262,8 +261,7 @@ export const PLANS: Record<
   PRO: {
     id: 'PRO',
     name: '🚀 Finix Pro',
-    description:
-      'Para pequenas empresas - R$35/mês (ou R$350/ano com economia de R$70)',
+    description: 'Para pequenas empresas - R$35/mês (ou R$350/ano com economia de R$70)',
     price: 35,
     currency: 'BRL',
     monthlyPrice: 35,
@@ -336,7 +334,7 @@ const authenticate = async (
     }
     (req as any).user = user;
     next();
-  } catch (err) {
+  } catch {
     res.status(401).json({ error: 'Token inválido' });
   }
 };
@@ -447,9 +445,7 @@ const toLocalDateKey = (d: Date): string => {
 const buildInstallmentSchedule = async (user: any, data: any) => {
   const plan = PLANS[user.plan] || PLANS.FREE;
   if (!plan.hasInstallments) {
-    throw new Error(
-      'Parcelamento disponível apenas no plano pago. Faça upgrade para ativar.'
-    );
+    throw new Error('Parcelamento disponível apenas no plano pago. Faça upgrade para ativar.');
   }
   if (
     plan.transactionsLimit !== -1 &&
@@ -483,15 +479,9 @@ const buildInstallmentSchedule = async (user: any, data: any) => {
     const installmentDate = new Date(data.startDate);
     installmentDate.setMonth(installmentDate.getMonth() + i);
     installmentDate.setDate(
-      getSafeDueDay(
-        installmentDate.getFullYear(),
-        installmentDate.getMonth(),
-        data.dueDay
-      )
+      getSafeDueDay(installmentDate.getFullYear(), installmentDate.getMonth(), data.dueDay)
     );
-
-    const amount =
-      i === data.installments - 1 ? perParcel + remainder : perParcel;
+    const amount = i === data.installments - 1 ? perParcel + remainder : perParcel;
     transactionsData.push({
       id: uuidv4(),
       userId: user.id,
@@ -611,6 +601,9 @@ const userPublic = (u: any) => ({
 // ============================================================================
 // AUTH
 // ============================================================================
+// FIX 3: /api/auth/register definido aqui NÃO conflita com authRoutes
+// porque authRoutes deve montar apenas /login, /me, /verify etc.
+// Se authRoutes já tem /register, REMOVA o bloco abaixo para evitar duplicação.
 app.post('/api/auth/register', authRateLimit, async (req, res) => {
   try {
     const data = registerSchema.parse(req.body);
@@ -618,7 +611,9 @@ app.post('/api/auth/register', authRateLimit, async (req, res) => {
     res.status(201).json(result);
   } catch (err: any) {
     console.error('Register error:', err);
-    if (err.name === 'ZodError') return res.status(400).json({ error: 'Dados inválidos' });
+    // FIX 4: ZodError retorna 400, não 500
+    if (err.name === 'ZodError')
+      return res.status(400).json({ error: 'Dados inválidos', details: err.errors });
     res.status(500).json({ error: err.message || 'Erro ao criar conta' });
   }
 });
@@ -629,11 +624,7 @@ app.post('/api/auth/login', async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email: data.email.toLowerCase() },
     });
-    if (
-      !user ||
-      !(await bcrypt.compare(data.password, user.passwordHash)) ||
-      user.blocked
-    ) {
+    if (!user || !(await bcrypt.compare(data.password, user.passwordHash)) || user.blocked) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
     const token = jwt.sign(
@@ -644,7 +635,8 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ user: userPublic(user), token });
   } catch (err: any) {
     console.error('Login error:', err);
-    if (err.name === 'ZodError') return res.status(400).json({ error: 'Dados inválidos' });
+    if (err.name === 'ZodError')
+      return res.status(400).json({ error: 'Dados inválidos', details: err.errors });
     res.status(500).json({ error: err.message || 'Erro ao fazer login' });
   }
 });
@@ -659,16 +651,8 @@ app.get('/api/auth/me', authenticate, (req, res) => {
 // ONBOARDING
 // ============================================================================
 const DEFAULT_CATEGORIES = [
-  'Alimentação',
-  'Transporte',
-  'Saúde',
-  'Salário',
-  'Investimento',
-  'Pagamento',
-  'Lazer',
-  'Educação',
-  'Moradia',
-  'Serviços',
+  'Alimentação', 'Transporte', 'Saúde', 'Salário', 'Investimento',
+  'Pagamento', 'Lazer', 'Educação', 'Moradia', 'Serviços',
 ];
 
 app.post('/api/onboarding', authenticate, async (req, res) => {
@@ -677,10 +661,7 @@ app.post('/api/onboarding', authenticate, async (req, res) => {
     if (user.hasCompletedOnboarding)
       return res.status(400).json({ error: 'Onboarding já completado' });
     const data = onboardingSchema.parse(req.body);
-    const updateData: any = {
-      hasCompletedOnboarding: true,
-      usageType: data.usageType,
-    };
+    const updateData: any = { hasCompletedOnboarding: true, usageType: data.usageType };
     if (data.usageType !== 'pessoal') {
       updateData.companyName = data.companyName || null;
       updateData.companyLogo = data.companyLogo || null;
@@ -692,10 +673,7 @@ app.post('/api/onboarding', authenticate, async (req, res) => {
       updateData.businessPurpose = null;
       updateData.primaryColor = null;
     }
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData,
-    });
+    const updatedUser = await prisma.user.update({ where: { id: user.id }, data: updateData });
     await prisma.category.deleteMany({ where: { userId: user.id } });
     const categoriesToCreate =
       data.categories?.length > 0 ? data.categories : DEFAULT_CATEGORIES;
@@ -707,7 +685,8 @@ app.post('/api/onboarding', authenticate, async (req, res) => {
     res.json({ user: userPublic(updatedUser) });
   } catch (err: any) {
     console.error('Onboarding error:', err);
-    if (err.name === 'ZodError') return res.status(400).json({ error: 'Dados inválidos' });
+    if (err.name === 'ZodError')
+      return res.status(400).json({ error: 'Dados inválidos', details: err.errors });
     res.status(500).json({ error: err.message || 'Erro no onboarding' });
   }
 });
@@ -716,9 +695,7 @@ app.post('/api/upload-logo', authenticate, upload.single('logo'), async (req, re
   try {
     const user = (req as any).user;
     if (user.plan !== 'PRO')
-      return res
-        .status(403)
-        .json({ error: 'Upload de logo disponível apenas para plano PRO' });
+      return res.status(403).json({ error: 'Upload de logo disponível apenas para plano PRO' });
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     const logoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     res.json({ logoUrl });
@@ -728,7 +705,7 @@ app.post('/api/upload-logo', authenticate, upload.single('logo'), async (req, re
   }
 });
 
-app.get('/api/plans', (req, res) => res.json(Object.values(PLANS)));
+app.get('/api/plans', (_req, res) => res.json(Object.values(PLANS)));
 
 app.get('/api/plans/me', authenticate, (req, res) => {
   const user = (req as any).user;
@@ -751,9 +728,7 @@ app.put('/api/categories', authenticate, async (req, res) => {
     const user = (req as any).user;
     const plan = PLANS[user.plan] || PLANS.FREE;
     if (!plan.canEditCategories)
-      return res.status(403).json({
-        error: 'Atualização de categorias disponível apenas no plano Pro',
-      });
+      return res.status(403).json({ error: 'Atualização de categorias disponível apenas no plano Pro' });
     const data = categoriesUpdateSchema.parse(req.body);
     const uniqueCategories = Array.from(
       new Set(data.categories.map((cat) => cat.trim()).filter(Boolean))
@@ -782,10 +757,7 @@ app.post('/api/categories', authenticate, async (req, res) => {
     const user = (req as any).user;
     const plan = PLANS[user.plan] || PLANS.FREE;
     if (!plan.canCreateCategories)
-      return res.status(403).json({
-        error:
-          'Criação de categorias personalizada disponível apenas no plano Pro',
-      });
+      return res.status(403).json({ error: 'Criação de categorias disponível apenas no plano Pro' });
     const data = categorySchema.parse(req.body);
     const category = await prisma.category.create({
       data: { id: uuidv4(), userId: user.id, ...data },
@@ -804,9 +776,7 @@ app.put('/api/categories/:id', authenticate, async (req, res) => {
     const user = (req as any).user;
     const plan = PLANS[user.plan] || PLANS.FREE;
     if (!plan.canEditCategories)
-      return res
-        .status(403)
-        .json({ error: 'Edição de categorias disponível apenas no plano Pro' });
+      return res.status(403).json({ error: 'Edição de categorias disponível apenas no plano Pro' });
     const data = categoryUpdateSchema.parse(req.body);
     const updated = await prisma.category.updateMany({
       where: { id: String(req.params.id), userId: user.id },
@@ -814,9 +784,7 @@ app.put('/api/categories/:id', authenticate, async (req, res) => {
     });
     if (updated.count === 0)
       return res.status(404).json({ error: 'Categoria não encontrada' });
-    const category = await prisma.category.findUnique({
-      where: { id: String(req.params.id) },
-    });
+    const category = await prisma.category.findUnique({ where: { id: String(req.params.id) } });
     res.json(category);
   } catch (err: any) {
     console.error('Update category error:', err);
@@ -831,9 +799,7 @@ app.delete('/api/categories/:id', authenticate, async (req, res) => {
     const user = (req as any).user;
     const plan = PLANS[user.plan] || PLANS.FREE;
     if (!plan.canEditCategories)
-      return res
-        .status(403)
-        .json({ error: 'Exclusão de categorias disponível apenas no plano Pro' });
+      return res.status(403).json({ error: 'Exclusão de categorias disponível apenas no plano Pro' });
     const categoryId = String(req.params.id);
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
     if (!category || category.userId !== user.id)
@@ -842,9 +808,7 @@ app.delete('/api/categories/:id', authenticate, async (req, res) => {
       where: { userId: user.id, category: category.name },
     });
     if (linked > 0)
-      return res
-        .status(400)
-        .json({ error: 'Não é possível excluir categoria vinculada a transações' });
+      return res.status(400).json({ error: 'Não é possível excluir categoria vinculada a transações' });
     await prisma.category.delete({ where: { id: categoryId } });
     res.json({ ok: true });
   } catch (err: any) {
@@ -875,8 +839,7 @@ app.get('/api/transactions', authenticate, async (req, res) => {
   const plan = PLANS[user.plan] || PLANS.FREE;
   if (!plan.canUseTransactions) {
     return res.status(403).json({
-      error:
-        'Acesso a transações não disponível no seu plano. Faça upgrade para acessar.',
+      error: 'Acesso a transações não disponível no seu plano. Faça upgrade para acessar.',
       upgrade: true,
       currentPlan: user.plan,
     });
@@ -919,18 +882,14 @@ app.post('/api/transactions', authenticate, async (req, res) => {
 
   if (!plan.canUseTransactions) {
     return res.status(403).json({
-      error:
-        'Acesso a transações não disponível no seu plano. Faça upgrade para criar movimentos.',
+      error: 'Acesso a transações não disponível no seu plano.',
       upgrade: true,
       currentPlan: user.plan,
     });
   }
-  if (
-    plan.transactionsLimit !== -1 &&
-    user.transactionsUsed >= plan.transactionsLimit
-  ) {
+  if (plan.transactionsLimit !== -1 && user.transactionsUsed >= plan.transactionsLimit) {
     return res.status(403).json({
-      error: `Limite mensal de ${plan.transactionsLimit} transações atingido. Faça upgrade do seu plano.`,
+      error: `Limite mensal de ${plan.transactionsLimit} transações atingido.`,
       upgrade: true,
       currentPlan: user.plan,
       limit: plan.transactionsLimit,
@@ -946,7 +905,7 @@ app.post('/api/transactions', authenticate, async (req, res) => {
     const existingCats = new Set(distinctCats.map((c) => c.category));
     if (!existingCats.has(data.category) && existingCats.size >= plan.categoriesLimit) {
       return res.status(403).json({
-        error: `Plano ${plan.name} permite até ${plan.categoriesLimit} categorias. Faça upgrade para criar mais.`,
+        error: `Plano ${plan.name} permite até ${plan.categoriesLimit} categorias.`,
         upgrade: true,
       });
     }
@@ -992,9 +951,7 @@ app.put('/api/transactions/:id', authenticate, async (req, res) => {
   });
   if (transaction.count === 0)
     return res.status(404).json({ error: 'Transação não encontrada' });
-  const updated = await prisma.transaction.findUnique({
-    where: { id: String(req.params.id) },
-  });
+  const updated = await prisma.transaction.findUnique({ where: { id: String(req.params.id) } });
   res.json(updated);
 });
 
@@ -1002,9 +959,7 @@ app.delete('/api/transactions/:id', authenticate, async (req, res) => {
   const user = (req as any).user;
   const { deleteGroup } = req.query;
   if (deleteGroup === 'true') {
-    const tx = await prisma.transaction.findUnique({
-      where: { id: String(req.params.id) },
-    });
+    const tx = await prisma.transaction.findUnique({ where: { id: String(req.params.id) } });
     if (tx?.installmentId) {
       await prisma.transaction.deleteMany({
         where: { installmentId: tx.installmentId, userId: user.id },
@@ -1124,24 +1079,8 @@ app.get('/api/calendar', authenticate, async (req, res) => {
         ? new Date(year, month - 1, 1)
         : new Date();
 
-    const startOfMonth = new Date(
-      selected.getFullYear(),
-      selected.getMonth(),
-      1,
-      0,
-      0,
-      0,
-      0
-    );
-    const endOfMonth = new Date(
-      selected.getFullYear(),
-      selected.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999
-    );
+    const startOfMonth = new Date(selected.getFullYear(), selected.getMonth(), 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(selected.getFullYear(), selected.getMonth() + 1, 0, 23, 59, 59, 999);
 
     const transactions = await prisma.transaction.findMany({
       where: { userId: user.id, date: { gte: startOfMonth, lte: endOfMonth } },
@@ -1152,16 +1091,10 @@ app.get('/api/calendar', authenticate, async (req, res) => {
       string,
       { revenue: number; expense: number; net: number; transactions: any[] }
     > = {};
-    const monthDays = new Date(
-      selected.getFullYear(),
-      selected.getMonth() + 1,
-      0
-    ).getDate();
+    const monthDays = new Date(selected.getFullYear(), selected.getMonth() + 1, 0).getDate();
 
     for (let day = 1; day <= monthDays; day++) {
-      const dateKey = toLocalDateKey(
-        new Date(selected.getFullYear(), selected.getMonth(), day)
-      );
+      const dateKey = toLocalDateKey(new Date(selected.getFullYear(), selected.getMonth(), day));
       dailyMap[dateKey] = { revenue: 0, expense: 0, net: 0, transactions: [] };
     }
 
@@ -1172,7 +1105,6 @@ app.get('/api/calendar', authenticate, async (req, res) => {
       if (!dailyMap[dateKey])
         dailyMap[dateKey] = { revenue: 0, expense: 0, net: 0, transactions: [] };
       const values = dailyMap[dateKey];
-
       if (tx.type === 'INCOME') {
         values.revenue += Number(tx.amount);
         monthlyTotal.revenue += Number(tx.amount);
@@ -1182,7 +1114,6 @@ app.get('/api/calendar', authenticate, async (req, res) => {
       }
       values.net = values.revenue - values.expense;
       monthlyTotal.net = monthlyTotal.revenue - monthlyTotal.expense;
-
       values.transactions.push({
         id: tx.id,
         title: tx.title,
@@ -1199,7 +1130,6 @@ app.get('/api/calendar', authenticate, async (req, res) => {
         installmentNumber: tx.installmentNumber ?? null,
         totalInstallments: tx.totalInstallments ?? null,
       });
-
       dailyMap[dateKey] = values;
     });
 
@@ -1224,10 +1154,7 @@ app.get('/api/calendar', authenticate, async (req, res) => {
 // ============================================================================
 app.get('/api/goals', authenticate, async (req, res) => {
   const user = (req as any).user;
-  const goals = await prisma.goal.findMany({
-    where: { userId: user.id },
-    orderBy: { deadline: 'asc' },
-  });
+  const goals = await prisma.goal.findMany({ where: { userId: user.id }, orderBy: { deadline: 'asc' } });
   res.json(goals);
 });
 
@@ -1243,19 +1170,14 @@ app.post('/api/goals', authenticate, async (req, res) => {
         upgrade: true,
       });
   }
-  const goal = await prisma.goal.create({
-    data: { ...data, id: uuidv4(), userId: user.id },
-  });
+  const goal = await prisma.goal.create({ data: { ...data, id: uuidv4(), userId: user.id } });
   res.json(goal);
 });
 
 app.put('/api/goals/:id', authenticate, async (req, res) => {
   const user = (req as any).user;
   const data = goalSchema.parse(req.body);
-  const goal = await prisma.goal.updateMany({
-    where: { id: String(req.params.id), userId: user.id },
-    data,
-  });
+  const goal = await prisma.goal.updateMany({ where: { id: String(req.params.id), userId: user.id }, data });
   if (goal.count === 0) return res.status(404).json({ error: 'Meta não encontrada' });
   const updated = await prisma.goal.findUnique({ where: { id: String(req.params.id) } });
   res.json(updated);
@@ -1263,9 +1185,7 @@ app.put('/api/goals/:id', authenticate, async (req, res) => {
 
 app.delete('/api/goals/:id', authenticate, async (req, res) => {
   const user = (req as any).user;
-  const deleted = await prisma.goal.deleteMany({
-    where: { id: String(req.params.id), userId: user.id },
-  });
+  const deleted = await prisma.goal.deleteMany({ where: { id: String(req.params.id), userId: user.id } });
   if (deleted.count === 0) return res.status(404).json({ error: 'Meta não encontrada' });
   res.json({ ok: true });
 });
@@ -1288,8 +1208,7 @@ app.get('/api/budgets', authenticate, async (req, res) => {
   const result = budgets.map((b) => ({
     ...b,
     spent: spentByCategory[b.category] || 0,
-    percentage:
-      b.limit > 0 ? ((spentByCategory[b.category] || 0) / b.limit) * 100 : 0,
+    percentage: b.limit > 0 ? ((spentByCategory[b.category] || 0) / b.limit) * 100 : 0,
   }));
   res.json(result);
 });
@@ -1298,9 +1217,7 @@ app.post('/api/budgets', authenticate, async (req, res) => {
   const user = (req as any).user;
   const data = budgetSchema.parse(req.body);
   try {
-    const budget = await prisma.budget.create({
-      data: { ...data, id: uuidv4(), userId: user.id },
-    });
+    const budget = await prisma.budget.create({ data: { ...data, id: uuidv4(), userId: user.id } });
     res.json(budget);
   } catch {
     res.status(400).json({ error: 'Já existe um orçamento para esta categoria' });
@@ -1310,25 +1227,16 @@ app.post('/api/budgets', authenticate, async (req, res) => {
 app.put('/api/budgets/:id', authenticate, async (req, res) => {
   const user = (req as any).user;
   const data = budgetSchema.parse(req.body);
-  const budget = await prisma.budget.updateMany({
-    where: { id: String(req.params.id), userId: user.id },
-    data,
-  });
-  if (budget.count === 0)
-    return res.status(404).json({ error: 'Orçamento não encontrado' });
-  const updated = await prisma.budget.findUnique({
-    where: { id: String(req.params.id) },
-  });
+  const budget = await prisma.budget.updateMany({ where: { id: String(req.params.id), userId: user.id }, data });
+  if (budget.count === 0) return res.status(404).json({ error: 'Orçamento não encontrado' });
+  const updated = await prisma.budget.findUnique({ where: { id: String(req.params.id) } });
   res.json(updated);
 });
 
 app.delete('/api/budgets/:id', authenticate, async (req, res) => {
   const user = (req as any).user;
-  const deleted = await prisma.budget.deleteMany({
-    where: { id: String(req.params.id), userId: user.id },
-  });
-  if (deleted.count === 0)
-    return res.status(404).json({ error: 'Orçamento não encontrado' });
+  const deleted = await prisma.budget.deleteMany({ where: { id: String(req.params.id), userId: user.id } });
+  if (deleted.count === 0) return res.status(404).json({ error: 'Orçamento não encontrado' });
   res.json({ ok: true });
 });
 
@@ -1342,19 +1250,13 @@ app.put('/api/profile', authenticate, async (req, res) => {
   if (data.name) updates.name = data.name.trim();
   if (data.photo) updates.photo = data.photo;
   if (data.newPassword) {
-    if (
-      !data.currentPassword ||
-      !(await bcrypt.compare(data.currentPassword, user.passwordHash))
-    )
+    if (!data.currentPassword || !(await bcrypt.compare(data.currentPassword, user.passwordHash)))
       return res.status(400).json({ error: 'Senha atual incorreta' });
     updates.passwordHash = await bcrypt.hash(data.newPassword, 10);
   }
   if (Object.keys(updates).length === 0)
     return res.status(400).json({ error: 'Nada para atualizar' });
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: updates,
-  });
+  const updatedUser = await prisma.user.update({ where: { id: user.id }, data: updates });
   res.json(userPublic(updatedUser));
 });
 
@@ -1366,12 +1268,8 @@ app.get('/api/dashboard', authenticate, async (req, res) => {
   const transactions = await prisma.transaction.findMany({ where: { userId: user.id } });
   const goals = await prisma.goal.findMany({ where: { userId: user.id } });
 
-  const income = transactions
-    .filter((t) => t.type === 'INCOME')
-    .reduce((s, t) => s + t.amount, 0);
-  const expense = transactions
-    .filter((t) => t.type === 'EXPENSE')
-    .reduce((s, t) => s + t.amount, 0);
+  const income = transactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const expense = transactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
   const saved = goals.reduce((s, g) => s + g.currentAmount, 0);
   const balance = income - expense - saved;
 
@@ -1402,9 +1300,7 @@ app.get('/api/dashboard', authenticate, async (req, res) => {
   const byCat: Record<string, number> = {};
   transactions
     .filter((t) => t.type === 'EXPENSE')
-    .forEach((t) => {
-      byCat[t.category] = (byCat[t.category] || 0) + t.amount;
-    });
+    .forEach((t) => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const categories = Object.entries(byCat)
     .sort((a, b) => b[1] - a[1])
     .map(([category, amount]) => ({ category, amount }));
@@ -1416,44 +1312,22 @@ app.get('/api/dashboard', authenticate, async (req, res) => {
     if (prev > 0) {
       const diff = ((cur - prev) / prev) * 100;
       if (diff > 10)
-        insights.push({
-          type: 'warning',
-          title: 'Gastos aumentaram',
-          message: `Você gastou ${diff.toFixed(0)}% a mais este mês.`,
-        });
+        insights.push({ type: 'warning', title: 'Gastos aumentaram', message: `Você gastou ${diff.toFixed(0)}% a mais este mês.` });
       else if (diff < -10)
-        insights.push({
-          type: 'success',
-          title: 'Ótimo controle',
-          message: `Você economizou ${Math.abs(diff).toFixed(0)}% em relação ao mês passado.`,
-        });
+        insights.push({ type: 'success', title: 'Ótimo controle', message: `Você economizou ${Math.abs(diff).toFixed(0)}% em relação ao mês passado.` });
     }
   }
   if (categories.length > 0) {
     const top = categories[0];
     if (expense > 0 && top.amount / expense > 0.4)
-      insights.push({
-        type: 'info',
-        title: 'Categoria dominante',
-        message: `${top.category} representa ${(top.amount / expense * 100).toFixed(0)}% dos seus gastos.`,
-      });
+      insights.push({ type: 'info', title: 'Categoria dominante', message: `${top.category} representa ${(top.amount / expense * 100).toFixed(0)}% dos seus gastos.` });
   }
   if (balance < 0)
-    insights.push({
-      type: 'warning',
-      title: 'Atenção ao saldo',
-      message: 'Suas despesas superam as receitas.',
-    });
+    insights.push({ type: 'warning', title: 'Atenção ao saldo', message: 'Suas despesas superam as receitas.' });
   else if (income > 0 && balance / income > 0.3)
-    insights.push({
-      type: 'success',
-      title: 'Você está no caminho certo',
-      message: `Economizou ${(balance / income * 100).toFixed(0)}% da sua renda.`,
-    });
+    insights.push({ type: 'success', title: 'Você está no caminho certo', message: `Economizou ${(balance / income * 100).toFixed(0)}% da sua renda.` });
 
-  const recent = transactions
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 5);
+  const recent = transactions.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
   res.json({ balance, income, expense, saved, monthly, categories, recent, insights });
 });
 
@@ -1478,10 +1352,7 @@ app.get('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   const transactions = await prisma.transaction.findMany({ where: { userId } });
   const goals = await prisma.goal.findMany({ where: { userId } });
-  const categories = await prisma.category.findMany({
-    where: { userId },
-    orderBy: { name: 'asc' },
-  });
+  const categories = await prisma.category.findMany({ where: { userId }, orderBy: { name: 'asc' } });
   res.json({ user: userPublic(user), transactions, goals, categories });
 });
 
@@ -1491,22 +1362,14 @@ app.put('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
   const targetUser = await prisma.user.findUnique({ where: { id: userId } });
   if (!targetUser) return res.status(404).json({ error: 'Usuário não encontrado' });
   const { categories, ...updateData } = data;
-  if (
-    data.plan === 'PRO' &&
-    targetUser.plan !== 'PRO' &&
-    data.hasCompletedOnboarding === undefined
-  )
+  if (data.plan === 'PRO' && targetUser.plan !== 'PRO' && data.hasCompletedOnboarding === undefined)
     updateData.hasCompletedOnboarding = false;
   const updated = await prisma.user.update({ where: { id: userId }, data: updateData });
   if (categories) {
-    const uniqueCategories = Array.from(
-      new Set(categories.map((name) => name.trim()).filter(Boolean))
-    );
+    const uniqueCategories = Array.from(new Set(categories.map((name) => name.trim()).filter(Boolean)));
     await prisma.category.deleteMany({ where: { userId } });
     if (uniqueCategories.length)
-      await prisma.category.createMany({
-        data: uniqueCategories.map((name) => ({ userId, name })),
-      });
+      await prisma.category.createMany({ data: uniqueCategories.map((name) => ({ userId, name })) });
   }
   res.json(userPublic(updated));
 });
@@ -1519,7 +1382,7 @@ app.delete('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/admin/stats', authenticate, requireAdmin, async (req, res) => {
+app.get('/api/admin/stats', authenticate, requireAdmin, async (_req, res) => {
   const totalUsers = await prisma.user.count();
   const totalAdmins = await prisma.user.count({ where: { role: 'ADMIN' } });
   const totalBlocked = await prisma.user.count({ where: { blocked: true } });
@@ -1528,29 +1391,12 @@ app.get('/api/admin/stats', authenticate, requireAdmin, async (req, res) => {
   const freeUsers = await prisma.user.count({ where: { plan: 'FREE' } });
   const basicUsers = await prisma.user.count({ where: { plan: 'BASIC' } });
   const proUsers = await prisma.user.count({ where: { plan: 'PRO' } });
-  const paidTxs = await prisma.paymentTransaction.findMany({
-    where: { paymentStatus: 'paid' },
-  });
+  const paidTxs = await prisma.paymentTransaction.findMany({ where: { paymentStatus: 'paid' } });
   const totalRevenue = paidTxs.reduce((s, t) => s + t.amount, 0);
-  const agg = await prisma.transaction.groupBy({
-    by: ['type'],
-    _sum: { amount: true },
-  });
+  const agg = await prisma.transaction.groupBy({ by: ['type'], _sum: { amount: true } });
   const income = agg.find((a) => a.type === 'INCOME')?._sum.amount || 0;
   const expense = agg.find((a) => a.type === 'EXPENSE')?._sum.amount || 0;
-  res.json({
-    totalUsers,
-    totalAdmins,
-    blockedUsers: totalBlocked,
-    totalTransactions: totalTx,
-    totalGoals,
-    globalIncome: income,
-    globalExpense: expense,
-    freeUsers,
-    basicUsers,
-    proUsers,
-    totalRevenue,
-  });
+  res.json({ totalUsers, totalAdmins, blockedUsers: totalBlocked, totalTransactions: totalTx, totalGoals, globalIncome: income, globalExpense: expense, freeUsers, basicUsers, proUsers, totalRevenue });
 });
 
 // ============================================================================
@@ -1565,16 +1411,7 @@ app.post('/api/insights/ai', authenticate, requireFeature('hasAI'), async (req, 
   const goals = await prisma.goal.findMany({ where: { userId: user.id } });
 
   if (transactions.length === 0) {
-    return res.json({
-      insights: [
-        {
-          type: 'info',
-          title: 'Sem dados suficientes',
-          message:
-            'Adicione algumas transações para receber análises personalizadas.',
-        },
-      ],
-    });
+    return res.json({ insights: [{ type: 'info', title: 'Sem dados suficientes', message: 'Adicione algumas transações para receber análises personalizadas.' }] });
   }
 
   const incomeTx = transactions.filter((t) => t.type === 'INCOME');
@@ -1584,86 +1421,37 @@ app.post('/api/insights/ai', authenticate, requireFeature('hasAI'), async (req, 
   const balance = income - expense;
   const spendRatio = income > 0 ? expense / income : 1;
   const avgExpense = expenseTx.length > 0 ? expense / expenseTx.length : 0;
-  const topCategory = expenseTx.reduce(
-    (acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const topCategory = expenseTx.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc; }, {} as Record<string, number>);
   const bestCategory = Object.entries(topCategory).sort((a, b) => b[1] - a[1])[0];
   const now = new Date();
-  const recentExpenses = expenseTx.filter(
-    (t) =>
-      (now.getTime() - new Date(t.date).getTime()) / (1000 * 60 * 60 * 24) <= 14
-  );
+  const recentExpenses = expenseTx.filter((t) => (now.getTime() - new Date(t.date).getTime()) / (1000 * 60 * 60 * 24) <= 14);
 
   const localInsights: any[] = [];
   if (income === 0)
-    localInsights.push({
-      type: 'warning',
-      title: 'Atenção, sem receita registrada',
-      message:
-        'Ainda não há nenhuma receita cadastrada. Registre sua renda para que o Finix saiba quanto você pode gastar com segurança.',
-    });
+    localInsights.push({ type: 'warning', title: 'Atenção, sem receita registrada', message: 'Ainda não há nenhuma receita cadastrada.' });
   else if (spendRatio >= 0.9)
-    localInsights.push({
-      type: 'warning',
-      title: 'Cuidado, seus gastos estão muito altos',
-      message: `Você já gastou ${(spendRatio * 100).toFixed(0)}% da sua renda registrada.`,
-    });
+    localInsights.push({ type: 'warning', title: 'Cuidado, seus gastos estão muito altos', message: `Você já gastou ${(spendRatio * 100).toFixed(0)}% da sua renda registrada.` });
   else if (spendRatio >= 0.75)
-    localInsights.push({
-      type: 'warning',
-      title: 'Atenção, a dívida do mês pode apertar',
-      message: `Seu ritmo de despesas consome ${(spendRatio * 100).toFixed(0)}% da renda.`,
-    });
+    localInsights.push({ type: 'warning', title: 'Atenção, a dívida do mês pode apertar', message: `Seu ritmo de despesas consome ${(spendRatio * 100).toFixed(0)}% da renda.` });
   else if (spendRatio >= 0.5)
-    localInsights.push({
-      type: 'info',
-      title: 'Bom controle, mas fique atento',
-      message: `Você usou ${(spendRatio * 100).toFixed(0)}% da sua renda.`,
-    });
+    localInsights.push({ type: 'info', title: 'Bom controle, mas fique atento', message: `Você usou ${(spendRatio * 100).toFixed(0)}% da sua renda.` });
   else
-    localInsights.push({
-      type: 'success',
-      title: 'Ótimo, seu orçamento está equilibrado',
-      message: `Suas despesas representam ${(spendRatio * 100).toFixed(0)}% da receita.`,
-    });
+    localInsights.push({ type: 'success', title: 'Ótimo, seu orçamento está equilibrado', message: `Suas despesas representam ${(spendRatio * 100).toFixed(0)}% da receita.` });
 
   if (bestCategory && bestCategory[1] > 0 && expense > 0) {
     const categoryRatio = (bestCategory[1] / expense) * 100;
     if (categoryRatio >= 35)
-      localInsights.push({
-        type: 'warning',
-        title: `Atenção: ${bestCategory[0]} domina seus gastos`,
-        message: `${bestCategory[0]} responde por ${categoryRatio.toFixed(0)}% das despesas.`,
-      });
+      localInsights.push({ type: 'warning', title: `Atenção: ${bestCategory[0]} domina seus gastos`, message: `${bestCategory[0]} responde por ${categoryRatio.toFixed(0)}% das despesas.` });
   }
   if (recentExpenses.length >= 3 && avgExpense > 0) {
-    const recentAvg =
-      recentExpenses.reduce((sum, t) => sum + t.amount, 0) / recentExpenses.length;
+    const recentAvg = recentExpenses.reduce((sum, t) => sum + t.amount, 0) / recentExpenses.length;
     if (recentAvg > avgExpense)
-      localInsights.push({
-        type: 'info',
-        title: 'Últimos gastos acima da média',
-        message:
-          'Nas últimas duas semanas você gastou mais do que a sua média habitual.',
-      });
+      localInsights.push({ type: 'info', title: 'Últimos gastos acima da média', message: 'Nas últimas duas semanas você gastou mais do que a sua média habitual.' });
   }
   if (balance < 0)
-    localInsights.push({
-      type: 'warning',
-      title: 'Seu saldo está negativo',
-      message: 'As despesas superam sua renda registrada.',
-    });
+    localInsights.push({ type: 'warning', title: 'Seu saldo está negativo', message: 'As despesas superam sua renda registrada.' });
   if (goals.length > 0 && spendRatio > 0.6)
-    localInsights.push({
-      type: 'info',
-      title: 'Meta em risco de atraso',
-      message:
-        'Com gastos acima de 60% da renda, pode ficar mais difícil atingir metas financeiras.',
-    });
+    localInsights.push({ type: 'info', title: 'Meta em risco de atraso', message: 'Com gastos acima de 60% da renda, pode ficar mais difícil atingir metas financeiras.' });
 
   try {
     const apiKey = process.env.EMERGENT_LLM_KEY;
@@ -1683,22 +1471,19 @@ Metas cadastradas: ${goals.length}
 Responda apenas com JSON válido no formato:
 { "insights": [{ "type": "success|warning|info", "title": "...", "message": "..." }] }`;
 
-    const response = await fetch(
-      'https://integrations.emergentagent.com/llm/v1/messages',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 800,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      }
-    );
+    const response = await fetch('https://integrations.emergentagent.com/llm/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
 
     const data = (await response.json()) as any;
     let insights: any[] = localInsights.slice(0, 4);
@@ -1707,12 +1492,9 @@ Responda apenas com JSON válido no formato:
         const jsonMatch = data.content[0].text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed?.insights && Array.isArray(parsed.insights))
-            insights = parsed.insights;
+          if (parsed?.insights && Array.isArray(parsed.insights)) insights = parsed.insights;
         }
-      } catch {
-        /* usa fallback */
-      }
+      } catch { /* usa fallback */ }
     }
     res.json({ insights });
   } catch (err) {
@@ -1726,10 +1508,7 @@ Responda apenas com JSON válido no formato:
 // ============================================================================
 app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, res) => {
   const user = (req as any).user;
-  const transactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
-    orderBy: { date: 'desc' },
-  });
+  const transactions = await prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: 'desc' } });
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   const chunks: Buffer[] = [];
   doc.on('data', (c: Buffer) => chunks.push(c));
@@ -1744,12 +1523,8 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
   doc.text(`Plano: ${PLANS[user.plan]?.name || user.plan}`);
   doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`);
   doc.moveDown();
-  const totalIncome = transactions
-    .filter((t) => t.type === 'INCOME')
-    .reduce((s, t) => s + t.amount, 0);
-  const totalExpense = transactions
-    .filter((t) => t.type === 'EXPENSE')
-    .reduce((s, t) => s + t.amount, 0);
+  const totalIncome = transactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const totalExpense = transactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
   doc.fontSize(12).fillColor('#111827').text('Resumo', { underline: true });
   doc.moveDown(0.5);
   doc.fontSize(10).text(`Total de transações: ${transactions.length}`);
@@ -1781,10 +1556,7 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
 
 app.get('/api/export/excel', authenticate, requireFeature('hasExcel'), async (req, res) => {
   const user = (req as any).user;
-  const transactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
-    orderBy: { date: 'desc' },
-  });
+  const transactions = await prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: 'desc' } });
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Transações');
   sheet.columns = [
@@ -1794,15 +1566,13 @@ app.get('/api/export/excel', authenticate, requireFeature('hasExcel'), async (re
     { header: 'Categoria', key: 'category', width: 18 },
     { header: 'Valor', key: 'amount', width: 14 },
   ];
-  sheet.addRows(
-    transactions.map((t) => ({
-      date: new Date(t.date).toLocaleDateString('pt-BR'),
-      title: t.title,
-      type: t.type,
-      category: t.category,
-      amount: t.amount,
-    }))
-  );
+  sheet.addRows(transactions.map((t) => ({
+    date: new Date(t.date).toLocaleDateString('pt-BR'),
+    title: t.title,
+    type: t.type,
+    category: t.category,
+    amount: t.amount,
+  })));
   sheet.getRow(1).font = { bold: true };
   sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
   const buffer = await workbook.xlsx.writeBuffer();
@@ -1824,8 +1594,7 @@ app.post('/internal/update-user-plan', async (req, res) => {
   if (plan) updates.plan = plan;
   if (stripeCustomerId !== undefined) updates.stripeCustomerId = stripeCustomerId;
   if (stripeSubscriptionId !== undefined) updates.stripeSubscriptionId = stripeSubscriptionId;
-  if (planExpiresAt !== undefined)
-    updates.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
+  if (planExpiresAt !== undefined) updates.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
   const user = await prisma.user.update({ where: { id: userId }, data: updates });
   res.json(userPublic(user));
 });
@@ -1835,16 +1604,7 @@ app.post('/internal/create-payment-tx', async (req, res) => {
   if (secret !== INTERNAL_SECRET) return res.status(401).json({ error: 'unauthorized' });
   const { userId, userEmail, sessionId, amount, currency, plan, metadata } = req.body;
   const tx = await prisma.paymentTransaction.create({
-    data: {
-      id: uuidv4(),
-      userId,
-      userEmail,
-      sessionId,
-      amount,
-      currency: currency || 'brl',
-      plan,
-      metadata: metadata ? JSON.stringify(metadata) : null,
-    },
+    data: { id: uuidv4(), userId, userEmail, sessionId, amount, currency: currency || 'brl', plan, metadata: metadata ? JSON.stringify(metadata) : null },
   });
   res.json(tx);
 });
@@ -1877,9 +1637,7 @@ app.get('/internal/user-by-id/:id', async (req, res) => {
 app.get('/internal/payment-tx/:sessionId', async (req, res) => {
   const secret = req.headers['x-internal-secret'];
   if (secret !== INTERNAL_SECRET) return res.status(401).json({ error: 'unauthorized' });
-  const tx = await prisma.paymentTransaction.findUnique({
-    where: { sessionId: String(req.params.sessionId) },
-  });
+  const tx = await prisma.paymentTransaction.findUnique({ where: { sessionId: String(req.params.sessionId) } });
   if (!tx) return res.status(404).json({ error: 'not found' });
   res.json(tx);
 });
@@ -1902,21 +1660,9 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
         const sessionId = `test-session-${Date.now()}`;
         await prisma.user.update({ where: { id: user.id }, data: { plan: 'TEST' } });
         await prisma.paymentTransaction.create({
-          data: {
-            userId: user.id,
-            userEmail: user.email,
-            sessionId,
-            amount: plan.price,
-            currency: 'BRL',
-            plan: plan_id,
-            paymentStatus: 'paid',
-            stripePaymentId: sessionId,
-          },
+          data: { userId: user.id, userEmail: user.email, sessionId, amount: plan.price, currency: 'BRL', plan: plan_id, paymentStatus: 'paid', stripePaymentId: sessionId },
         });
-        return res.json({
-          url: `${FRONTEND_URL}/app/dashboard?success=true&session_id=${sessionId}`,
-          sessionId,
-        });
+        return res.json({ url: `${FRONTEND_URL}/app/dashboard?success=true&session_id=${sessionId}`, sessionId });
       }
       return res.status(400).json({ error: 'Plano não configurado no Stripe' });
     }
@@ -1926,10 +1672,7 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
       customer = await stripe.customers.retrieve(user.stripeCustomerId);
     } else {
       customer = await stripe.customers.create({ email: user.email, name: user.name });
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { stripeCustomerId: customer.id },
-      });
+      await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customer.id } });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -1943,16 +1686,7 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     });
 
     await prisma.paymentTransaction.create({
-      data: {
-        userId: user.id,
-        userEmail: user.email,
-        sessionId: session.id,
-        amount: plan.price,
-        currency: 'BRL',
-        plan: plan_id,
-        paymentStatus: 'pending',
-        stripePaymentId: session.id,
-      },
+      data: { userId: user.id, userEmail: user.email, sessionId: session.id, amount: plan.price, currency: 'BRL', plan: plan_id, paymentStatus: 'pending', stripePaymentId: session.id },
     });
 
     res.json({ url: session.url, sessionId: session.id });
@@ -1978,18 +1712,14 @@ app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
   try {
     const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     const itemId = subscription.items.data[0]?.id;
-    if (!itemId)
-      return res.status(400).json({ error: 'Assinatura sem itens encontrada.' });
+    if (!itemId) return res.status(400).json({ error: 'Assinatura sem itens encontrada.' });
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
       items: [{ id: itemId, price: targetPlan.stripePriceId }],
       proration_behavior: 'always_invoice',
     });
     await prisma.user.update({ where: { id: user.id }, data: { plan: plan_id } });
     const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
-    return res.json({
-      message: `Plano alterado para ${targetPlan.name} com sucesso.`,
-      user: userPublic(updatedUser),
-    });
+    return res.json({ message: `Plano alterado para ${targetPlan.name} com sucesso.`, user: userPublic(updatedUser) });
   } catch (err: any) {
     console.error('Stripe change-plan error:', err);
     return res.status(500).json({ error: err.message || 'Erro ao alterar plano.' });
@@ -2002,13 +1732,8 @@ app.post('/api/stripe/cancel-subscription', authenticate, async (req, res) => {
   if (!user.stripeSubscriptionId)
     return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
   try {
-    await stripe.subscriptions.update(user.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null },
-    });
+    await stripe.subscriptions.update(user.stripeSubscriptionId, { cancel_at_period_end: true });
+    await prisma.user.update({ where: { id: user.id }, data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null } });
     return res.json({ message: 'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.' });
   } catch (err: any) {
     console.error('Stripe cancel subscription error:', err);
@@ -2025,10 +1750,7 @@ async function handleCheckoutCompleted(session: any) {
   });
   const planExpiresAt = new Date();
   planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
-  await prisma.user.update({
-    where: { id: userId },
-    data: { plan, stripeSubscriptionId: session.subscription, planExpiresAt },
-  });
+  await prisma.user.update({ where: { id: userId }, data: { plan, stripeSubscriptionId: session.subscription, planExpiresAt } });
 }
 
 async function handleInvoicePaymentSucceeded(invoice: any) {
@@ -2046,26 +1768,16 @@ async function handleSubscriptionDeleted(subscription: any) {
   const customer = await stripe!.customers.retrieve(subscription.customer);
   const user = await prisma.user.findFirst({ where: { stripeCustomerId: (customer as any).id } });
   if (user)
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null },
-    });
+    await prisma.user.update({ where: { id: user.id }, data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null } });
 }
 
 // ============================================================================
-// HEALTH
+// ERROR HANDLER GLOBAL
 // ============================================================================
-app.get('/', (req, res) =>
-  res.json({ app: 'Finix TS', status: 'ok', version: '2.0' })
-);
-
-app.get('/api/health', (req, res) =>
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
-);
-
 app.use(
   (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('Error:', err);
+    console.error('[ERROR]', err);
+    // FIX 4: ZodError nunca vira 500
     if (err.name === 'ZodError')
       return res.status(400).json({ error: 'Dados inválidos', details: err.errors });
     res.status(500).json({ error: err.message || 'Erro interno' });
@@ -2073,7 +1785,7 @@ app.use(
 );
 
 // ============================================================================
-// SEED
+// SEED + START
 // ============================================================================
 const seedData = async () => {
   const adminEmail = process.env.ADMIN_EMAIL || 'finixappp@gmail.com';
@@ -2095,7 +1807,7 @@ const seedData = async () => {
         transactionsMonth: currentMonthKey(),
       },
     });
-    console.log(`✅ Admin criado: ${adminEmail} / Admin@123`);
+    console.log(`✅ Admin criado: ${adminEmail}`);
   } else {
     const updateData: any = {};
     if (admin.role !== 'ADMIN') updateData.role = 'ADMIN';
@@ -2119,15 +1831,14 @@ app.listen(PORT, async () => {
 ║  Finix TS Backend                      ║
 ║  Rodando na porta ${PORT}                 ║
 ║  Environment: ${process.env.NODE_ENV || 'development'}           ║
-║  Database: ${process.env.DATABASE_URL?.split('@')[1] || 'não configurado'}  ║
 ╚════════════════════════════════════════╝
   `);
   console.log('[SERVER] CORS Origins:', allowedOrigins);
   console.log('[SERVER] Frontend URL:', FRONTEND_URL);
   console.log('[SERVER] JWT Secret configurado:', !!process.env.JWT_SECRET);
   console.log('[SERVER] Database URL configurado:', !!process.env.DATABASE_URL);
+  console.log('[SERVER] Stripe configurado:', !!process.env.STRIPE_SECRET_KEY);
 
   await seedData();
-
   console.log('[SERVER] ✅ Servidor pronto para requisições');
 });
