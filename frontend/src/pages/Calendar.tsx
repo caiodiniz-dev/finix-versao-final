@@ -26,7 +26,6 @@ const getYesterdayStr = (): string => {
   return new Intl.DateTimeFormat('en-CA').format(d);
 };
 
-// Retorna YYYY-MM-DD do dia anterior a uma data
 const getPrevDateStr = (dateStr: string): string => {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
@@ -34,7 +33,6 @@ const getPrevDateStr = (dateStr: string): string => {
   return new Intl.DateTimeFormat('en-CA').format(dt);
 };
 
-// Retorna YYYY-MM-DD do dia seguinte a uma data
 const getNextDateStr = (dateStr: string): string => {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
@@ -63,16 +61,9 @@ interface DayTransaction {
   totalInstallments?: number;
 }
 
-// ─── Normaliza a data de uma transação para o fuso local do browser ──────────
-// O servidor salva new Date("2026-05-09") como UTC 00:00Z, que em UTC-3 é
-// 2026-05-08T21:00:00. O banco retorna esse valor, e tx.date vem como
-// "2026-05-08T21:00:00.000Z". Para exibir corretamente precisamos converter
-// esse ISO para a data LOCAL do browser, não cortar cegamente os 10 primeiros chars.
 const txDateToLocal = (raw: string): string => {
   if (!raw) return '';
-  // Se já é só YYYY-MM-DD, usa direto
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  // ISO com timezone → converte para local
   const d = new Date(raw);
   return new Intl.DateTimeFormat('en-CA').format(d);
 };
@@ -97,17 +88,12 @@ export default function Calendar() {
   const shouldAutoSelectRef = useRef(true);
   const fetchCalendarRef = useRef<(force?: boolean) => void>(() => { });
 
-  // ─── Busca transações do dia ─────────────────────────────────────────────
-  // ESTRATÉGIA: busca o dia pedido + o dia anterior (que é onde o servidor
-  // pode ter salvo por causa do UTC shift). Depois filtra localmente pelo
-  // dia correto usando a data convertida para o fuso do browser.
   const fetchDayTransactions = useCallback(async (date: string) => {
     if (!date || !user) return;
     setLoadingDay(true);
     try {
       const prevDate = getPrevDateStr(date);
 
-      // Busca os dois dias em paralelo
       const [resDay, resPrev] = await Promise.all([
         api.get(`/api/transactions?date=${date}&_t=${Date.now()}`),
         api.get(`/api/transactions?date=${prevDate}&_t=${Date.now()}`),
@@ -116,17 +102,14 @@ export default function Calendar() {
       const fromDay: any[] = resDay.data?.transactions ?? resDay.data ?? [];
       const fromPrev: any[] = resPrev.data?.transactions ?? resPrev.data ?? [];
 
-      // Junta e normaliza, convertendo a data de cada tx para o fuso local
       const allRaw = [...fromDay, ...fromPrev];
       const seenIds = new Set<string>();
 
       const txs: DayTransaction[] = allRaw
         .map((tx: any) => ({
           ...tx,
-          // ← aqui está o fix: usa o fuso local do browser, não corte cego
           date: txDateToLocal(String(tx.date)),
         }))
-        // Filtra só as que pertencem ao dia selecionado (após conversão local)
         .filter((tx) => {
           if (tx.date !== date) return false;
           if (seenIds.has(tx.id)) return false;
@@ -140,7 +123,6 @@ export default function Calendar() {
       const expense = txs.filter(t => t.type === 'EXPENSE').reduce((a, t) => a + t.amount, 0);
       setDayTotals({ revenue, expense, net: revenue - expense });
 
-      // Mantém o grid sincronizado
       setCalendar((prev) => {
         if (!prev) return prev;
         return {
@@ -167,7 +149,6 @@ export default function Calendar() {
     fetchDayTransactions(date);
   }, [fetchDayTransactions]);
 
-  // ─── Busca dados do mês ───────────────────────────────────────────────────
   const fetchCalendar = useCallback(async (_forceRefresh = false) => {
     if (!user) return;
     setLoading(true);
@@ -176,8 +157,6 @@ export default function Calendar() {
       const res = await api.get(`/api/calendar?month=${monthKey}&_t=${Date.now()}`);
       const data: CalendarData = res.data;
 
-      // O calendário do servidor já usa toLocalDateKey (new Date(tx.date) convertido
-      // para local no servidor). Então o dailySummary já vem com datas corretas.
       const normalized: CalendarData = {
         ...data,
         dailySummary: (data.dailySummary as any[]).map((d) => ({
@@ -244,7 +223,6 @@ export default function Calendar() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { date?: string } | undefined;
       if (detail?.date) {
-        // Converte a data do evento para local (pode vir como ISO UTC)
         const txDate = txDateToLocal(String(detail.date));
         if (txDate.slice(0, 7) === monthKey) {
           setSelectedDate(txDate);
@@ -316,24 +294,25 @@ export default function Calendar() {
   }, [calendar, monthKey]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
             Calendário Financeiro
           </h1>
-          <p className="mt-2 text-sm md:text-base text-slate-500 dark:text-slate-400">
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-slate-500 dark:text-slate-400">
             Visualize receitas, despesas e saldo diário com navegação mensal.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-3 py-2 shadow-sm">
-          <button onClick={handlePrevMonth} className="btn-ghost rounded-full p-2">
+        <div className="inline-flex self-start sm:self-auto items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-3 py-2 shadow-sm">
+          <button onClick={handlePrevMonth} className="btn-ghost rounded-full p-1.5 sm:p-2">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <span className="font-semibold capitalize text-slate-800 dark:text-slate-100">
+          <span className="font-semibold capitalize text-sm sm:text-base text-slate-800 dark:text-slate-100">
             {currentMonthLabel}
           </span>
-          <button onClick={handleNextMonth} className="btn-ghost rounded-full p-2">
+          <button onClick={handleNextMonth} className="btn-ghost rounded-full p-1.5 sm:p-2">
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -350,44 +329,62 @@ export default function Calendar() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
+          {/* Monthly totals */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
               { label: 'Receita', value: monthlyTotals.revenue, color: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Despesa', value: monthlyTotals.expense, color: 'text-rose-600 dark:text-rose-400' },
               {
-                label: 'Saldo líquido',
+                label: 'Saldo',
                 value: monthlyTotals.net,
                 color: monthlyTotals.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
               },
             ].map((item) => (
-              <div key={item.label} className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 md:p-6 shadow-sm">
-                <div className="text-xs md:text-sm uppercase tracking-[0.3em] text-slate-400">{item.label}</div>
-                <div className={`mt-3 text-2xl md:text-3xl font-bold ${item.color}`}>{formatCurrency(item.value)}</div>
-                {isCurrentMonth && <p className="mt-1 text-xs text-slate-400">Acumulado até hoje</p>}
+              <div key={item.label} className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 md:p-6 shadow-sm">
+                <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-400 truncate">
+                  {/* Show short label on mobile */}
+                  <span className="sm:hidden">{item.label}</span>
+                  <span className="hidden sm:inline">{item.label === 'Saldo' ? 'Saldo líquido' : item.label}</span>
+                </div>
+                <div className={`mt-2 text-sm sm:text-base md:text-2xl lg:text-3xl font-bold ${item.color} break-all`}>
+                  {formatCurrency(item.value)}
+                </div>
+                {isCurrentMonth && (
+                  <p className="mt-1 text-[10px] sm:text-xs text-slate-400 hidden sm:block">Acumulado até hoje</p>
+                )}
               </div>
             ))}
           </div>
 
+          {/* Main grid: calendar + day detail */}
           <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
-            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
+            {/* Calendar grid */}
+            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 shadow-sm">
               {loading && (
                 <div className="mb-3 flex items-center gap-2 text-xs text-slate-400">
                   <Loader2 className="h-3 w-3 animate-spin" /> Atualizando...
                 </div>
               )}
-              <div className="grid gap-2">
-                <div className="grid grid-cols-7 gap-2 text-center text-[11px] uppercase tracking-[0.25em] text-slate-400">
+              <div className="grid gap-1 sm:gap-2">
+                {/* Weekday labels */}
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.25em] text-slate-400">
                   {WEEKDAY_LABELS.map((label) => (
-                    <div key={label} className="py-2">{label}</div>
+                    <div key={label} className="py-1 sm:py-2">
+                      {/* Short on mobile */}
+                      <span className="sm:hidden">{label.charAt(0)}</span>
+                      <span className="hidden sm:inline">{label}</span>
+                    </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+
+                {/* Day cells */}
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {calendarGridDays.map((day, index) => {
                     if (!day) {
                       return (
                         <div
                           key={`empty-${index}`}
-                          className="min-h-[98px] rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20"
+                          className="min-h-[60px] sm:min-h-[80px] md:min-h-[98px] rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20"
                         />
                       );
                     }
@@ -404,7 +401,7 @@ export default function Calendar() {
                         disabled={!past}
                         title={!past ? 'Dados disponíveis somente após o dia ocorrer' : undefined}
                         className={[
-                          'group flex flex-col gap-2 rounded-3xl border p-2 md:p-3 text-left transition-all min-h-[120px] md:min-h-[98px]',
+                          'group flex flex-col gap-1 sm:gap-2 rounded-xl sm:rounded-2xl md:rounded-3xl border p-1.5 sm:p-2 md:p-3 text-left transition-all min-h-[60px] sm:min-h-[80px] md:min-h-[98px]',
                           !past
                             ? 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 opacity-35 cursor-not-allowed'
                             : isActive
@@ -412,60 +409,68 @@ export default function Calendar() {
                               : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] hover:border-brand-blue/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer',
                         ].join(' ')}
                       >
-                        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        {/* Weekday — hidden on very small screens */}
+                        <span className="hidden md:block text-[10px] uppercase tracking-[0.2em] text-slate-400">
                           {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                         </span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-lg md:text-xl font-semibold ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
+
+                        {/* Day number + today dot */}
+                        <div className="flex items-center gap-1">
+                          <span className={`text-sm sm:text-base md:text-xl font-semibold leading-none ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
                             {date.getDate()}
                           </span>
-                          {isToday && <span className="h-1.5 w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
+                          {isToday && <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
                         </div>
+
+                        {/* Amounts */}
                         {past ? (
                           <>
-                            <div className="space-y-0.5 text-xs md:text-sm">
+                            <div className="space-y-0.5 text-[10px] sm:text-xs leading-tight">
                               {(day.revenue ?? 0) > 0 && (
-                                <div className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                  +{formatCurrency(day.revenue)}
+                                <div className="text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                                  +{new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(day.revenue)}
                                 </div>
                               )}
                               {(day.expense ?? 0) > 0 && (
-                                <div className="text-rose-600 dark:text-rose-400 font-medium">
-                                  -{formatCurrency(day.expense)}
+                                <div className="text-rose-600 dark:text-rose-400 font-medium truncate">
+                                  -{new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(day.expense)}
                                 </div>
                               )}
                               {(day.revenue ?? 0) === 0 && (day.expense ?? 0) === 0 && (
-                                <div className="text-slate-300 dark:text-slate-600 text-xs">—</div>
+                                <div className="text-slate-300 dark:text-slate-600 text-[10px]">—</div>
                               )}
                             </div>
-                            <div className={`mt-auto h-1.5 rounded-full ${(day.net ?? 0) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                            <div className={`mt-auto h-1 sm:h-1.5 rounded-full ${(day.net ?? 0) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                           </>
                         ) : (
-                          <div className="mt-auto h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50" />
+                          <div className="mt-auto h-1 sm:h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50" />
                         )}
                       </button>
                     );
                   })}
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap items-center gap-4 px-1 text-xs text-slate-400">
+
+              {/* Legend */}
+              <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-3 sm:gap-4 px-1 text-[10px] sm:text-xs text-slate-400">
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Receita</span>
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-400" /> Despesa</span>
                 <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-blue" /> Hoje</span>
-                <span className="flex items-center gap-1.5 opacity-50"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" /> Dias futuros</span>
+                <span className="flex items-center gap-1.5 opacity-50"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" /> Futuros</span>
               </div>
             </div>
 
-            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4 md:p-6 shadow-sm">
+            {/* Day detail panel */}
+            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 md:p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Detalhes do dia</p>
-                  <h2 className="mt-2 text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-slate-400">Detalhes do dia</p>
+                  <h2 className="mt-1 sm:mt-2 text-base sm:text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
                     {selectedDate ? dateBR(selectedDate) : 'Selecione um dia'}
                   </h2>
                 </div>
                 {selectedDate && (
-                  <div className={`rounded-2xl px-3 py-1 text-sm font-semibold ${dayTotals.net >= 0
+                  <div className={`rounded-xl sm:rounded-2xl px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold flex-shrink-0 ${dayTotals.net >= 0
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                     : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'}`}>
                     {dayTotals.net >= 0 ? 'Positivo' : 'Negativo'}
@@ -473,68 +478,74 @@ export default function Calendar() {
                 )}
               </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
-                    <div className="text-xs text-slate-400">Receita</div>
-                    <div className="mt-1.5 text-lg md:text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+              <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+                {/* Revenue / Expense mini cards */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
+                    <div className="text-[10px] sm:text-xs text-slate-400">Receita</div>
+                    <div className="mt-1 sm:mt-1.5 text-sm sm:text-base md:text-lg font-semibold text-emerald-600 dark:text-emerald-400 break-all">
                       {formatCurrency(dayTotals.revenue)}
                     </div>
                   </div>
-                  <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
-                    <div className="text-xs text-slate-400">Despesa</div>
-                    <div className="mt-1.5 text-lg md:text-xl font-semibold text-rose-600 dark:text-rose-400">
+                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
+                    <div className="text-[10px] sm:text-xs text-slate-400">Despesa</div>
+                    <div className="mt-1 sm:mt-1.5 text-sm sm:text-base md:text-lg font-semibold text-rose-600 dark:text-rose-400 break-all">
                       {formatCurrency(dayTotals.expense)}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
-                  <div className="text-xs text-slate-400">Saldo do dia</div>
-                  <div className={`mt-1.5 text-xl md:text-2xl font-semibold ${dayTotals.net >= 0
+                {/* Net balance */}
+                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
+                  <div className="text-[10px] sm:text-xs text-slate-400">Saldo do dia</div>
+                  <div className={`mt-1 sm:mt-1.5 text-sm sm:text-base md:text-xl font-semibold break-all ${dayTotals.net >= 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-rose-600 dark:text-rose-400'}`}>
                     {formatCurrency(dayTotals.net)}
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-4">
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">Transações</p>
+                {/* Transactions list */}
+                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+                    <p className="font-semibold text-sm sm:text-base text-slate-800 dark:text-slate-100">Transações</p>
                     <div className="flex items-center gap-2">
                       {loadingDay && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
-                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-500">
+                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] sm:text-xs text-slate-500">
                         {dayTransactions.length} itens
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-3">
+
+                  <div className="space-y-2 sm:space-y-3 max-h-[40vh] xl:max-h-none overflow-y-auto">
                     {dayTransactions.length > 0 ? (
                       dayTransactions.map((tx) => (
-                        <div key={tx.id} className="rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 md:p-4">
-                          <div className="flex items-start justify-between gap-4">
+                        <div key={tx.id} className="rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
+                          <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-sm md:text-base">{tx.title}</p>
-                              <p className="text-xs text-slate-400 mt-1">
+                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-xs sm:text-sm md:text-base">{tx.title}</p>
+                              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">
                                 {tx.category}
                                 {tx.paymentMethod && <> · {tx.paymentMethod}</>}
                                 {' · '}{dateBR(tx.date)}
                               </p>
                               {tx.description && (
-                                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{tx.description}</p>
+                                <p className="mt-1 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">{tx.description}</p>
                               )}
-                              {tx.recurring && (
-                                <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                                  🔁 {tx.recurringFrequency || 'recorrente'}
-                                </span>
-                              )}
-                              {tx.installmentGroupId && (tx.totalInstallments ?? 0) > 1 && (
-                                <span className="inline-flex items-center gap-1 mt-1.5 ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                                  {tx.installmentNumber}/{tx.totalInstallments}x
-                                </span>
-                              )}
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {tx.recurring && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                                    🔁 {tx.recurringFrequency || 'recorrente'}
+                                  </span>
+                                )}
+                                {tx.installmentGroupId && (tx.totalInstallments ?? 0) > 1 && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                    {tx.installmentNumber}/{tx.totalInstallments}x
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className={`font-bold whitespace-nowrap flex-shrink-0 text-right text-sm md:text-base ${tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <div className={`font-bold whitespace-nowrap flex-shrink-0 text-right text-xs sm:text-sm md:text-base ${tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                               <div>{tx.type === 'INCOME' ? '+' : '-'}{currency(tx.amount)}</div>
                               {tx.currency && tx.currency !== 'BRL' && (
                                 <div className="text-[10px] text-slate-400 font-normal">{tx.currency}</div>
@@ -544,7 +555,7 @@ export default function Calendar() {
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-6 text-center text-slate-400 text-sm">
+                      <div className="rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-4 sm:p-6 text-center text-slate-400 text-xs sm:text-sm">
                         {loadingDay
                           ? 'Carregando transações...'
                           : selectedDate

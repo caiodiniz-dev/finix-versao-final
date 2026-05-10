@@ -28,9 +28,9 @@ const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
 // ── Stripe: inicializa apenas se a chave estiver configurada ─────────────────
-const stripe = process.env.STRIPE_SECRET_KEY
-    ? new stripe_1.default(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
-    : null;
+const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-04-22.dahlia",
+});
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixapp.vercel.app';
@@ -941,7 +941,7 @@ app.post('/api/alerts/read', authenticate, (_req, res) => {
 // ============================================================================
 // CALENDAR
 // ============================================================================
-app.get('/api/calendar', authenticate, requireFeature('hasCalendar'), async (req, res) => {
+app.get('/api/calendar', authenticate, async (req, res) => {
     try {
         const user = req.user;
         const monthParam = String(req.query.month || '');

@@ -1070,7 +1070,7 @@ app.post('/api/alerts/read', authenticate, (_req, res) => {
 // ============================================================================
 // CALENDAR
 // ============================================================================
-app.get('/api/calendar', authenticate, requireFeature('hasCalendar'), async (req, res) => {
+app.get('/api/calendar', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
     const monthParam = String(req.query.month || '');
