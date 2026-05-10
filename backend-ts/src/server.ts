@@ -364,19 +364,19 @@ type PlanFeature =
 
 const requireFeature =
   (feature: PlanFeature) =>
-    (req: express.Request, res: express.Response, next: express.NextFunction) => {
-      const user = (req as any).user;
-      const plan = PLANS[user.plan] || PLANS.FREE;
-      if (!plan[feature]) {
-        return res.status(403).json({
-          error: 'Recurso não disponível no seu plano',
-          requiredFeature: feature,
-          currentPlan: user.plan,
-          upgrade: true,
-        });
-      }
-      next();
-    };
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const user = (req as any).user;
+    const plan = PLANS[user.plan] || PLANS.FREE;
+    if (!plan[feature]) {
+      return res.status(403).json({
+        error: 'Recurso não disponível no seu plano',
+        requiredFeature: feature,
+        currentPlan: user.plan,
+        upgrade: true,
+      });
+    }
+    next();
+  };
 
 // ============================================================================
 // SCHEMAS
