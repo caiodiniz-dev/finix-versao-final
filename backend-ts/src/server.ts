@@ -33,8 +33,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixapp.vercel.app';
 
-const corsOrigins = [
-  process.env.FRONTEND_URL || 'https://finixapp.vercel.app',
+const allowedOrigins = [
   'https://finixapp.vercel.app',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -45,13 +44,29 @@ const corsOrigins = [
 // ============================================================================
 // CORS - DEVE VIR PRIMEIRO, ANTES DE QUALQUER ROTA
 // ============================================================================
-app.use(
-  cors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Permite requisições sem origin (mobile, Insomnia, Postman)
+    if (!origin) return callback(null, true);
+
+    // Verifica origens permitidas ou terminadas com .vercel.app
+    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Origin bloqueada: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400,
+};
+
+app.use(cors(corsOptions));
 
 // ============================================================================
 // STRIPE WEBHOOK - precisa do body RAW, antes do express.json()
