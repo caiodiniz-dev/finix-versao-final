@@ -25,7 +25,6 @@ const app = express();
 const prisma = new PrismaClient();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ── Stripe: inicializa apenas se a chave estiver configurada ─────────────────
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-04-22.dahlia",
 });
@@ -43,7 +42,20 @@ const corsOrigins = [
   'http://127.0.0.1:5173',
 ];
 
-// ── IMPORTANTE: webhook precisa do body RAW, antes do express.json() ─────────
+// ============================================================================
+// CORS - DEVE VIR PRIMEIRO, ANTES DE QUALQUER ROTA
+// ============================================================================
+app.use(
+  cors({
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  })
+);
+
+// ============================================================================
+// STRIPE WEBHOOK - precisa do body RAW, antes do express.json()
+// ============================================================================
 app.post(
   '/api/stripe/webhook',
   express.raw({ type: 'application/json' }),
@@ -75,13 +87,6 @@ app.post(
   }
 );
 
-app.use(
-  cors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-  })
-);
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
@@ -1696,10 +1701,7 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
   });
   doc.fontSize(22).fillColor('#1f2937').text('Relatório Finix - Transações', { align: 'left' });
   doc.moveDown();
-  doc
-    .fontSize(10)
-    .fillColor('#4b5563')
-    .text(`Usuário: ${user.name} (${user.email})`);
+  doc.fontSize(10).fillColor('#4b5563').text(`Usuário: ${user.name} (${user.email})`);
   doc.text(`Plano: ${PLANS[user.plan]?.name || user.plan}`);
   doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`);
   doc.moveDown();
@@ -1727,10 +1729,7 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
   doc.moveDown(0.5);
   transactions.forEach((t) => {
     const y = doc.y;
-    doc.text(new Date(t.date).toLocaleDateString('pt-BR'), 40, y, {
-      width: 80,
-      continued: true,
-    });
+    doc.text(new Date(t.date).toLocaleDateString('pt-BR'), 40, y, { width: 80, continued: true });
     doc.text(t.title, 130, y, { width: 150, continued: true });
     doc.text(t.type, 290, y, { width: 80, continued: true });
     doc.text(t.category, 370, y, { width: 120, continued: true });
@@ -1768,14 +1767,8 @@ app.get('/api/export/excel', authenticate, requireFeature('hasExcel'), async (re
   sheet.getRow(1).font = { bold: true };
   sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
   const buffer = await workbook.xlsx.writeBuffer();
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader(
-    'Content-Disposition',
-    'attachment; filename="finix-transacoes.xlsx"'
-  );
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="finix-transacoes.xlsx"');
   res.send(Buffer.from(buffer));
 });
 
@@ -1787,13 +1780,11 @@ const INTERNAL_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 app.post('/internal/update-user-plan', async (req, res) => {
   const secret = req.headers['x-internal-secret'];
   if (secret !== INTERNAL_SECRET) return res.status(401).json({ error: 'unauthorized' });
-  const { userId, plan, stripeCustomerId, stripeSubscriptionId, planExpiresAt } =
-    req.body;
+  const { userId, plan, stripeCustomerId, stripeSubscriptionId, planExpiresAt } = req.body;
   const updates: any = {};
   if (plan) updates.plan = plan;
   if (stripeCustomerId !== undefined) updates.stripeCustomerId = stripeCustomerId;
-  if (stripeSubscriptionId !== undefined)
-    updates.stripeSubscriptionId = stripeSubscriptionId;
+  if (stripeSubscriptionId !== undefined) updates.stripeSubscriptionId = stripeSubscriptionId;
   if (planExpiresAt !== undefined)
     updates.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
   const user = await prisma.user.update({ where: { id: userId }, data: updates });
@@ -1857,8 +1848,6 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
 // ============================================================================
 // STRIPE
 // ============================================================================
-
-// ── POST /api/stripe/checkout ────────────────────────────────────────────────
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe não configurado' });
   try {
@@ -1897,10 +1886,7 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     if (user.stripeCustomerId) {
       customer = await stripe.customers.retrieve(user.stripeCustomerId);
     } else {
-      customer = await stripe.customers.create({
-        email: user.email,
-        name: user.name,
-      });
+      customer = await stripe.customers.create({ email: user.email, name: user.name });
       await prisma.user.update({
         where: { id: user.id },
         data: { stripeCustomerId: customer.id },
@@ -1937,53 +1923,29 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /api/stripe/change-plan ─────────────────────────────────────────────
-// Downgrade Pro → Basic (ou upgrade Basic → Pro) sem novo checkout
 app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe não configurado' });
-
   const user = (req as any).user;
   const { plan_id } = req.body;
-
   if (!['BASIC', 'PRO'].includes(plan_id))
     return res.status(400).json({ error: 'Plano inválido para mudança direta.' });
-
   if (plan_id === user.plan)
     return res.status(400).json({ error: 'Você já está neste plano.' });
-
   if (!user.stripeSubscriptionId)
-    return res
-      .status(400)
-      .json({ error: 'Nenhuma assinatura ativa encontrada. Faça upgrade via checkout.' });
-
+    return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada. Faça upgrade via checkout.' });
   const targetPlan = PLANS[plan_id];
   if (!targetPlan?.stripePriceId)
     return res.status(400).json({ error: 'Plano de destino não configurado no Stripe.' });
-
   try {
-    // Busca a assinatura atual para pegar o item ID
-    const subscription = await stripe.subscriptions.retrieve(
-      user.stripeSubscriptionId
-    );
+    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     const itemId = subscription.items.data[0]?.id;
-
     if (!itemId)
-      return res
-        .status(400)
-        .json({ error: 'Assinatura sem itens encontrada.' });
-
-    // Troca o price (downgrade ou upgrade) com prorateamento
+      return res.status(400).json({ error: 'Assinatura sem itens encontrada.' });
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
       items: [{ id: itemId, price: targetPlan.stripePriceId }],
       proration_behavior: 'always_invoice',
     });
-
-    // Atualiza o plano no banco
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { plan: plan_id },
-    });
-
+    await prisma.user.update({ where: { id: user.id }, data: { plan: plan_id } });
     const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
     return res.json({
       message: `Plano alterado para ${targetPlan.name} com sucesso.`,
@@ -1995,54 +1957,32 @@ app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /api/stripe/cancel-subscription ─────────────────────────────────────
 app.post('/api/stripe/cancel-subscription', authenticate, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe não configurado' });
-
   const user = (req as any).user;
-
   if (!user.stripeSubscriptionId)
-    return res
-      .status(400)
-      .json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
-
+    return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
   try {
-    // Cancela ao fim do período atual (o usuário não perde acesso imediatamente)
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
-
-    // Reverte para FREE no banco imediatamente
     await prisma.user.update({
       where: { id: user.id },
       data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null },
     });
-
-    return res.json({
-      message:
-        'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.',
-    });
+    return res.json({ message: 'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.' });
   } catch (err: any) {
     console.error('Stripe cancel subscription error:', err);
-    return res
-      .status(500)
-      .json({ error: err.message || 'Erro ao cancelar a assinatura' });
+    return res.status(500).json({ error: err.message || 'Erro ao cancelar a assinatura' });
   }
 });
-
-// ── POST /api/stripe/webhook ──────────────────────────────────────────────────
-// (já registrado no topo do arquivo, antes do express.json())
 
 async function handleCheckoutCompleted(session: any) {
   const userId = session.metadata.userId;
   const plan = session.metadata.plan;
   await prisma.paymentTransaction.updateMany({
     where: { sessionId: session.id },
-    data: {
-      paymentStatus: 'paid',
-      status: 'completed',
-      stripePaymentId: session.payment_intent,
-    },
+    data: { paymentStatus: 'paid', status: 'completed', stripePaymentId: session.payment_intent },
   });
   const planExpiresAt = new Date();
   planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
@@ -2054,12 +1994,8 @@ async function handleCheckoutCompleted(session: any) {
 
 async function handleInvoicePaymentSucceeded(invoice: any) {
   const subscription = await stripe!.subscriptions.retrieve(invoice.subscription);
-  const customer = await stripe!.customers.retrieve(
-    subscription.customer as string
-  );
-  const user = await prisma.user.findFirst({
-    where: { stripeCustomerId: (customer as any).id },
-  });
+  const customer = await stripe!.customers.retrieve(subscription.customer as string);
+  const user = await prisma.user.findFirst({ where: { stripeCustomerId: (customer as any).id } });
   if (user) {
     const planExpiresAt = new Date();
     planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
@@ -2069,9 +2005,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
 
 async function handleSubscriptionDeleted(subscription: any) {
   const customer = await stripe!.customers.retrieve(subscription.customer);
-  const user = await prisma.user.findFirst({
-    where: { stripeCustomerId: (customer as any).id },
-  });
+  const user = await prisma.user.findFirst({ where: { stripeCustomerId: (customer as any).id } });
   if (user)
     await prisma.user.update({
       where: { id: user.id },
@@ -2091,12 +2025,7 @@ app.get('/api/health', (req, res) =>
 );
 
 app.use(
-  (
-    err: any,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction
-  ) => {
+  (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Error:', err);
     if (err.name === 'ZodError')
       return res.status(400).json({ error: 'Dados inválidos', details: err.errors });
@@ -2110,9 +2039,7 @@ app.use(
 const seedData = async () => {
   const adminEmail = process.env.ADMIN_EMAIL || 'finixappp@gmail.com';
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-  await prisma.user.deleteMany({
-    where: { role: 'ADMIN', email: { not: adminEmail } },
-  });
+  await prisma.user.deleteMany({ where: { role: 'ADMIN', email: { not: adminEmail } } });
   const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!admin) {
     await prisma.user.create({
