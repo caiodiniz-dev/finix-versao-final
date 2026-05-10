@@ -4,14 +4,19 @@ exports.getMeController = exports.loginController = exports.resendCodeController
 const authService_1 = require("../services/authService");
 const signupController = async (req, res) => {
     try {
+        console.log('[AUTH] Signup request:', { email: req.body.email });
         const { email, password, name } = req.body;
         if (!email || !password || !name) {
+            console.warn('[AUTH] Signup failed: missing required fields');
             return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' });
         }
+        console.log('[AUTH] Creating user:', email);
         const result = await (0, authService_1.signup)(email, password, name);
+        console.log('[AUTH] Signup successful for:', email);
         res.status(201).json(result);
     }
     catch (error) {
+        console.error('[AUTH] Signup error:', error.message);
         res.status(400).json({ error: error.message });
     }
 };
@@ -46,14 +51,19 @@ const resendCodeController = async (req, res) => {
 exports.resendCodeController = resendCodeController;
 const loginController = async (req, res) => {
     try {
+        console.log('[AUTH] Login request:', { email: req.body.email, method: req.method, path: req.path });
         const { email, password } = req.body;
         if (!email || !password) {
+            console.warn('[AUTH] Login failed: missing email or password');
             return res.status(400).json({ error: 'Email e senha são obrigatórios' });
         }
+        console.log('[AUTH] Attempting login for:', email);
         const result = await (0, authService_1.login)(email, password);
+        console.log('[AUTH] Login successful for:', email);
         res.json(result);
     }
     catch (error) {
+        console.error('[AUTH] Login error:', error.message);
         res.status(400).json({ error: error.message });
     }
 };

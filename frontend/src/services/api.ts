@@ -15,12 +15,27 @@ api.interceptors.request.use((config: any) => {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('[API Request]', config.method?.toUpperCase(), config.url, {
+    hasAuth: !!token,
+    timestamp: new Date().toISOString(),
+  });
   return config;
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    console.log('[API Response]', res.status, res.config.url, {
+      dataSize: JSON.stringify(res.data).length,
+      timestamp: new Date().toISOString(),
+    });
+    return res;
+  },
   (err) => {
+    console.error('[API Error]', err.response?.status, err.config?.url, {
+      message: err.message,
+      data: err.response?.data,
+      timestamp: new Date().toISOString(),
+    });
     if (err?.response?.status === 401) {
       localStorage.removeItem('finix_token');
       sessionStorage.removeItem('finix_token');

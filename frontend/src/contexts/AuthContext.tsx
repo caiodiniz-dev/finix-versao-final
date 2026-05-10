@@ -42,16 +42,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string, remember = true) => {
     try {
+      console.log('[AuthContext] Starting login request for:', email);
       const { data } = await api.post('/api/auth/login', { email, password });
+      console.log('[AuthContext] Login response received:', { userId: data.user?.id, verified: data.user?.isVerified });
       const storage = remember ? localStorage : sessionStorage;
       storage.setItem('finix_token', data.token);
       setUser(data.user);
 
       // Check if user is verified
       if (!data.user.isVerified) {
+        console.warn('[AuthContext] User email not verified');
         throw new Error('E-mail não verificado. Verifique seu e-mail antes de continuar.');
       }
-    } catch (e) { throw new Error(apiErrorMessage(e)); }
+      console.log('[AuthContext] Login completed successfully');
+    } catch (e) {
+      console.error('[AuthContext] Login error:', e);
+      throw new Error(apiErrorMessage(e));
+    }
   };
 
   const register = async (name: string, email: string, password: string): Promise<{ userId: string; message: string }> => {

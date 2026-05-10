@@ -24,11 +24,15 @@ export default function Login() {
 
   const onSubmit = async (data: Form) => {
     try {
+      console.log('[LOGIN] Attempting login with email:', data.email);
       await login(data.email, data.password, remember);
+      console.log('[LOGIN] Login successful');
       toast.success('Bem-vindo de volta!');
       nav('/app/dashboard');
     } catch (e: any) {
-      toast.error(e.message || 'Falha ao entrar');
+      const errorMsg = e.message || 'Falha ao entrar';
+      console.error('[LOGIN] Login failed:', errorMsg);
+      toast.error(errorMsg);
     }
   };
 

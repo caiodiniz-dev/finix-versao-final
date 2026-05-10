@@ -4,15 +4,20 @@ import { AuthRequest } from '../middlewares/auth';
 
 export const signupController = async (req: Request, res: Response) => {
   try {
+    console.log('[AUTH] Signup request:', { email: req.body.email });
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
+      console.warn('[AUTH] Signup failed: missing required fields');
       return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' });
     }
 
+    console.log('[AUTH] Creating user:', email);
     const result = await signup(email, password, name);
+    console.log('[AUTH] Signup successful for:', email);
     res.status(201).json(result);
   } catch (error: any) {
+    console.error('[AUTH] Signup error:', error.message);
     res.status(400).json({ error: error.message });
   }
 };
@@ -49,15 +54,21 @@ export const resendCodeController = async (req: Request, res: Response) => {
 
 export const loginController = async (req: Request, res: Response) => {
   try {
+    console.log('[AUTH] Login request:', { email: req.body.email, method: req.method, path: req.path });
+
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.warn('[AUTH] Login failed: missing email or password');
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
+    console.log('[AUTH] Attempting login for:', email);
     const result = await login(email, password);
+    console.log('[AUTH] Login successful for:', email);
     res.json(result);
   } catch (error: any) {
+    console.error('[AUTH] Login error:', error.message);
     res.status(400).json({ error: error.message });
   }
 };

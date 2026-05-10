@@ -10,17 +10,21 @@ const authRateLimit = (req, res, next) => {
     const entry = rateStore.get(key);
     if (!entry) {
         rateStore.set(key, { count: 1, firstRequestAt: now });
+        console.log('[RateLimit] New request from:', key);
         return next();
     }
     if (now - entry.firstRequestAt > WINDOW_MS) {
         rateStore.set(key, { count: 1, firstRequestAt: now });
+        console.log('[RateLimit] Window reset for:', key);
         return next();
     }
     if (entry.count >= MAX_REQUESTS) {
+        console.warn('[RateLimit] Rate limit exceeded for:', key, 'count:', entry.count);
         return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em alguns instantes.' });
     }
     entry.count += 1;
     rateStore.set(key, entry);
+    console.log('[RateLimit] Request count for', key, ':', entry.count);
     next();
 };
 exports.authRateLimit = authRateLimit;

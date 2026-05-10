@@ -104,7 +104,31 @@ app.post(
 
 app.use(express.json({ limit: '10mb' }));
 
-app.use(authRoutes);
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Finix API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/auth/login',
+      health: '/health',
+    },
+  });
+});
+
+app.use('/api/auth', authRoutes);
 
 // ============================================================================
 // PLANS CONFIGURATION
@@ -2090,6 +2114,20 @@ const seedData = async () => {
 
 const PORT = Number(process.env.PORT) || 8000;
 app.listen(PORT, async () => {
-  console.log(`Finix TS backend rodando na porta ${PORT}`);
+  console.log(`
+╔════════════════════════════════════════╗
+║  Finix TS Backend                      ║
+║  Rodando na porta ${PORT}                 ║
+║  Environment: ${process.env.NODE_ENV || 'development'}           ║
+║  Database: ${process.env.DATABASE_URL?.split('@')[1] || 'não configurado'}  ║
+╚════════════════════════════════════════╝
+  `);
+  console.log('[SERVER] CORS Origins:', allowedOrigins);
+  console.log('[SERVER] Frontend URL:', FRONTEND_URL);
+  console.log('[SERVER] JWT Secret configurado:', !!process.env.JWT_SECRET);
+  console.log('[SERVER] Database URL configurado:', !!process.env.DATABASE_URL);
+
   await seedData();
+
+  console.log('[SERVER] ✅ Servidor pronto para requisições');
 });

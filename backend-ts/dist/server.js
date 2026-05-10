@@ -22,27 +22,52 @@ const rateLimit_1 = require("./middlewares/rateLimit");
 const authService_1 = require("./services/authService");
 dotenv_1.default.config();
 if (!process.env.DATABASE_URL) {
-    console.warn('WARNING: DATABASE_URL is not set. Configure your .env file with DATABASE_URL.');
+    console.warn('WARNING: DATABAapp.useSE_URL is not set. Configure your .env file with DATABASE_URL.');
 }
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
-// ── Stripe: inicializa apenas se a chave estiver configurada ─────────────────
 const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2026-04-22.dahlia",
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'finix-dev-secret';
 const JWT_EXPIRES_IN = '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://finixapp.vercel.app';
-const corsOrigins = [
-    process.env.FRONTEND_URL || 'https://finixapp.vercel.app',
+const allowedOrigins = [
     'https://finixapp.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ];
-// ── IMPORTANTE: webhook precisa do body RAW, antes do express.json() ─────────
+// ============================================================================
+// CORS - DEVE VIR PRIMEIRO, ANTES DE QUALQUER ROTA
+// ============================================================================
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Permite requisições sem origin (mobile, Insomnia, Postman)
+        if (!origin)
+            return callback(null, true);
+        // Verifica origens permitidas ou terminadas com .vercel.app
+        const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+        if (isAllowed) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`[CORS] Origin bloqueada: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400,
+};
+app.use((0, cors_1.default)(corsOptions));
+// ============================================================================
+// STRIPE WEBHOOK - precisa do body RAW, antes do express.json()
+// ============================================================================
 app.post('/api/stripe/webhook', express_1.default.raw({ type: 'application/json' }), async (req, res) => {
     if (!stripe)
         return res.status(500).json({ error: 'Stripe não configurado' });
@@ -71,12 +96,29 @@ app.post('/api/stripe/webhook', express_1.default.raw({ type: 'application/json'
     }
     res.json({ received: true });
 });
-app.use((0, cors_1.default)({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-}));
 app.use(express_1.default.json({ limit: '10mb' }));
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+    });
+});
+app.get('/', (req, res) => {
+    res.json({
+        name: 'Finix API',
+        version: '1.0.0',
+        status: 'running',
+        endpoints: {
+            auth: '/api/auth/login',
+            health: '/health',
+        },
+    });
+});
 app.use('/api/auth', authRoutes_1.default);
 // ============================================================================
 // PLANS CONFIGURATION
@@ -1492,10 +1534,7 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
     });
     doc.fontSize(22).fillColor('#1f2937').text('Relatório Finix - Transações', { align: 'left' });
     doc.moveDown();
-    doc
-        .fontSize(10)
-        .fillColor('#4b5563')
-        .text(`Usuário: ${user.name} (${user.email})`);
+    doc.fontSize(10).fillColor('#4b5563').text(`Usuário: ${user.name} (${user.email})`);
     doc.text(`Plano: ${exports.PLANS[user.plan]?.name || user.plan}`);
     doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`);
     doc.moveDown();
@@ -1523,10 +1562,7 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
     doc.moveDown(0.5);
     transactions.forEach((t) => {
         const y = doc.y;
-        doc.text(new Date(t.date).toLocaleDateString('pt-BR'), 40, y, {
-            width: 80,
-            continued: true,
-        });
+        doc.text(new Date(t.date).toLocaleDateString('pt-BR'), 40, y, { width: 80, continued: true });
         doc.text(t.title, 130, y, { width: 150, continued: true });
         doc.text(t.type, 290, y, { width: 80, continued: true });
         doc.text(t.category, 370, y, { width: 120, continued: true });
@@ -1647,7 +1683,6 @@ app.get('/internal/payment-tx/:sessionId', async (req, res) => {
 // ============================================================================
 // STRIPE
 // ============================================================================
-// ── POST /api/stripe/checkout ────────────────────────────────────────────────
 app.post('/api/stripe/checkout', authenticate, async (req, res) => {
     if (!stripe)
         return res.status(500).json({ error: 'Stripe não configurado' });
@@ -1687,10 +1722,7 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
             customer = await stripe.customers.retrieve(user.stripeCustomerId);
         }
         else {
-            customer = await stripe.customers.create({
-                email: user.email,
-                name: user.name,
-            });
+            customer = await stripe.customers.create({ email: user.email, name: user.name });
             await prisma.user.update({
                 where: { id: user.id },
                 data: { stripeCustomerId: customer.id },
@@ -1724,8 +1756,6 @@ app.post('/api/stripe/checkout', authenticate, async (req, res) => {
         res.status(500).json({ error: err.message || 'Erro ao criar checkout' });
     }
 });
-// ── POST /api/stripe/change-plan ─────────────────────────────────────────────
-// Downgrade Pro → Basic (ou upgrade Basic → Pro) sem novo checkout
 app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
     if (!stripe)
         return res.status(500).json({ error: 'Stripe não configurado' });
@@ -1736,30 +1766,20 @@ app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
     if (plan_id === user.plan)
         return res.status(400).json({ error: 'Você já está neste plano.' });
     if (!user.stripeSubscriptionId)
-        return res
-            .status(400)
-            .json({ error: 'Nenhuma assinatura ativa encontrada. Faça upgrade via checkout.' });
+        return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada. Faça upgrade via checkout.' });
     const targetPlan = exports.PLANS[plan_id];
     if (!targetPlan?.stripePriceId)
         return res.status(400).json({ error: 'Plano de destino não configurado no Stripe.' });
     try {
-        // Busca a assinatura atual para pegar o item ID
         const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
         const itemId = subscription.items.data[0]?.id;
         if (!itemId)
-            return res
-                .status(400)
-                .json({ error: 'Assinatura sem itens encontrada.' });
-        // Troca o price (downgrade ou upgrade) com prorateamento
+            return res.status(400).json({ error: 'Assinatura sem itens encontrada.' });
         await stripe.subscriptions.update(user.stripeSubscriptionId, {
             items: [{ id: itemId, price: targetPlan.stripePriceId }],
             proration_behavior: 'always_invoice',
         });
-        // Atualiza o plano no banco
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { plan: plan_id },
-        });
+        await prisma.user.update({ where: { id: user.id }, data: { plan: plan_id } });
         const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
         return res.json({
             message: `Plano alterado para ${targetPlan.name} com sucesso.`,
@@ -1771,48 +1791,33 @@ app.post('/api/stripe/change-plan', authenticate, async (req, res) => {
         return res.status(500).json({ error: err.message || 'Erro ao alterar plano.' });
     }
 });
-// ── POST /api/stripe/cancel-subscription ─────────────────────────────────────
 app.post('/api/stripe/cancel-subscription', authenticate, async (req, res) => {
     if (!stripe)
         return res.status(500).json({ error: 'Stripe não configurado' });
     const user = req.user;
     if (!user.stripeSubscriptionId)
-        return res
-            .status(400)
-            .json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
+        return res.status(400).json({ error: 'Nenhuma assinatura ativa encontrada para cancelar.' });
     try {
-        // Cancela ao fim do período atual (o usuário não perde acesso imediatamente)
         await stripe.subscriptions.update(user.stripeSubscriptionId, {
             cancel_at_period_end: true,
         });
-        // Reverte para FREE no banco imediatamente
         await prisma.user.update({
             where: { id: user.id },
             data: { plan: 'FREE', stripeSubscriptionId: null, planExpiresAt: null },
         });
-        return res.json({
-            message: 'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.',
-        });
+        return res.json({ message: 'Assinatura cancelada. Seu plano foi revertido para o plano gratuito.' });
     }
     catch (err) {
         console.error('Stripe cancel subscription error:', err);
-        return res
-            .status(500)
-            .json({ error: err.message || 'Erro ao cancelar a assinatura' });
+        return res.status(500).json({ error: err.message || 'Erro ao cancelar a assinatura' });
     }
 });
-// ── POST /api/stripe/webhook ──────────────────────────────────────────────────
-// (já registrado no topo do arquivo, antes do express.json())
 async function handleCheckoutCompleted(session) {
     const userId = session.metadata.userId;
     const plan = session.metadata.plan;
     await prisma.paymentTransaction.updateMany({
         where: { sessionId: session.id },
-        data: {
-            paymentStatus: 'paid',
-            status: 'completed',
-            stripePaymentId: session.payment_intent,
-        },
+        data: { paymentStatus: 'paid', status: 'completed', stripePaymentId: session.payment_intent },
     });
     const planExpiresAt = new Date();
     planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
@@ -1824,9 +1829,7 @@ async function handleCheckoutCompleted(session) {
 async function handleInvoicePaymentSucceeded(invoice) {
     const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
     const customer = await stripe.customers.retrieve(subscription.customer);
-    const user = await prisma.user.findFirst({
-        where: { stripeCustomerId: customer.id },
-    });
+    const user = await prisma.user.findFirst({ where: { stripeCustomerId: customer.id } });
     if (user) {
         const planExpiresAt = new Date();
         planExpiresAt.setMonth(planExpiresAt.getMonth() + 1);
@@ -1835,9 +1838,7 @@ async function handleInvoicePaymentSucceeded(invoice) {
 }
 async function handleSubscriptionDeleted(subscription) {
     const customer = await stripe.customers.retrieve(subscription.customer);
-    const user = await prisma.user.findFirst({
-        where: { stripeCustomerId: customer.id },
-    });
+    const user = await prisma.user.findFirst({ where: { stripeCustomerId: customer.id } });
     if (user)
         await prisma.user.update({
             where: { id: user.id },
@@ -1861,9 +1862,7 @@ app.use((err, _req, res, _next) => {
 const seedData = async () => {
     const adminEmail = process.env.ADMIN_EMAIL || 'finixappp@gmail.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-    await prisma.user.deleteMany({
-        where: { role: 'ADMIN', email: { not: adminEmail } },
-    });
+    await prisma.user.deleteMany({ where: { role: 'ADMIN', email: { not: adminEmail } } });
     const admin = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (!admin) {
         await prisma.user.create({
@@ -1905,6 +1904,18 @@ const seedData = async () => {
 };
 const PORT = Number(process.env.PORT) || 8000;
 app.listen(PORT, async () => {
-    console.log(`Finix TS backend rodando na porta ${PORT}`);
+    console.log(`
+╔════════════════════════════════════════╗
+║  Finix TS Backend                      ║
+║  Rodando na porta ${PORT}                 ║
+║  Environment: ${process.env.NODE_ENV || 'development'}           ║
+║  Database: ${process.env.DATABASE_URL?.split('@')[1] || 'não configurado'}  ║
+╚════════════════════════════════════════╝
+  `);
+    console.log('[SERVER] CORS Origins:', allowedOrigins);
+    console.log('[SERVER] Frontend URL:', FRONTEND_URL);
+    console.log('[SERVER] JWT Secret configurado:', !!process.env.JWT_SECRET);
+    console.log('[SERVER] Database URL configurado:', !!process.env.DATABASE_URL);
     await seedData();
+    console.log('[SERVER] ✅ Servidor pronto para requisições');
 });
