@@ -189,10 +189,11 @@ export const sendVerificationEmail = async (email: string, code: string) => {
   try {
     const html = getVerificationTemplate(code);
 
-    // Primeiro tente Resend (se configurado). Se falhar, tente SMTP/Gmail como fallback.
+    // Primeiro tenta Resend, depois SMTP/Gmail como fallback.
     let lastError: any = null;
     if (resend) {
       try {
+        console.log('[EMAIL] Enviando via Resend para:', email);
         await resend.emails.send({
           from: EMAIL_FROM,
           to: email,
@@ -204,33 +205,43 @@ export const sendVerificationEmail = async (email: string, code: string) => {
       } catch (err) {
         console.error('⚠️ Falha ao enviar via Resend, tentando SMTP fallback:', err);
         lastError = err;
-        // continua para tentar SMTP abaixo
       }
     }
 
     if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
       const isGmail = SMTP_USER?.toLowerCase().includes('@gmail.com') || SMTP_HOST.includes('gmail');
-      const transporterOptions: any = {
+      const baseOptions: any = {
         auth: {
           user: SMTP_USER,
           pass: SMTP_PASS,
         },
       };
+      const smtpOptions = isGmail
+        ? {
+          ...baseOptions,
+          service: 'gmail',
+          host: SMTP_HOST,
+          port: SMTP_PORT,
+          secure: SMTP_PORT === 465,
+          tls: { rejectUnauthorized: false },
+        }
+        : {
+          ...baseOptions,
+          host: SMTP_HOST,
+          port: SMTP_PORT,
+          secure: SMTP_PORT === 465,
+        };
 
-      if (isGmail) {
-        transporterOptions.service = 'gmail';
-        transporterOptions.port = SMTP_PORT;
-        transporterOptions.secure = SMTP_PORT === 465;
-        transporterOptions.tls = { rejectUnauthorized: false };
-      } else {
-        transporterOptions.host = SMTP_HOST;
-        transporterOptions.port = SMTP_PORT;
-        transporterOptions.secure = SMTP_PORT === 465;
-      }
-
-      const transporter = nodemailer.createTransport(transporterOptions);
+      const transporter = nodemailer.createTransport(smtpOptions);
 
       try {
+        console.log('[EMAIL] Enviando via SMTP para:', email, {
+          host: SMTP_HOST,
+          port: SMTP_PORT,
+          secure: SMTP_PORT === 465,
+          service: isGmail ? 'gmail' : undefined,
+        });
+        await transporter.verify();
         await transporter.sendMail({
           from: EMAIL_FROM,
           to: email,
@@ -242,6 +253,35 @@ export const sendVerificationEmail = async (email: string, code: string) => {
       } catch (err) {
         console.error('❌ Falha ao enviar via SMTP:', err);
         lastError = lastError || err;
+
+        if (isGmail && SMTP_PORT === 465) {
+          console.log('[EMAIL] Tentando fallback Gmail via porta 587');
+          const fallbackTransporter = nodemailer.createTransport({
+            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: SMTP_USER,
+              pass: SMTP_PASS,
+            },
+            tls: { rejectUnauthorized: false },
+          });
+          try {
+            await fallbackTransporter.verify();
+            await fallbackTransporter.sendMail({
+              from: EMAIL_FROM,
+              to: email,
+              subject: '🔐 Seu código de verificação – Finix',
+              html,
+            });
+            console.log('✅ E-mail enviado via SMTP fallback porta 587 para:', email);
+            return;
+          } catch (fallbackErr) {
+            console.error('❌ Falha no fallback SMTP 587:', fallbackErr);
+            lastError = lastError || fallbackErr;
+          }
+        }
       }
     }
 
@@ -250,10 +290,10 @@ export const sendVerificationEmail = async (email: string, code: string) => {
     }
 
     throw new Error(
-      'Serviço de e-mail não configurado. Defina RESEND_API_KEY ou configuração SMTP (SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS).'
+      'Serviço de e-mail não configurado. Defina RESEND_API_KEY ou SMTP_USER/GMAIL_USER + SMTP_PASS/GMAIL_APP_PASSWORD.'
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erro ao enviar e-mail:', error);
-    throw new Error('Erro ao enviar e-mail de verificação.');
+    throw new Error(error?.message || 'Erro ao enviar e-mail de verificação.');
   }
 };

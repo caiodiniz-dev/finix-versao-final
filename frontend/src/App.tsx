@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
@@ -74,13 +74,20 @@ function Home() {
 export default function App() {
   const [dark, setDark] = React.useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return localStorage.getItem('finix_theme') === 'dark';
+    const saved = localStorage.getItem('finix_theme');
+    return saved === 'dark';
   });
 
-  React.useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof document === 'undefined') return;
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('finix_theme', dark ? 'dark' : 'light');
+    const html = document.documentElement;
+    if (dark) {
+      html.classList.add('dark');
+      localStorage.setItem('finix_theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      localStorage.setItem('finix_theme', 'light');
+    }
   }, [dark]);
 
   return (
