@@ -1,6 +1,12 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Finix <onboarding@finix.app>';
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
 
 const getVerificationTemplate = (code: string) => {
   return `<!DOCTYPE html>
@@ -181,13 +187,43 @@ const getVerificationTemplate = (code: string) => {
 
 export const sendVerificationEmail = async (email: string, code: string) => {
   try {
-    await resend.emails.send({
-      from: 'Finix <onboarding@resend.dev>',
-      to: email,
-      subject: '🔐 Seu código de verificação – Finix',
-      html: getVerificationTemplate(code),
-    });
-    console.log('✅ E-mail enviado com sucesso para:', email);
+    const html = getVerificationTemplate(code);
+
+    if (resend) {
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: email,
+        subject: '🔐 Seu código de verificação – Finix',
+        html,
+      });
+      console.log('✅ E-mail enviado com sucesso para:', email);
+      return;
+    }
+
+    if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        secure: SMTP_PORT === 465,
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: EMAIL_FROM,
+        to: email,
+        subject: '🔐 Seu código de verificação – Finix',
+        html,
+      });
+      console.log('✅ E-mail enviado via SMTP para:', email);
+      return;
+    }
+
+    throw new Error(
+      'Serviço de e-mail não configurado. Defina RESEND_API_KEY ou configuração SMTP (SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS).'
+    );
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail:', error);
     throw new Error('Erro ao enviar e-mail de verificação.');

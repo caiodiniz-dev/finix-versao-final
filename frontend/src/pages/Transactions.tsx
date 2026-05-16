@@ -388,45 +388,45 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"
         data-testid="tx-modal"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold text-slate-100">{editing ? 'Editar transação' : 'Nova transação'}</h2>
+          <h2 className="font-display text-xl font-bold text-slate-900 dark:text-slate-100">{editing ? 'Editar transação' : 'Nova transação'}</h2>
           <button onClick={onClose} className="btn-ghost !p-2"><X className="w-4 h-4" /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-3" data-testid="tx-form">
           <div>
             <label className="text-sm font-medium text-slate-300">Título</label>
-            <input {...register('title')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-title" />
+            <input {...register('title')} className="input mt-1" data-testid="tx-title" />
             {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-300">Valor (R$)</label>
-              <input type="number" step="0.01" {...register('amount')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-amount" />
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Valor (R$)</label>
+              <input type="number" step="0.01" {...register('amount')} className="input mt-1" data-testid="tx-amount" />
               {errors.amount && <p className="text-xs text-red-400 mt-1">{errors.amount.message}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-slate-300">Data</label>
-              <input type="date" {...register('date')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-date" />
+              <input type="date" {...register('date')} className="input mt-1" data-testid="tx-date" />
               {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date.message}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-300">Tipo</label>
-              <select {...register('type')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-type">
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Tipo</label>
+              <select {...register('type')} className="input mt-1" data-testid="tx-type">
                 <option value="EXPENSE">Despesa</option>
                 <option value="INCOME">Receita</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-300">Categoria</label>
-              <select {...register('category')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-category" disabled={transactionCategories.length === 0}>
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Categoria</label>
+              <select {...register('category')} className="input mt-1" data-testid="tx-category" disabled={transactionCategories.length === 0}>
                 {transactionCategories.length === 0
                   ? <option value="">Configure categorias no onboarding</option>
                   : transactionCategories.map((c) => <option key={c} value={c}>{c}</option>)
@@ -446,16 +446,16 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-300">Método de Pagamento</label>
-              <select {...register('paymentMethod')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-payment-method">
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Método de Pagamento</label>
+              <select {...register('paymentMethod')} className="input mt-1" data-testid="tx-payment-method">
                 <option value="pix">PIX</option>
                 <option value="debito">Débito</option>
                 <option value="credito">Crédito</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-300">Moeda</label>
-              <select {...register('currency')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-currency">
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Moeda</label>
+              <select {...register('currency')} className="input mt-1" data-testid="tx-currency">
                 <option value="BRL">Real (BRL)</option>
                 <option value="USD">Dólar (USD)</option>
                 <option value="EUR">Euro (EUR)</option>
@@ -466,24 +466,24 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
           {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium text-slate-300">Parcelas</label>
-              <input type="number" min="1" max="60" {...register('installments')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-installments" />
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Parcelas</label>
+              <input type="number" min="1" max="60" {...register('installments')} className="input mt-1" data-testid="tx-installments" />
               {errors.installments && <p className="text-xs text-red-400 mt-1">{errors.installments.message}</p>}
-              <p className="text-xs text-slate-500 mt-1">Aparece como 1 linha com progresso "Pago X de N".</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Aparece como 1 linha com progresso "Pago X de N".</p>
             </div>
           )}
 
           {/* Data limite de pagamento — só para crédito */}
           {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">
                 Data limite de pagamento
-                <span className="ml-1 text-slate-500 font-normal">(opcional)</span>
+                <span className="ml-1 text-slate-500 dark:text-slate-400 font-normal">(opcional)</span>
               </label>
               <input
                 type="date"
                 {...register('dueDate')}
-                className="input mt-1 bg-slate-800 border-slate-700 text-slate-100"
+                className="input mt-1"
                 data-testid="tx-due-date"
               />
               <p className="text-xs text-slate-500 mt-1">
@@ -505,7 +505,7 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
             </div>
           )}
 
-          <div className="rounded-xl bg-slate-800 p-3">
+          <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -519,8 +519,8 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
             </label>
             {isRec && (
               <div className="mt-2">
-                <label className="text-xs text-slate-500">Frequência</label>
-                <select {...register('recurringFrequency')} className="input mt-1 bg-slate-700 border-slate-600 text-slate-100" data-testid="tx-recurring-frequency" defaultValue={editing?.recurringFrequency || 'monthly'}>
+                <label className="text-xs text-slate-500 dark:text-slate-400">Frequência</label>
+                <select {...register('recurringFrequency')} className="input mt-1" data-testid="tx-recurring-frequency" defaultValue={editing?.recurringFrequency || 'monthly'}>
                   <option value="monthly">Mensal</option>
                   <option value="weekly">Semanal</option>
                   <option value="yearly">Anual</option>
@@ -530,8 +530,8 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-300">Descrição (opcional)</label>
-            <textarea {...register('description')} rows={2} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" data-testid="tx-description" />
+            <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Descrição (opcional)</label>
+            <textarea {...register('description')} rows={2} className="input mt-1" data-testid="tx-description" />
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

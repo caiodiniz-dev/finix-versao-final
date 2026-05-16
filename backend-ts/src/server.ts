@@ -1519,40 +1519,75 @@ app.get('/api/export/pdf', authenticate, requireFeature('hasPDF'), async (req, r
     res.setHeader('Content-Disposition', 'attachment; filename="finix-relatorio.pdf"');
     res.send(Buffer.concat(chunks));
   });
-  doc.fontSize(22).fillColor('#1f2937').text('Relatório Finix - Transações', { align: 'left' });
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#4b5563').text(`Usuário: ${user.name} (${user.email})`);
-  doc.text(`Plano: ${PLANS[user.plan]?.name || user.plan}`);
-  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`);
-  doc.moveDown();
+
   const totalIncome = transactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-  doc.fontSize(12).fillColor('#111827').text('Resumo', { underline: true });
-  doc.moveDown(0.5);
-  doc.fontSize(10).text(`Total de transações: ${transactions.length}`);
-  doc.text(`Receitas: R$ ${totalIncome.toFixed(2)}`);
-  doc.text(`Despesas: R$ ${totalExpense.toFixed(2)}`);
-  doc.moveDown();
-  doc.fontSize(12).text('Transações', { underline: true });
-  doc.moveDown(0.5);
-  const tableTop = doc.y;
-  doc.fontSize(10).fillColor('#111827');
-  doc.text('Data', 40, tableTop, { width: 80, continued: true });
-  doc.text('Título', 130, tableTop, { width: 150, continued: true });
-  doc.text('Tipo', 290, tableTop, { width: 80, continued: true });
-  doc.text('Categoria', 370, tableTop, { width: 120, continued: true });
-  doc.text('Valor', 490, tableTop, { width: 90, align: 'right' });
-  doc.moveDown(0.5);
-  transactions.forEach((t) => {
+  const totalNet = totalIncome - totalExpense;
+
+  doc.font('Helvetica-Bold').fontSize(22).fillColor('#111827').text('Relatório Finix — Transações', { align: 'left' });
+  doc.moveDown(0.6);
+  doc.font('Helvetica').fontSize(10).fillColor('#475569').text(`Usuário: ${user.name} (${user.email})`);
+  doc.text(`Plano: ${PLANS[user.plan]?.name || user.plan}`);
+  doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`);
+  doc.moveDown(0.8);
+
+  doc.font('Helvetica-Bold').fontSize(12).fillColor('#111827').text('Resumo', { underline: true });
+  doc.moveDown(0.4);
+
+  const summaryRows = [
+    { label: 'Total de transações', value: `${transactions.length}` },
+    { label: 'Receitas totais', value: `R$ ${totalIncome.toFixed(2)}` },
+    { label: 'Despesas totais', value: `R$ ${totalExpense.toFixed(2)}` },
+    { label: 'Saldo líquido', value: `R$ ${totalNet.toFixed(2)}` },
+  ];
+
+  summaryRows.forEach((row) => {
     const y = doc.y;
-    doc.text(new Date(t.date).toLocaleDateString('pt-BR'), 40, y, { width: 80, continued: true });
-    doc.text(t.title, 130, y, { width: 150, continued: true });
-    doc.text(t.type, 290, y, { width: 80, continued: true });
-    doc.text(t.category, 370, y, { width: 120, continued: true });
-    doc.text(`R$ ${t.amount.toFixed(2)}`, 490, y, { width: 90, align: 'right' });
-    doc.moveDown(0.5);
-    if (doc.y > 720) doc.addPage();
+    doc.font('Helvetica').fontSize(10).fillColor('#374151').text(row.label, 40, y);
+    doc.font('Helvetica-Bold').text(row.value, 450, y, { width: 110, align: 'right' });
+    doc.moveDown(0.9);
   });
+
+  doc.moveDown(0.6);
+  doc.font('Helvetica-Bold').fontSize(12).fillColor('#111827').text('Transações', { underline: true });
+  doc.moveDown(0.6);
+
+  const tableTop = doc.y;
+  const columnPositions = { date: 40, title: 120, type: 310, category: 390, value: 490 };
+
+  doc.save();
+  doc.fillColor('#f8fafc').rect(40, tableTop - 4, 510, 22).fill();
+  doc.restore();
+
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827');
+  doc.text('Data', columnPositions.date, tableTop, { width: 80 });
+  doc.text('Título', columnPositions.title, tableTop, { width: 180 });
+  doc.text('Tipo', columnPositions.type, tableTop, { width: 80 });
+  doc.text('Categoria', columnPositions.category, tableTop, { width: 90 });
+  doc.text('Valor', columnPositions.value, tableTop, { width: 90, align: 'right' });
+  doc.moveDown(1.1);
+
+  doc.strokeColor('#e5e7eb').lineWidth(0.5).moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+  doc.moveDown(0.5);
+
+  doc.font('Helvetica').fontSize(10).fillColor('#1f2937');
+  if (transactions.length === 0) {
+    doc.text('Nenhuma transação encontrada.', 40, doc.y);
+  } else {
+    transactions.forEach((t) => {
+      const y = doc.y;
+      doc.text(new Date(t.date).toLocaleDateString('pt-BR'), columnPositions.date, y, { width: 80 });
+      doc.text(t.title || '-', columnPositions.title, y, { width: 180 });
+      doc.text(t.type, columnPositions.type, y, { width: 80 });
+      doc.text(t.category || '-', columnPositions.category, y, { width: 90 });
+      doc.text(`R$ ${t.amount.toFixed(2)}`, columnPositions.value, y, { width: 90, align: 'right' });
+      doc.moveDown(0.8);
+      if (doc.y > 720) {
+        doc.addPage();
+      }
+    });
+  }
+
   doc.end();
 });
 
