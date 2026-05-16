@@ -189,19 +189,28 @@ export const sendVerificationEmail = async (email: string, code: string) => {
   try {
     const html = getVerificationTemplate(code);
 
+    // Primeiro tente Resend (se configurado). Se falhar, tente SMTP/Gmail como fallback.
+    let lastError: any = null;
     if (resend) {
-      await resend.emails.send({
-        from: EMAIL_FROM,
-        to: email,
-        subject: '🔐 Seu código de verificação – Finix',
-        html,
-      });
-      console.log('✅ E-mail enviado com sucesso para:', email);
-      return;
+      try {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: email,
+          subject: '🔐 Seu código de verificação – Finix',
+          html,
+        });
+        console.log('✅ E-mail enviado com sucesso via Resend para:', email);
+        return;
+      } catch (err) {
+        console.error('⚠️ Falha ao enviar via Resend, tentando SMTP fallback:', err);
+        lastError = err;
+        // continua para tentar SMTP abaixo
+      }
     }
 
     if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-      const transporter = nodemailer.createTransport({
+      const isGmail = SMTP_USER?.toLowerCase().includes('@gmail.com') || SMTP_HOST.includes('gmail');
+      const transporterOptions: any = {
         host: SMTP_HOST,
         port: SMTP_PORT,
         secure: SMTP_PORT === 465,
@@ -209,16 +218,32 @@ export const sendVerificationEmail = async (email: string, code: string) => {
           user: SMTP_USER,
           pass: SMTP_PASS,
         },
-      });
+      };
+      if (isGmail) {
+        // Fornece configuração compatível com Gmail/App Passwords
+        transporterOptions.service = 'gmail';
+        transporterOptions.tls = { rejectUnauthorized: true };
+      }
 
-      await transporter.sendMail({
-        from: EMAIL_FROM,
-        to: email,
-        subject: '🔐 Seu código de verificação – Finix',
-        html,
-      });
-      console.log('✅ E-mail enviado via SMTP para:', email);
-      return;
+      const transporter = nodemailer.createTransport(transporterOptions);
+
+      try {
+        await transporter.sendMail({
+          from: EMAIL_FROM,
+          to: email,
+          subject: '🔐 Seu código de verificação – Finix',
+          html,
+        });
+        console.log('✅ E-mail enviado via SMTP para:', email);
+        return;
+      } catch (err) {
+        console.error('❌ Falha ao enviar via SMTP:', err);
+        lastError = lastError || err;
+      }
+    }
+
+    if (lastError) {
+      throw lastError;
     }
 
     throw new Error(
