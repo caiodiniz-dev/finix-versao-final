@@ -398,19 +398,19 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-3" data-testid="tx-form">
           <div>
-            <label className="text-sm font-medium text-slate-300">Título</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Título</label>
             <input {...register('title')} className="input mt-1" data-testid="tx-title" />
             {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Valor (R$)</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Valor (R$)</label>
               <input type="number" step="0.01" {...register('amount')} className="input mt-1" data-testid="tx-amount" />
               {errors.amount && <p className="text-xs text-red-400 mt-1">{errors.amount.message}</p>}
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-300">Data</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Data</label>
               <input type="date" {...register('date')} className="input mt-1" data-testid="tx-date" />
               {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date.message}</p>}
             </div>
@@ -418,14 +418,14 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Tipo</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
               <select {...register('type')} className="input mt-1" data-testid="tx-type">
                 <option value="EXPENSE">Despesa</option>
                 <option value="INCOME">Receita</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Categoria</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Categoria</label>
               <select {...register('category')} className="input mt-1" data-testid="tx-category" disabled={transactionCategories.length === 0}>
                 {transactionCategories.length === 0
                   ? <option value="">Configure categorias no onboarding</option>
@@ -433,7 +433,7 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
                 }
               </select>
               {selectedBudget && (
-                <p className={`text-xs mt-2 ${overLimit ? 'text-rose-400' : 'text-slate-400'}`}>
+                <p className={`text-xs mt-2 ${overLimit ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'}`}>
                   Orçamento: {currency(selectedBudget.limit)} · Gasto: {currency(currentSpent)}
                   {overLimit && ' · ⚠ Ultrapassará o limite'}
                   {(selectedBudget as any).dueDate && (
@@ -446,7 +446,7 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Método de Pagamento</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Método de Pagamento</label>
               <select {...register('paymentMethod')} className="input mt-1" data-testid="tx-payment-method">
                 <option value="pix">PIX</option>
                 <option value="debito">Débito</option>
@@ -454,7 +454,7 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Moeda</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Moeda</label>
               <select {...register('currency')} className="input mt-1" data-testid="tx-currency">
                 <option value="BRL">Real (BRL)</option>
                 <option value="USD">Dólar (USD)</option>
@@ -466,17 +466,17 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
 
           {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">Parcelas</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Parcelas</label>
               <input type="number" min="1" max="60" {...register('installments')} className="input mt-1" data-testid="tx-installments" />
               {errors.installments && <p className="text-xs text-red-400 mt-1">{errors.installments.message}</p>}
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Aparece como 1 linha com progresso "Pago X de N".</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Aparece como 1 linha com progresso "Pago X de N".</p>
             </div>
           )}
 
           {/* Data limite de pagamento — só para crédito */}
           {watchedPaymentMethod === 'credito' && (
             <div>
-              <label className="text-sm font-medium text-slate-500 dark:text-slate-300">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Data limite de pagamento
                 <span className="ml-1 text-slate-500 dark:text-slate-400 font-normal">(opcional)</span>
               </label>
@@ -486,21 +486,21 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
                 className="input mt-1"
                 data-testid="tx-due-date"
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                 Data de vencimento da fatura / última parcela. Aparece nos alertas.
               </p>
             </div>
           )}
 
           {watchedPaymentMethod === 'credito' && watchedInstallments > 1 && (
-            <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-3 space-y-1">
-              <div className="flex justify-between text-sm text-slate-300">
+            <div className="rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3 space-y-1">
+              <div className="flex justify-between text-sm text-slate-700 dark:text-slate-300">
                 <span>Valor por parcela</span>
                 <span className="font-semibold">{currency(watchedAmount, watchedCurrency)}</span>
               </div>
-              <div className="flex justify-between text-sm text-slate-300">
+              <div className="flex justify-between text-sm text-slate-700 dark:text-slate-300">
                 <span>Total ({watchedInstallments}x)</span>
-                <span className="font-semibold text-rose-400">{currency(watchedAmount * watchedInstallments, watchedCurrency)}</span>
+                <span className="font-semibold text-rose-500">{currency(watchedAmount * watchedInstallments, watchedCurrency)}</span>
               </div>
             </div>
           )}
@@ -514,7 +514,7 @@ function TxModal({ editing, onClose, onSaved, budgets, categories }: {
                 className="w-4 h-4 rounded accent-brand-blue"
                 data-testid="tx-recurring"
               />
-              <span className="text-sm font-medium text-slate-300">Transação recorrente</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Transação recorrente</span>
               <RefreshCw className="w-4 h-4 text-brand-purple ml-auto" />
             </label>
             {isRec && (

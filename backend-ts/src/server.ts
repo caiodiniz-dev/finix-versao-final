@@ -629,6 +629,9 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(data.password, user.passwordHash)) || user.blocked) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
+    if (!user.isVerified) {
+      return res.status(401).json({ error: 'E-mail não verificado. Verifique seu e-mail antes de fazer login.' });
+    }
     const token = jwt.sign(
       { sub: user.id, email: user.email, role: user.role },
       JWT_SECRET,

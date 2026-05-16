@@ -203,12 +203,12 @@ export default function Profile() {
                   <form onSubmit={nameForm.handleSubmit(onSaveName)} className="mt-6 space-y-4" data-testid="name-form">
                     <div>
                       <label className="text-sm font-medium text-slate-300">Nome</label>
-                      <input {...nameForm.register('name')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500" />
+                      <input {...nameForm.register('name')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
                       {nameForm.formState.errors.name && <p className="text-xs text-rose-400 mt-1">{nameForm.formState.errors.name.message}</p>}
                     </div>
                     <div>
                       <label className="text-sm font-medium text-slate-300">E-mail</label>
-                      <input value={user.email} disabled className="input mt-1 bg-slate-800/50 border-slate-700 text-slate-400 cursor-not-allowed" />
+                      <input value={user.email} disabled className="input mt-1 bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-900/50 dark:border-slate-700 dark:text-slate-400" />
                     </div>
                     <button type="submit" className="btn-primary w-full" disabled={nameForm.formState.isSubmitting}>
                       {nameForm.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar alterações'}
@@ -303,12 +303,12 @@ export default function Profile() {
               <form onSubmit={pwForm.handleSubmit(onChangePw)} className="mt-6 space-y-4" data-testid="password-form">
                 <div>
                   <label className="text-sm font-medium text-slate-300">Senha atual</label>
-                  <input type="password" {...pwForm.register('currentPassword')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" />
+                  <input type="password" {...pwForm.register('currentPassword')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
                   {pwForm.formState.errors.currentPassword && <p className="text-xs text-rose-400 mt-1">{pwForm.formState.errors.currentPassword.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-300">Nova senha</label>
-                  <input type="password" {...pwForm.register('newPassword')} className="input mt-1 bg-slate-800 border-slate-700 text-slate-100" />
+                  <input type="password" {...pwForm.register('newPassword')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
                   {pwForm.formState.errors.newPassword && <p className="text-xs text-rose-400 mt-1">{pwForm.formState.errors.newPassword.message}</p>}
                 </div>
                 <button type="submit" className="btn-primary w-full" disabled={pwForm.formState.isSubmitting}>

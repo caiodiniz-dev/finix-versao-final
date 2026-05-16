@@ -243,23 +243,23 @@ export default function Categories() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-300">Nome</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nome</label>
               <input
                 value={newCategory.name}
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
                 disabled={!canManage}
-                className="input mt-1 bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
+                className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100"
                 placeholder="Ex: Streaming"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-slate-300">Tipo</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
                 <select
                   value={newCategory.type}
                   onChange={(e) => setNewCategory((prev) => ({ ...prev, type: e.target.value as any }))}
                   disabled={!canManage}
-                  className="input mt-1 bg-slate-800 border-slate-700 text-slate-100"
+                  className="input mt-1 text-slate-900 dark:text-slate-100"
                 >
                   <option value="expense">Despesa</option>
                   <option value="income">Receita</option>
@@ -267,23 +267,23 @@ export default function Categories() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-300">Cor</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Cor</label>
                 <input
                   type="color"
                   value={newCategory.color}
                   disabled={!canManage}
                   onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
-                  className="mt-1 h-11 w-full rounded-xl border border-slate-700 bg-slate-800 p-1"
+                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white p-1 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-300">Ícone</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Ícone</label>
               <input
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, icon: e.target.value }))}
                 disabled={!canManage}
-                className="input mt-1 bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
+                className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100"
                 placeholder="Ex: Wallet"
               />
               <p className="text-xs text-slate-500 mt-1">Nome do ícone Lucide (opcional)</p>

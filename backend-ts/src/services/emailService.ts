@@ -2,11 +2,11 @@ import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Finix <onboarding@finix.app>';
-const SMTP_HOST = process.env.SMTP_HOST;
-const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_USER = process.env.SMTP_USER || process.env.GMAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+const SMTP_HOST = process.env.SMTP_HOST || process.env.GMAIL_HOST || 'smtp.gmail.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.GMAIL_PORT || 465);
+const EMAIL_FROM = process.env.EMAIL_FROM || (SMTP_USER ? `Finix <${SMTP_USER}>` : 'Finix <onboarding@finix.app>');
 
 const getVerificationTemplate = (code: string) => {
   return `<!DOCTYPE html>
