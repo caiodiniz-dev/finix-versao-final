@@ -211,18 +211,21 @@ export const sendVerificationEmail = async (email: string, code: string) => {
     if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
       const isGmail = SMTP_USER?.toLowerCase().includes('@gmail.com') || SMTP_HOST.includes('gmail');
       const transporterOptions: any = {
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-        secure: SMTP_PORT === 465,
         auth: {
           user: SMTP_USER,
           pass: SMTP_PASS,
         },
       };
+
       if (isGmail) {
-        // Fornece configuração compatível com Gmail/App Passwords
         transporterOptions.service = 'gmail';
-        transporterOptions.tls = { rejectUnauthorized: true };
+        transporterOptions.port = SMTP_PORT;
+        transporterOptions.secure = SMTP_PORT === 465;
+        transporterOptions.tls = { rejectUnauthorized: false };
+      } else {
+        transporterOptions.host = SMTP_HOST;
+        transporterOptions.port = SMTP_PORT;
+        transporterOptions.secure = SMTP_PORT === 465;
       }
 
       const transporter = nodemailer.createTransport(transporterOptions);

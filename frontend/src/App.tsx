@@ -72,6 +72,17 @@ function Home() {
 }
 
 export default function App() {
+  const [dark, setDark] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('finix_theme') === 'dark';
+  });
+
+  React.useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('finix_theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -86,7 +97,7 @@ export default function App() {
           <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
           <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
           <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
-          <Route path="/app" element={<OnboardingRequired><AppLayout /></OnboardingRequired>}>
+          <Route path="/app" element={<OnboardingRequired><AppLayout dark={dark} setDark={setDark} /></OnboardingRequired>}>
             <Route index element={<Navigate to="/app/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="transactions" element={<Transactions />} />

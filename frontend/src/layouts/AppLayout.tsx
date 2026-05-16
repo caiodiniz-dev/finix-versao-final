@@ -7,19 +7,18 @@ import { Logo } from '../components/Logo';
 import { useAuth, useAutoRefreshUser } from '../contexts/AuthContext';
 import { api } from '../services/api';
 
-export default function AppLayout() {
+type AppLayoutProps = {
+  dark: boolean;
+  setDark: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+export default function AppLayout({ dark, setDark }: AppLayoutProps) {
   const { user, logout } = useAuth();
   useAutoRefreshUser(30000);
   const nav = useNavigate();
   const location = useLocation(); // ← FIX 1: observa rota atual
   const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState<boolean>(() => localStorage.getItem('finix_theme') === 'dark');
   const [alertCount, setAlertCount] = useState<number>(0);
-
-  React.useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('finix_theme', dark ? 'dark' : 'light');
-  }, [dark]);
 
   React.useEffect(() => {
     const fetchAlerts = async () => {
