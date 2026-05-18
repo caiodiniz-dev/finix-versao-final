@@ -1,8 +1,9 @@
-import React, { useLayoutEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -72,54 +73,41 @@ function Home() {
 }
 
 export default function App() {
-  const [dark, setDark] = React.useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('finix_theme');
-    return saved === 'dark';
-  });
-
-  useLayoutEffect(() => {
-    if (typeof document === 'undefined') return;
-    const html = document.documentElement;
-    if (dark) {
-      html.classList.add('dark');
-      localStorage.setItem('finix_theme', 'dark');
-    } else {
-      html.classList.remove('dark');
-      localStorage.setItem('finix_theme', 'light');
-    }
-  }, [dark]);
-
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Toaster position="top-right" toastOptions={{
-          style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
-          success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
-        }} />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
-          <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-          <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
-          <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
-          <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
-          <Route path="/app" element={<OnboardingRequired><AppLayout dark={dark} setDark={setDark} /></OnboardingRequired>}>
-            <Route index element={<Navigate to="/app/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="transactions" element={<Transactions />} />
-            <Route path="goals" element={<Goals />} />
-            <Route path="budgets" element={<Budgets />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="alerts" element={<Alerts />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="plans" element={<Plans />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
+              success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
+            }}
+          />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
+            <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
+            <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
+            <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
+            <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
+            <Route path="/app" element={<OnboardingRequired><AppLayout /></OnboardingRequired>}>
+              <Route index element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="transactions" element={<Transactions />} />
+              <Route path="goals" element={<Goals />} />
+              <Route path="budgets" element={<Budgets />} />
+              <Route path="calendar" element={<Calendar />} />
+              <Route path="alerts" element={<Alerts />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="plans" element={<Plans />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

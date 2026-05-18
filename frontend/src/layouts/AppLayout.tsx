@@ -5,14 +5,12 @@ import {
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { useAuth, useAutoRefreshUser } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { api } from '../services/api';
 
-type AppLayoutProps = {
-  dark: boolean;
-  setDark: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
-export default function AppLayout({ dark, setDark }: AppLayoutProps) {
+export default function AppLayout() {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const { user, logout } = useAuth();
   useAutoRefreshUser(30000);
   const nav = useNavigate();
@@ -159,11 +157,11 @@ export default function AppLayout({ dark, setDark }: AppLayoutProps) {
           )}
           <button
             data-testid="theme-toggle"
-            onClick={() => setDark(!dark)}
+            onClick={toggleTheme}
             className="btn-outline !py-2"
             title="Alternar tema"
           >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             data-testid="logout-btn"
