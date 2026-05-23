@@ -35,13 +35,13 @@
   /* Dark theme scoped to dashboard only */
   .dashboard-theme.dark {
     color-scheme: dark;
-    --color-background: #050816;
-    --color-surface: #111827;
-    --color-surface-strong: #1e2a46;
+    --color-background: #050814;
+    --color-surface: #0b1529;
+    --color-surface-strong: #111b35;
     --color-border: #334155;
     --color-border-strong: #475569;
-    --color-text: #eff6ff;
-    --color-text-muted: #dbeafe;
+    --color-text: #f8fafc;
+    --color-text-muted: #cbd5e1;
     --color-text-low: #94a3b8;
     --color-primary: #60a5fa;
     --color-primary-soft: rgba(96, 165, 250, 0.22);

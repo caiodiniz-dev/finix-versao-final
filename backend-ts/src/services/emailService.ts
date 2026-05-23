@@ -205,8 +205,8 @@ const getVerificationText = (code: string) => {
   return `Código de verificação Finix: ${code}\n\nUse este código para acessar a plataforma.\n\nEste código expira em 5 minutos.\n\nSe você não solicitou este acesso, ignore esta mensagem.`;
 };
 
-const buildMailData = (email: string, code: string) => ({
-  from: EMAIL_FROM,
+const buildMailData = (email: string, code: string, from: string) => ({
+  from,
   to: email,
   replyTo: REPLY_TO,
   subject: EMAIL_SUBJECT,
@@ -260,7 +260,12 @@ export const sendVerificationEmail = async (rawEmail: string, code: string) => {
     throw new Error("Email inválido para envio de código de verificação.");
   }
 
-  const mailData = buildMailData(email, code);
+  const smtpFrom = SMTP_USER ? `Finix <${SMTP_USER}>` : EMAIL_FROM;
+  const mailData = buildMailData(
+    email,
+    code,
+    resendClient ? EMAIL_FROM : smtpFrom,
+  );
   let lastError: any = null;
 
   if (resendClient) {

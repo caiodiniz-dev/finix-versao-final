@@ -25,7 +25,7 @@ export default function AppLayout() {
   const { theme, toggleTheme } = useDashboardTheme();
   const isDark = theme === "dark";
   const { user, logout } = useAuth();
-  useAutoRefreshUser(30000);
+  useAutoRefreshUser(0);
   const nav = useNavigate();
   const location = useLocation(); // ← FIX 1: observa rota atual
   const [open, setOpen] = useState(false);

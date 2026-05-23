@@ -140,7 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     try {
       const r = await api.get("/api/auth/me");
-      setUser(r.data);
+      setUser((current) => {
+        const nextUser = r.data;
+        if (JSON.stringify(current) === JSON.stringify(nextUser)) {
+          return current;
+        }
+        return nextUser;
+      });
     } catch (e) {
       console.error("Failed to refresh user:", e);
     }
@@ -173,13 +179,16 @@ export function useAutoRefreshUser(intervalMs = 30000) {
   const { refreshUser } = useAuth();
 
   useEffect(() => {
-    const interval = setInterval(refreshUser, intervalMs);
+    const interval =
+      intervalMs > 0 ? window.setInterval(refreshUser, intervalMs) : null;
 
     const handleFocus = () => refreshUser();
     window.addEventListener("focus", handleFocus);
 
     return () => {
-      clearInterval(interval);
+      if (interval !== null) {
+        window.clearInterval(interval);
+      }
       window.removeEventListener("focus", handleFocus);
     };
   }, [refreshUser, intervalMs]);

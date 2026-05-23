@@ -315,7 +315,7 @@ export default function Landing() {
               </Link>
               <Link
                 to="/register"
-                className="bg-surface-strong text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-surface-strong transition"
+                className="bg-black text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-slate-900 transition"
               >
                 Teste Grátis!
               </Link>
@@ -954,7 +954,7 @@ export default function Landing() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 bg-surface text-brand-blue font-bold px-8 py-4 rounded-2xl hover:bg-surface/90 transition shadow-xl text-base"
+                className="inline-flex items-center gap-2 bg-black text-white font-bold px-8 py-4 rounded-2xl hover:bg-slate-900 transition shadow-xl text-base"
               >
                 Criar conta grátis <ArrowRight className="w-5 h-5" />
               </Link>
@@ -1054,7 +1054,7 @@ export default function Landing() {
               <button
                 type="submit"
                 disabled={sendingContact}
-                className="w-full py-4 bg-surface text-brand-blue font-bold rounded-2xl hover:bg-surface/90 transition shadow-xl flex items-center justify-center gap-2 text-base"
+                className="w-full py-4 bg-surface text-white font-bold rounded-2xl hover:bg-surface/90 transition shadow-xl flex items-center justify-center gap-2 text-base"
               >
                 {sendingContact ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
