@@ -1,13 +1,23 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api, apiErrorMessage } from '../services/api';
-import { User } from '../types';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { api, apiErrorMessage } from "../services/api";
+import { User } from "../types";
 
 interface AuthCtx {
   user: User | null | undefined; // undefined = loading, null = not logged in
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   loginWithToken: (token: string, remember?: boolean) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<{ userId: string; message: string }>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+  ) => Promise<{ userId: string; message: string }>;
   setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -20,97 +30,142 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
-    const token = localStorage.getItem('finix_token') || sessionStorage.getItem('finix_token');
-    if (!token) { setUser(null); return; }
-    api.get('/api/auth/me').then((r) => setUser(r.data)).catch(() => {
-      localStorage.removeItem('finix_token');
-      sessionStorage.removeItem('finix_token');
+    const token =
+      localStorage.getItem("finix_token") ||
+      sessionStorage.getItem("finix_token");
+    if (!token) {
       setUser(null);
-    });
+      return;
+    }
+    api
+      .get("/api/auth/me")
+      .then((r) => setUser(r.data))
+      .catch(() => {
+        localStorage.removeItem("finix_token");
+        sessionStorage.removeItem("finix_token");
+        setUser(null);
+      });
   }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => {
-      localStorage.removeItem('finix_token');
-      sessionStorage.removeItem('finix_token');
+      localStorage.removeItem("finix_token");
+      sessionStorage.removeItem("finix_token");
       setUser(null);
-      navigate('/login', { replace: true });
+      navigate("/login", { replace: true });
     };
 
-    window.addEventListener('finix-auth-unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('finix-auth-unauthorized', handleUnauthorized);
+    window.addEventListener("finix-auth-unauthorized", handleUnauthorized);
+    return () =>
+      window.removeEventListener("finix-auth-unauthorized", handleUnauthorized);
   }, [navigate]);
 
   const storeToken = (token: string, remember: boolean) => {
     const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('finix_token', token);
+    storage.setItem("finix_token", token);
   };
 
   const login = async (email: string, password: string, remember = true) => {
     try {
-      console.log('[AuthContext] Starting login request for:', email);
-      const { data } = await api.post('/api/auth/login', { email, password });
-      console.log('[AuthContext] Login response received:', { userId: data.user?.id, verified: data.user?.isVerified });
+      console.log("[AuthContext] Starting login request for:", email);
+      const { data } = await api.post("/api/auth/login", { email, password });
+      console.log("[AuthContext] Login response received:", {
+        userId: data.user?.id,
+        verified: data.user?.isVerified,
+      });
       storeToken(data.token, remember);
       setUser(data.user);
 
       if (!data.user.isVerified) {
-        console.warn('[AuthContext] User email not verified');
-        throw new Error('E-mail não verificado. Verifique seu e-mail antes de continuar.');
+        console.warn("[AuthContext] User email not verified");
+        throw new Error(
+          "E-mail não verificado. Verifique seu e-mail antes de continuar.",
+        );
       }
-      console.log('[AuthContext] Login completed successfully');
+      console.log("[AuthContext] Login completed successfully");
     } catch (e) {
-      console.error('[AuthContext] Login error:', e);
+      console.error("[AuthContext] Login error:", e);
       throw new Error(apiErrorMessage(e));
     }
   };
 
   const loginWithToken = async (token: string, remember = true) => {
     try {
-      console.log('[AuthContext] Authenticating with token from OAuth callback');
+      console.log(
+        "[AuthContext] Authenticating with token from OAuth callback",
+      );
       storeToken(token, remember);
-      const { data } = await api.get('/api/auth/me');
+      const { data } = await api.get("/api/auth/me");
       setUser(data);
-      console.log('[AuthContext] OAuth login completed successfully for:', data?.email);
+      console.log(
+        "[AuthContext] OAuth login completed successfully for:",
+        data?.email,
+      );
     } catch (e) {
-      console.error('[AuthContext] OAuth login error:', e);
-      localStorage.removeItem('finix_token');
-      sessionStorage.removeItem('finix_token');
+      console.error("[AuthContext] OAuth login error:", e);
+      localStorage.removeItem("finix_token");
+      sessionStorage.removeItem("finix_token");
       throw new Error(apiErrorMessage(e));
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<{ userId: string; message: string }> => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<{ userId: string; message: string }> => {
     try {
-      const { data } = await api.post('/api/auth/signup', { name, email, password });
+      const { data } = await api.post("/api/auth/signup", {
+        name,
+        email,
+        password,
+      });
       return data;
-    } catch (e) { throw new Error(apiErrorMessage(e)); }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('finix_token');
-    sessionStorage.removeItem('finix_token');
-    setUser(null);
-    navigate('/login', { replace: true });
-  };
-
-  const refreshUser = async () => {
-    const token = localStorage.getItem('finix_token') || sessionStorage.getItem('finix_token');
-    if (!token) return;
-    try {
-      const r = await api.get('/api/auth/me');
-      setUser(r.data);
     } catch (e) {
-      console.error('Failed to refresh user:', e);
+      throw new Error(apiErrorMessage(e));
     }
   };
 
-  return <Ctx.Provider value={{ user, login, loginWithToken, register, setUser, logout, refreshUser }}>{children}</Ctx.Provider>;
+  const logout = () => {
+    localStorage.removeItem("finix_token");
+    sessionStorage.removeItem("finix_token");
+    setUser(null);
+    navigate("/login", { replace: true });
+  };
+
+  const refreshUser = async () => {
+    const token =
+      localStorage.getItem("finix_token") ||
+      sessionStorage.getItem("finix_token");
+    if (!token) return;
+    try {
+      const r = await api.get("/api/auth/me");
+      setUser(r.data);
+    } catch (e) {
+      console.error("Failed to refresh user:", e);
+    }
+  };
+
+  return (
+    <Ctx.Provider
+      value={{
+        user,
+        login,
+        loginWithToken,
+        register,
+        setUser,
+        logout,
+        refreshUser,
+      }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export const useAuth = () => {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };
 
@@ -121,11 +176,11 @@ export function useAutoRefreshUser(intervalMs = 30000) {
     const interval = setInterval(refreshUser, intervalMs);
 
     const handleFocus = () => refreshUser();
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [refreshUser, intervalMs]);
 }

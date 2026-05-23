@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-type ThemeMode = 'light' | 'dark';
+type ThemeMode = "light" | "dark";
 
 interface ThemeContextValue {
   theme: ThemeMode;
@@ -8,14 +14,20 @@ interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-const PublicThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-const DashboardThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+const PublicThemeContext = createContext<ThemeContextValue | undefined>(
+  undefined,
+);
+const DashboardThemeContext = createContext<ThemeContextValue | undefined>(
+  undefined,
+);
 
 const getInitialTheme = (storageKey: string): ThemeMode => {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === "undefined") return "light";
   const saved = window.localStorage.getItem(storageKey) as ThemeMode | null;
-  if (saved === 'dark' || saved === 'light') return saved;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  if (saved === "dark" || saved === "light") return saved;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 };
 
 function ThemeProviderBase({
@@ -31,10 +43,12 @@ function ThemeProviderBase({
   context: React.Context<ThemeContextValue | undefined>;
   allowDark?: boolean;
 }) {
-  const [theme, setThemeState] = useState<ThemeMode>(() => getInitialTheme(storageKey));
+  const [theme, setThemeState] = useState<ThemeMode>(() =>
+    getInitialTheme(storageKey),
+  );
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(storageKey, theme);
   }, [storageKey, theme]);
 
@@ -43,7 +57,7 @@ function ThemeProviderBase({
   };
 
   const toggleTheme = () => {
-    setThemeState((current) => (current === 'dark' ? 'light' : 'dark'));
+    setThemeState((current) => (current === "dark" ? "light" : "dark"));
   };
 
   const value = useMemo(() => ({ theme, setTheme, toggleTheme }), [theme]);
@@ -51,7 +65,7 @@ function ThemeProviderBase({
   return (
     <context.Provider value={value}>
       <div
-        className={`${scopeClass} ${allowDark && theme === 'dark' ? 'dark' : ''}`}
+        className={`${scopeClass} ${allowDark && theme === "dark" ? "dark" : ""}`}
         data-theme={theme}
       >
         {children}
@@ -60,7 +74,11 @@ function ThemeProviderBase({
   );
 }
 
-export function PublicThemeProvider({ children }: { children: React.ReactNode }) {
+export function PublicThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ThemeProviderBase
       storageKey="finix_public_theme"
@@ -73,7 +91,11 @@ export function PublicThemeProvider({ children }: { children: React.ReactNode })
   );
 }
 
-export function DashboardThemeProvider({ children }: { children: React.ReactNode }) {
+export function DashboardThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ThemeProviderBase
       storageKey="finix_dashboard_theme"
@@ -88,7 +110,7 @@ export function DashboardThemeProvider({ children }: { children: React.ReactNode
 export function usePublicTheme() {
   const context = useContext(PublicThemeContext);
   if (!context) {
-    throw new Error('usePublicTheme must be used within PublicThemeProvider');
+    throw new Error("usePublicTheme must be used within PublicThemeProvider");
   }
   return context;
 }
@@ -96,7 +118,9 @@ export function usePublicTheme() {
 export function useDashboardTheme() {
   const context = useContext(DashboardThemeContext);
   if (!context) {
-    throw new Error('useDashboardTheme must be used within DashboardThemeProvider');
+    throw new Error(
+      "useDashboardTheme must be used within DashboardThemeProvider",
+    );
   }
   return context;
 }

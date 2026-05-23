@@ -1,49 +1,55 @@
-import { FormEvent, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Mail, ArrowLeft, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
-import { Logo } from '../components/Logo';
-import toast from 'react-hot-toast';
+import { FormEvent, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Mail, ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
+import { Logo } from "../components/Logo";
+import toast from "react-hot-toast";
 
 export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState(location.state?.email || '');
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
   const handleVerify = async (e: FormEvent) => {
     e.preventDefault();
-    const fullCode = code.join('');
+    const fullCode = code.join("");
 
     if (fullCode.length !== 6) {
-      toast.error('Digite os 6 dígitos do código.');
+      toast.error("Digite os 6 dígitos do código.");
       return;
     }
 
     if (!email) {
-      toast.error('Digite seu e-mail.');
+      toast.error("Digite seu e-mail.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: fullCode }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/verify`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code: fullCode }),
+        },
+      );
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || 'Erro ao verificar código');
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || "Erro ao verificar código",
+        );
 
       setIsVerified(true);
-      toast.success('✨ E-mail verificado com sucesso!');
-      setTimeout(() => navigate('/login'), 3000);
+      toast.success("✨ E-mail verificado com sucesso!");
+      setTimeout(() => navigate("/login"), 3000);
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao verificar código');
+      toast.error(err.message || "Erro ao verificar código");
     } finally {
       setIsLoading(false);
     }
@@ -52,16 +58,22 @@ export default function VerifyEmail() {
   const handleResend = async () => {
     setIsResending(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/resend-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/resend-code`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        },
+      );
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || 'Erro ao reenviar código');
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || "Erro ao reenviar código",
+        );
 
-      toast.success('Código reenviado!');
+      toast.success("Código reenviado!");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -71,15 +83,18 @@ export default function VerifyEmail() {
 
   const handleCodeChange = (index: number, value: string) => {
     const newCode = [...code];
-    newCode[index] = value.replace(/\D/g, '').slice(0, 1);
+    newCode[index] = value.replace(/\D/g, "").slice(0, 1);
     setCode(newCode);
     if (newCode[index] && index < 5) {
       document.getElementById(`code-${index + 1}`)?.focus();
     }
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
       document.getElementById(`code-${index - 1}`)?.focus();
     }
   };
@@ -115,9 +130,12 @@ export default function VerifyEmail() {
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-purple/30 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-brand-blue/20 blur-3xl" />
         <div className="relative max-w-sm">
-          <h2 className="text-5xl font-display font-extrabold leading-tight">Proteja sua conta</h2>
+          <h2 className="text-5xl font-display font-extrabold leading-tight">
+            Proteja sua conta
+          </h2>
           <p className="mt-4 text-white/80 leading-8">
-            A verificação de e-mail garante a segurança total dos seus dados financeiros. Você está quase lá!
+            A verificação de e-mail garante a segurança total dos seus dados
+            financeiros. Você está quase lá!
           </p>
         </div>
       </div>
@@ -131,20 +149,24 @@ export default function VerifyEmail() {
           <div className="text-center space-y-4 mb-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-blue/20 bg-brand-blue/5 px-4 py-2 text-sm font-semibold text-brand-blue mx-auto">
               <Mail className="w-4 h-4" />
-              {email || 'seu e-mail'}
+              {email || "seu e-mail"}
             </div>
             <h1 className="text-4xl font-display font-bold text-text">
               Digite seu código
             </h1>
             <p className="text-muted text-base">
-              Enviamos um código de 6 dígitos para o seu e-mail. Confira sua caixa de entrada.
+              Enviamos um código de 6 dígitos para o seu e-mail. Confira sua
+              caixa de entrada.
             </p>
           </div>
 
           <div className="card shadow-xl p-8">
             <form onSubmit={handleVerify} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-semibold text-text">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-semibold text-text"
+                >
                   E-mail
                 </label>
                 <input
@@ -195,7 +217,9 @@ export default function VerifyEmail() {
                 )}
               </button>
 
-              <p className="text-center text-sm text-muted">Sua segurança é nossa prioridade</p>
+              <p className="text-center text-sm text-muted">
+                Sua segurança é nossa prioridade
+              </p>
             </form>
           </div>
 
@@ -210,11 +234,11 @@ export default function VerifyEmail() {
               ) : (
                 <RefreshCw className="w-4 h-4" />
               )}
-              {isResending ? 'Reenviando...' : 'Reenviar código'}
+              {isResending ? "Reenviando..." : "Reenviar código"}
             </button>
 
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate("/register")}
               className="w-full text-sm font-semibold text-muted hover:text-text transition flex items-center justify-center gap-2 py-3 rounded-2xl border border-border bg-surface"
             >
               <ArrowLeft className="w-4 h-4" />

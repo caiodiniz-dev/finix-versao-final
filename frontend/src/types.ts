@@ -2,11 +2,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: "USER" | "ADMIN";
   blocked: boolean;
   createdAt: string;
   photo?: string;
-  plan?: 'FREE' | 'BASIC' | 'PRO';
+  plan?: "FREE" | "BASIC" | "PRO";
   transactionsUsed?: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -24,19 +24,19 @@ export interface Transaction {
   userId: string;
   title: string;
   amount: number;
-  type: 'INCOME' | 'EXPENSE';
+  type: "INCOME" | "EXPENSE";
   category: string;
   description?: string;
   date: string;
   recurring?: boolean;
-  recurringFrequency?: 'monthly' | 'weekly' | 'yearly' | null;
-  paymentMethod?: 'credito' | 'debito' | 'pix';
+  recurringFrequency?: "monthly" | "weekly" | "yearly" | null;
+  paymentMethod?: "credito" | "debito" | "pix";
   installments?: number;
   installmentNumber?: number;
   installmentGroupId?: string;
   totalInstallments?: number;
   totalAmount?: number;
-  currency?: 'BRL' | 'USD' | 'EUR' | 'GBP';
+  currency?: "BRL" | "USD" | "EUR" | "GBP";
   createdAt: string;
 }
 
@@ -70,7 +70,7 @@ export interface Category {
 }
 
 export interface Insight {
-  type: 'info' | 'warning' | 'success';
+  type: "info" | "warning" | "success";
   title: string;
   message: string;
 }

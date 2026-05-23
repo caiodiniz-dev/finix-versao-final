@@ -1,80 +1,80 @@
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Zap, Crown, Sparkles, AlertTriangle, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Zap, Crown, Sparkles, AlertTriangle, X } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
 
 const PLANS = [
   {
-    id: 'FREE',
-    name: 'Grátis',
-    emoji: '🆓',
+    id: "FREE",
+    name: "Grátis",
+    emoji: "🆓",
     price: 0,
-    description: 'Trial de 7 dias',
+    description: "Trial de 7 dias",
     features: [
-      'Acesso à Dashboard básica',
-      'Sem transações, cartões ou relatórios',
-      'Banner de upgrade visível',
+      "Acesso à Dashboard básica",
+      "Sem transações, cartões ou relatórios",
+      "Banner de upgrade visível",
     ],
     icon: Zap,
-    color: 'from-brand-blue to-brand-purple',
-    accent: 'rgba(100,116,139,.15)',
-    border: 'rgba(100,116,139,.25)',
+    color: "from-brand-blue to-brand-purple",
+    accent: "rgba(100,116,139,.15)",
+    border: "rgba(100,116,139,.25)",
   },
   {
-    id: 'BASIC',
-    name: 'Finix Básico',
-    emoji: '📦',
+    id: "BASIC",
+    name: "Finix Básico",
+    emoji: "📦",
     price: 10,
-    description: 'Para profissionais autônomos',
+    description: "Para profissionais autônomos",
     features: [
-      '1 usuário · 50 contatos · 2 contas',
-      '500 movimentações bancárias/mês',
-      '2 cartões · 50 movimentos de cartão/mês',
-      'Receitas, despesas e transferências',
-      'Contas a pagar e receber',
-      'Gestão de faturas de cartão',
-      'DRE Gerencial automático',
-      'Dashboard de KPIs',
-      'Calendário financeiro',
-      'Importação OFX / XLS / CSV / PDF',
-      'Conciliação bancária',
-      'Logs de atividades básico',
-      'Suporte via e-mail',
+      "1 usuário · 50 contatos · 2 contas",
+      "500 movimentações bancárias/mês",
+      "2 cartões · 50 movimentos de cartão/mês",
+      "Receitas, despesas e transferências",
+      "Contas a pagar e receber",
+      "Gestão de faturas de cartão",
+      "DRE Gerencial automático",
+      "Dashboard de KPIs",
+      "Calendário financeiro",
+      "Importação OFX / XLS / CSV / PDF",
+      "Conciliação bancária",
+      "Logs de atividades básico",
+      "Suporte via e-mail",
     ],
     icon: Crown,
-    color: 'from-blue-500 to-indigo-600',
-    accent: 'rgba(99,102,241,.12)',
-    border: 'rgba(99,102,241,.25)',
+    color: "from-blue-500 to-indigo-600",
+    accent: "rgba(99,102,241,.12)",
+    border: "rgba(99,102,241,.25)",
     highlighted: false,
   },
   {
-    id: 'PRO',
-    name: 'Finix Pro',
-    emoji: '🚀',
+    id: "PRO",
+    name: "Finix Pro",
+    emoji: "🚀",
     price: 35,
-    description: 'Para pequenas empresas',
+    description: "Para pequenas empresas",
     features: [
-      '5 usuários · Contatos ilimitados',
-      'Contas e cartões ilimitados',
-      'Movimentações ilimitadas',
-      'Fingu IA – análise e projeções',
-      'Chat inteligente financeiro',
-      'Categorização automática com IA',
-      'Análise comparativa de períodos',
-      'Centros de custo / projetos',
-      'DRE por centro de custo',
-      'Fluxo de caixa projetado',
-      'Alertas inteligentes por e-mail',
-      'Relatórios avançados em PDF',
-      'Logs de atividades avançado',
-      'Suporte prioritário (e-mail + WhatsApp)',
+      "5 usuários · Contatos ilimitados",
+      "Contas e cartões ilimitados",
+      "Movimentações ilimitadas",
+      "Fingu IA – análise e projeções",
+      "Chat inteligente financeiro",
+      "Categorização automática com IA",
+      "Análise comparativa de períodos",
+      "Centros de custo / projetos",
+      "DRE por centro de custo",
+      "Fluxo de caixa projetado",
+      "Alertas inteligentes por e-mail",
+      "Relatórios avançados em PDF",
+      "Logs de atividades avançado",
+      "Suporte prioritário (e-mail + WhatsApp)",
     ],
     icon: Sparkles,
-    color: 'from-violet-500 to-purple-600',
-    accent: 'rgba(139,92,246,.15)',
-    border: 'rgba(139,92,246,.4)',
+    color: "from-violet-500 to-purple-600",
+    accent: "rgba(139,92,246,.15)",
+    border: "rgba(139,92,246,.4)",
     highlighted: true,
   },
 ];
@@ -92,21 +92,21 @@ function DowngradeModal({
   loading: boolean;
 }) {
   const lostFeatures =
-    targetPlan.id === 'BASIC'
+    targetPlan.id === "BASIC"
       ? [
-        'Fingu IA (análise e projeções)',
-        'Chat inteligente',
-        'Categorização automática com IA',
-        'Centros de custo / projetos',
-        'Relatórios avançados em PDF',
-        'Suporte prioritário via WhatsApp',
-      ]
+          "Fingu IA (análise e projeções)",
+          "Chat inteligente",
+          "Categorização automática com IA",
+          "Centros de custo / projetos",
+          "Relatórios avançados em PDF",
+          "Suporte prioritário via WhatsApp",
+        ]
       : [];
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)' }}
+      style={{ background: "rgba(0,0,0,.7)", backdropFilter: "blur(6px)" }}
       onClick={onClose}
     >
       <motion.div
@@ -159,7 +159,7 @@ function DowngradeModal({
             disabled={loading}
             className="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600 transition disabled:opacity-50"
           >
-            {loading ? 'Processando...' : 'Confirmar downgrade'}
+            {loading ? "Processando..." : "Confirmar downgrade"}
           </button>
         </div>
       </motion.div>
@@ -172,18 +172,22 @@ export default function Plans() {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
   const [plans, setPlans] = useState(PLANS);
-  const [downgradeTarget, setDowngradeTarget] = useState<(typeof PLANS)[0] | null>(null);
+  const [downgradeTarget, setDowngradeTarget] = useState<
+    (typeof PLANS)[0] | null
+  >(null);
 
   useEffect(() => {
     const loadPlans = async () => {
       try {
-        const response = await api.get('/api/plans');
+        const response = await api.get("/api/plans");
         const remotePlans = response.data;
         setPlans((current) =>
           current.map((plan) => {
             const remote = remotePlans.find((p: any) => p.id === plan.id);
-            return remote ? { ...plan, price: remote.monthlyPrice ?? plan.price } : plan;
-          })
+            return remote
+              ? { ...plan, price: remote.monthlyPrice ?? plan.price }
+              : plan;
+          }),
         );
       } catch {
         // fallback to local plan definitions
@@ -194,25 +198,29 @@ export default function Plans() {
 
   // Upgrade via Stripe checkout
   const handleUpgrade = async (planId: string) => {
-    if (planId === 'FREE' || planId === user?.plan) return;
+    if (planId === "FREE" || planId === user?.plan) return;
 
     // If user is on Pro and wants Basic → show downgrade modal
-    if (user?.plan === 'PRO' && planId === 'BASIC') {
-      const target = plans.find((p) => p.id === 'BASIC')!;
+    if (user?.plan === "PRO" && planId === "BASIC") {
+      const target = plans.find((p) => p.id === "BASIC")!;
       setDowngradeTarget(target);
       return;
     }
 
     setLoading(planId);
     try {
-      const response = await api.post('/api/stripe/checkout', { plan_id: planId });
+      const response = await api.post("/api/stripe/checkout", {
+        plan_id: planId,
+      });
       if (response.data?.url) {
         window.location.href = response.data.url;
       } else {
-        toast.error('Nenhuma URL de pagamento retornada.');
+        toast.error("Nenhuma URL de pagamento retornada.");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || err.message || 'Erro ao iniciar checkout.');
+      toast.error(
+        err.response?.data?.error || err.message || "Erro ao iniciar checkout.",
+      );
     } finally {
       setLoading(null);
     }
@@ -221,14 +229,18 @@ export default function Plans() {
   // Downgrade Pro → Basic (confirmed via modal)
   const handleDowngrade = async () => {
     if (!downgradeTarget) return;
-    setLoading('downgrade');
+    setLoading("downgrade");
     try {
-      const response = await api.post('/api/stripe/change-plan', { plan_id: downgradeTarget.id });
-      toast.success(response.data?.message || 'Plano alterado com sucesso.');
+      const response = await api.post("/api/stripe/change-plan", {
+        plan_id: downgradeTarget.id,
+      });
+      toast.success(response.data?.message || "Plano alterado com sucesso.");
       await refreshUser();
       setDowngradeTarget(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || err.message || 'Erro ao alterar plano.');
+      toast.error(
+        err.response?.data?.error || err.message || "Erro ao alterar plano.",
+      );
     } finally {
       setLoading(null);
     }
@@ -236,19 +248,23 @@ export default function Plans() {
 
   // Cancel subscription entirely → back to FREE
   const handleCancel = async () => {
-    if (!user || user.plan === 'FREE') return;
+    if (!user || user.plan === "FREE") return;
     const confirmed = window.confirm(
-      'Cancelar assinatura? Você voltará para o plano Grátis e perderá todos os recursos pagos.'
+      "Cancelar assinatura? Você voltará para o plano Grátis e perderá todos os recursos pagos.",
     );
     if (!confirmed) return;
 
-    setLoading('cancel');
+    setLoading("cancel");
     try {
-      const response = await api.post('/api/stripe/cancel-subscription', {});
-      toast.success(response.data?.message || 'Assinatura cancelada com sucesso.');
+      const response = await api.post("/api/stripe/cancel-subscription", {});
+      toast.success(
+        response.data?.message || "Assinatura cancelada com sucesso.",
+      );
       await refreshUser();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || err.message || 'Erro ao cancelar plano.');
+      toast.error(
+        err.response?.data?.error || err.message || "Erro ao cancelar plano.",
+      );
     } finally {
       setLoading(null);
     }
@@ -265,7 +281,7 @@ export default function Plans() {
             targetPlan={downgradeTarget}
             onConfirm={handleDowngrade}
             onClose={() => setDowngradeTarget(null)}
-            loading={loading === 'downgrade'}
+            loading={loading === "downgrade"}
           />
         )}
       </AnimatePresence>
@@ -277,29 +293,36 @@ export default function Plans() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl"
         >
-          <h1 className="text-4xl font-display font-extrabold">Planos e Preços</h1>
+          <h1 className="text-4xl font-display font-extrabold">
+            Planos e Preços
+          </h1>
           <p className="mt-4 text-lg text-muted max-w-2xl">
-            Escolha o plano ideal para sua realidade. Faça upgrade ou downgrade a qualquer momento.
+            Escolha o plano ideal para sua realidade. Faça upgrade ou downgrade
+            a qualquer momento.
           </p>
 
           {/* Current plan badge */}
           {user && currentPlan && (
             <div className="mt-6 inline-flex items-center gap-4 rounded-3xl border border-border/60 bg-surface-strong/70 px-5 py-4 shadow-soft">
               <div>
-                <p className="text-xs uppercase tracking-[.28em] text-muted">Plano atual</p>
+                <p className="text-xs uppercase tracking-[.28em] text-muted">
+                  Plano atual
+                </p>
                 <p className="mt-1 text-xl font-bold text-white">
                   {currentPlan.emoji} {currentPlan.name}
                 </p>
               </div>
-              {user.plan !== 'FREE' && (
+              {user.plan !== "FREE" && (
                 <>
                   <div className="h-8 w-px bg-surface-strong/60" />
                   <button
                     onClick={handleCancel}
-                    disabled={loading === 'cancel'}
+                    disabled={loading === "cancel"}
                     className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition disabled:opacity-50"
                   >
-                    {loading === 'cancel' ? 'Cancelando...' : 'Cancelar assinatura'}
+                    {loading === "cancel"
+                      ? "Cancelando..."
+                      : "Cancelar assinatura"}
                   </button>
                 </>
               )}
@@ -312,22 +335,22 @@ export default function Plans() {
           {plans.map((plan, idx) => {
             const Icon = plan.icon;
             const isCurrent = plan.id === user?.plan;
-            const isDowngrade =
-              user?.plan === 'PRO' && plan.id === 'BASIC';
+            const isDowngrade = user?.plan === "PRO" && plan.id === "BASIC";
 
             // Button label logic
-            let btnLabel = 'Escolher plano';
-            if (isCurrent) btnLabel = '✓ Plano atual';
-            else if (loading === plan.id) btnLabel = 'Redirecionando...';
-            else if (loading === 'downgrade' && isDowngrade) btnLabel = 'Processando...';
-            else if (isDowngrade) btnLabel = 'Fazer downgrade';
-            else if (plan.id === 'FREE') btnLabel = 'Plano gratuito';
+            let btnLabel = "Escolher plano";
+            if (isCurrent) btnLabel = "✓ Plano atual";
+            else if (loading === plan.id) btnLabel = "Redirecionando...";
+            else if (loading === "downgrade" && isDowngrade)
+              btnLabel = "Processando...";
+            else if (isDowngrade) btnLabel = "Fazer downgrade";
+            else if (plan.id === "FREE") btnLabel = "Plano gratuito";
 
             const btnDisabled =
               isCurrent ||
-              plan.id === 'FREE' ||
+              plan.id === "FREE" ||
               loading === plan.id ||
-              loading === 'downgrade';
+              loading === "downgrade";
 
             return (
               <motion.div
@@ -338,19 +361,24 @@ export default function Plans() {
                 style={{
                   background: plan.highlighted
                     ? `radial-gradient(ellipse 80% 60% at 50% 0%, ${plan.accent}, transparent), #0f172a`
-                    : '#0f172a',
-                  border: `1px solid ${isCurrent ? plan.border : 'rgba(255,255,255,.07)'}`,
+                    : "#0f172a",
+                  border: `1px solid ${isCurrent ? plan.border : "rgba(255,255,255,.07)"}`,
                   boxShadow: plan.highlighted
                     ? `0 0 0 1px ${plan.border}, 0 24px 60px rgba(139,92,246,.12)`
-                    : 'none',
+                    : "none",
                 }}
-                className={`relative overflow-hidden rounded-[28px] p-7 transition-all hover:border-white/15 ${plan.highlighted ? 'md:scale-[1.025]' : ''
-                  }`}
+                className={`relative overflow-hidden rounded-[28px] p-7 transition-all hover:border-white/15 ${
+                  plan.highlighted ? "md:scale-[1.025]" : ""
+                }`}
               >
                 {plan.highlighted && (
                   <div
                     className="absolute right-5 top-5 rounded-full px-3 py-1 text-xs font-bold tracking-wide"
-                    style={{ background: plan.accent, color: '#c4b5fd', border: `1px solid ${plan.border}` }}
+                    style={{
+                      background: plan.accent,
+                      color: "#c4b5fd",
+                      border: `1px solid ${plan.border}`,
+                    }}
                   >
                     Melhor opção
                   </div>
@@ -373,7 +401,9 @@ export default function Plans() {
                     <h3 className="font-bold text-white text-lg leading-none">
                       {plan.emoji} {plan.name}
                     </h3>
-                    <p className="mt-1 text-xs text-muted">{plan.description}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      {plan.description}
+                    </p>
                   </div>
                 </div>
 
@@ -381,9 +411,13 @@ export default function Plans() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className="text-[42px] font-extrabold leading-none text-white">
-                      {plan.price === 0 ? 'Grátis' : `R$\u00a0${plan.price.toFixed(2).replace('.', ',')}`}
+                      {plan.price === 0
+                        ? "Grátis"
+                        : `R$\u00a0${plan.price.toFixed(2).replace(".", ",")}`}
                     </span>
-                    {plan.price > 0 && <span className="text-muted text-sm">/mês</span>}
+                    {plan.price > 0 && (
+                      <span className="text-muted text-sm">/mês</span>
+                    )}
                   </div>
                 </div>
 
@@ -393,17 +427,22 @@ export default function Plans() {
                   disabled={btnDisabled}
                   style={
                     !btnDisabled && plan.highlighted
-                      ? { background: 'linear-gradient(135deg, #7c3aed, #6366f1)', color: '#fff' }
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #7c3aed, #6366f1)",
+                          color: "#fff",
+                        }
                       : {}
                   }
-                  className={`mb-7 w-full rounded-2xl px-5 py-3 text-sm font-bold transition-all ${isCurrent
-                    ? 'bg-surface/5 text-muted cursor-default'
-                    : isDowngrade
-                      ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
-                      : plan.highlighted
-                        ? 'shadow-lg hover:opacity-90'
-                        : 'border border-white/10 bg-surface/5 text-white hover:bg-surface/10'
-                    } disabled:opacity-50 disabled:cursor-default`}
+                  className={`mb-7 w-full rounded-2xl px-5 py-3 text-sm font-bold transition-all ${
+                    isCurrent
+                      ? "bg-surface/5 text-muted cursor-default"
+                      : isDowngrade
+                        ? "border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                        : plan.highlighted
+                          ? "shadow-lg hover:opacity-90"
+                          : "border border-white/10 bg-surface/5 text-white hover:bg-surface/10"
+                  } disabled:opacity-50 disabled:cursor-default`}
                 >
                   {btnLabel}
                 </button>
@@ -413,7 +452,9 @@ export default function Plans() {
                   {plan.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <Check className="mt-0.5 w-3.5 h-3.5 flex-shrink-0 text-emerald-400" />
-                      <span className="text-sm text-muted leading-snug">{f}</span>
+                      <span className="text-sm text-muted leading-snug">
+                        {f}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -423,7 +464,7 @@ export default function Plans() {
         </div>
 
         {/* Cancel zone (only for paid plans) */}
-        {user && user.plan !== 'FREE' && (
+        {user && user.plan !== "FREE" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -438,19 +479,24 @@ export default function Plans() {
                   Cancelar assinatura
                 </h2>
                 <p className="mt-3 text-sm text-muted leading-relaxed">
-                  Ao cancelar, sua assinatura será encerrada no final do período atual e você
-                  voltará ao plano Grátis, perdendo acesso a todos os recursos pagos.
-                  {user.plan === 'PRO' && (
-                    <> Prefere apenas reduzir o custo? Faça downgrade para o plano Básico acima.</>
+                  Ao cancelar, sua assinatura será encerrada no final do período
+                  atual e você voltará ao plano Grátis, perdendo acesso a todos
+                  os recursos pagos.
+                  {user.plan === "PRO" && (
+                    <>
+                      {" "}
+                      Prefere apenas reduzir o custo? Faça downgrade para o
+                      plano Básico acima.
+                    </>
                   )}
                 </p>
               </div>
               <button
                 onClick={handleCancel}
-                disabled={loading === 'cancel'}
+                disabled={loading === "cancel"}
                 className="w-full shrink-0 rounded-2xl border border-red-600/40 bg-red-600/10 px-6 py-3 text-sm font-bold text-red-400 hover:bg-red-600/20 transition disabled:opacity-50 md:w-auto"
               >
-                {loading === 'cancel' ? 'Cancelando...' : 'Cancelar assinatura'}
+                {loading === "cancel" ? "Cancelando..." : "Cancelar assinatura"}
               </button>
             </div>
           </motion.div>
@@ -463,24 +509,26 @@ export default function Plans() {
           viewport={{ once: true }}
           className="max-w-3xl pt-4"
         >
-          <h2 className="mb-8 text-2xl font-bold text-white">Dúvidas frequentes</h2>
+          <h2 className="mb-8 text-2xl font-bold text-white">
+            Dúvidas frequentes
+          </h2>
           <div className="space-y-3">
             {[
               {
-                q: 'Posso mudar de plano a qualquer momento?',
-                a: 'Sim. Upgrades são aplicados imediatamente. Downgrades (como Pro → Básico) entram em vigor no próximo ciclo de cobrança.',
+                q: "Posso mudar de plano a qualquer momento?",
+                a: "Sim. Upgrades são aplicados imediatamente. Downgrades (como Pro → Básico) entram em vigor no próximo ciclo de cobrança.",
               },
               {
-                q: 'O que acontece ao fazer downgrade do Pro para o Básico?',
-                a: 'Você perde acesso a recursos exclusivos do Pro — como Fingu IA, categorização automática, DRE por centro de custo e suporte via WhatsApp. Seus dados ficam salvos.',
+                q: "O que acontece ao fazer downgrade do Pro para o Básico?",
+                a: "Você perde acesso a recursos exclusivos do Pro — como Fingu IA, categorização automática, DRE por centro de custo e suporte via WhatsApp. Seus dados ficam salvos.",
               },
               {
-                q: 'Há cobrança recorrente?',
-                a: 'Sim. Básico e Pro são cobrados mensalmente via Stripe. Cancele quando quiser sem multa.',
+                q: "Há cobrança recorrente?",
+                a: "Sim. Básico e Pro são cobrados mensalmente via Stripe. Cancele quando quiser sem multa.",
               },
               {
-                q: 'Preciso de cartão para testar?',
-                a: 'Não. O plano Grátis funciona por 7 dias sem cartão. Para planos pagos, utilizamos Stripe com criptografia total.',
+                q: "Preciso de cartão para testar?",
+                a: "Não. O plano Grátis funciona por 7 dias sem cartão. Para planos pagos, utilizamos Stripe com criptografia total.",
               },
             ].map((item, i) => (
               <details
@@ -489,9 +537,13 @@ export default function Plans() {
               >
                 <summary className="flex items-center justify-between font-semibold text-white text-sm">
                   {item.q}
-                  <span className="ml-4 text-muted group-open:rotate-45 transition-transform text-lg">+</span>
+                  <span className="ml-4 text-muted group-open:rotate-45 transition-transform text-lg">
+                    +
+                  </span>
                 </summary>
-                <p className="mt-3 text-sm text-muted leading-relaxed">{item.a}</p>
+                <p className="mt-3 text-sm text-muted leading-relaxed">
+                  {item.a}
+                </p>
               </details>
             ))}
           </div>

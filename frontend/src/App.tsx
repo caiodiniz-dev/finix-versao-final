@@ -1,28 +1,37 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import './index.css';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { PublicThemeProvider, DashboardThemeProvider } from './contexts/ThemeContext';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Signup from './pages/Signup';
-import VerifyEmail from './pages/VerifyEmail';
-import OAuthCallback from './pages/OAuthCallback';
-import Onboarding from './pages/Onboarding';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Goals from './pages/Goals';
-import Budgets from './pages/Budgets';
-import Plans from './pages/Plans';
-import Calendar from './pages/Calendar';
-import Alerts from './pages/Alerts';
-import Categories from './pages/Categories';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
-import AppLayout from './layouts/AppLayout';
-import { Logo } from './components/Logo';
+import React from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import "./index.css";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import {
+  PublicThemeProvider,
+  DashboardThemeProvider,
+} from "./contexts/ThemeContext";
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
+import OAuthCallback from "./pages/OAuthCallback";
+import Onboarding from "./pages/Onboarding";
+import Dashboard from "./pages/Dashboard";
+import Transactions from "./pages/Transactions";
+import Goals from "./pages/Goals";
+import Budgets from "./pages/Budgets";
+import Plans from "./pages/Plans";
+import Calendar from "./pages/Calendar";
+import Alerts from "./pages/Alerts";
+import Categories from "./pages/Categories";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import AppLayout from "./layouts/AppLayout";
+import { Logo } from "./components/Logo";
 
 function FullScreenLoader() {
   return (
@@ -53,7 +62,12 @@ function OnboardingRequired({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (user === undefined) return <FullScreenLoader />;
   if (user === null) return <Navigate to="/login" replace />;
-  if (user.role !== 'ADMIN' && user.plan === 'PRO' && !user.hasCompletedOnboarding) return <Navigate to="/onboarding" replace />;
+  if (
+    user.role !== "ADMIN" &&
+    user.plan === "PRO" &&
+    !user.hasCompletedOnboarding
+  )
+    return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
 
@@ -61,17 +75,25 @@ function NeedsOnboarding({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (user === undefined) return <FullScreenLoader />;
   if (user === null) return <Navigate to="/login" replace />;
-  if (user.role === 'ADMIN') return <Navigate to="/app/dashboard" replace />;
-  if (user.plan !== 'PRO') return <Navigate to="/app/dashboard" replace />;
-  if (user.hasCompletedOnboarding) return <Navigate to="/app/dashboard" replace />;
+  if (user.role === "ADMIN") return <Navigate to="/app/dashboard" replace />;
+  if (user.plan !== "PRO") return <Navigate to="/app/dashboard" replace />;
+  if (user.hasCompletedOnboarding)
+    return <Navigate to="/app/dashboard" replace />;
   return <>{children}</>;
 }
 
-function ProtectedRoute({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
+function ProtectedRoute({
+  children,
+  admin = false,
+}: {
+  children: React.ReactNode;
+  admin?: boolean;
+}) {
   const { user } = useAuth();
   if (user === undefined) return <FullScreenLoader />;
   if (user === null) return <Navigate to="/login" replace />;
-  if (admin && user.role !== 'ADMIN') return <Navigate to="/app/dashboard" replace />;
+  if (admin && user.role !== "ADMIN")
+    return <Navigate to="/app/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -96,23 +118,76 @@ export default function App() {
         <Toaster
           position="top-right"
           toastOptions={{
-            style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
-            success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
+            style: {
+              borderRadius: 12,
+              padding: "12px 16px",
+              fontFamily: "Inter, sans-serif",
+            },
+            success: { iconTheme: { primary: "#22C55E", secondary: "white" } },
           }}
         />
         <Routes>
           <Route element={<PublicRoutes />}>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
-            <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-            <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
-            <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
-            <Route path="/oauth-callback" element={<PublicOnly><OAuthCallback /></PublicOnly>} />
+            <Route
+              path="/login"
+              element={
+                <PublicOnly>
+                  <Login />
+                </PublicOnly>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicOnly>
+                  <Register />
+                </PublicOnly>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <PublicOnly>
+                  <Signup />
+                </PublicOnly>
+              }
+            />
+            <Route
+              path="/verify-email"
+              element={
+                <PublicOnly>
+                  <VerifyEmail />
+                </PublicOnly>
+              }
+            />
+            <Route
+              path="/oauth-callback"
+              element={
+                <PublicOnly>
+                  <OAuthCallback />
+                </PublicOnly>
+              }
+            />
           </Route>
 
           <Route element={<DashboardRoutes />}>
-            <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
-            <Route path="/app" element={<OnboardingRequired><AppLayout /></OnboardingRequired>}>
+            <Route
+              path="/onboarding"
+              element={
+                <NeedsOnboarding>
+                  <Onboarding />
+                </NeedsOnboarding>
+              }
+            />
+            <Route
+              path="/app"
+              element={
+                <OnboardingRequired>
+                  <AppLayout />
+                </OnboardingRequired>
+              }
+            >
               <Route index element={<Navigate to="/app/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="transactions" element={<Transactions />} />
@@ -123,7 +198,14 @@ export default function App() {
               <Route path="categories" element={<Categories />} />
               <Route path="plans" element={<Plans />} />
               <Route path="profile" element={<Profile />} />
-              <Route path="admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />
+              <Route
+                path="admin"
+                element={
+                  <ProtectedRoute admin>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Route>
 

@@ -17,17 +17,17 @@
 
   :root {
     color-scheme: light;
-    --color-background: #F8FAFC;
+    --color-background: #f8fafc;
     --color-surface: #ffffff;
     --color-surface-strong: #f8fafc;
-    --color-border: #E2E8F0;
-    --color-border-strong: #CBD5E1;
-    --color-text: #0F172A;
+    --color-border: #e2e8f0;
+    --color-border-strong: #cbd5e1;
+    --color-text: #0f172a;
     --color-text-muted: #475569;
-    --color-text-low: #64748B;
-    --color-primary: #2563EB;
+    --color-text-low: #64748b;
+    --color-primary: #2563eb;
     --color-primary-soft: rgba(37, 99, 235, 0.12);
-    --color-secondary: #7C3AED;
+    --color-secondary: #7c3aed;
     --color-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.12);
     --color-overlay: rgba(15, 23, 42, 0.04);
   }
@@ -36,22 +36,28 @@
   .dashboard-theme.dark {
     color-scheme: dark;
     --color-background: #020617;
-    --color-surface: #0F172A;
+    --color-surface: #0f172a;
     --color-surface-strong: #111827;
     --color-border: #334155;
-    --color-border-strong: #1E293B;
-    --color-text: #E2E8F0;
-    --color-text-muted: #94A3B8;
-    --color-text-low: #CBD5E1;
-    --color-primary: #60A5FA;
+    --color-border-strong: #1e293b;
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-text-low: #cbd5e1;
+    --color-primary: #60a5fa;
     --color-primary-soft: rgba(59, 130, 246, 0.16);
-    --color-secondary: #A78BFA;
+    --color-secondary: #a78bfa;
     --color-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.45);
     --color-overlay: rgba(15, 23, 42, 0.55);
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      Segoe UI,
+      Roboto,
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     background: var(--color-background);
     color: var(--color-text);
@@ -62,18 +68,17 @@
   h2,
   h3,
   h4 {
-    font-family: 'Poppins', 'Inter', sans-serif;
+    font-family: "Poppins", "Inter", sans-serif;
     letter-spacing: -0.02em;
   }
 
   ::selection {
-    background: #2563EB;
+    background: #2563eb;
     color: white;
   }
 }
 
 @layer components {
-
   /* Primary button with 3D effect */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-purple shadow-glow hover:brightness-110 active:scale-[0.98] transition-all duration-200 hover:shadow-3d active:shadow-soft;
@@ -151,12 +156,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #cbd5e1;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #94a3b8;
 }
 
 .dashboard-theme.dark ::-webkit-scrollbar-thumb {
@@ -166,9 +171,17 @@
 /* Gradient background helper */
 .bg-auth-side {
   background:
-    radial-gradient(ellipse at top left, rgba(124, 58, 237, 0.35), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(34, 197, 94, 0.25), transparent 50%),
-    linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+    radial-gradient(
+      ellipse at top left,
+      rgba(124, 58, 237, 0.35),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at bottom right,
+      rgba(34, 197, 94, 0.25),
+      transparent 50%
+    ),
+    linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
 }
 
 /* 3D Transform utilities */

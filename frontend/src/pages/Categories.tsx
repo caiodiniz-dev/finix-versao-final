@@ -1,13 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Edit2, Trash2, RefreshCcw, Loader2, Tag } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { api, apiErrorMessage } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import { Category } from '../types';
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Edit2, Trash2, RefreshCcw, Loader2, Tag } from "lucide-react";
+import toast from "react-hot-toast";
+import { api, apiErrorMessage } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { Category } from "../types";
 
 const DEFAULT_CATEGORIES = [
-  'Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Educação', 'Salário', 'Freelance', 'Investimentos', 'Serviços',
+  "Alimentação",
+  "Transporte",
+  "Moradia",
+  "Saúde",
+  "Lazer",
+  "Educação",
+  "Salário",
+  "Freelance",
+  "Investimentos",
+  "Serviços",
 ];
 
 export default function Categories() {
@@ -16,12 +25,19 @@ export default function Categories() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [newCategory, setNewCategory] = useState({ name: '', type: 'expense', icon: 'Tag', color: '#7C3AED' });
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    type: "expense",
+    icon: "Tag",
+    color: "#7C3AED",
+  });
   const [editing, setEditing] = useState<Category | null>(null);
 
   const [hiddenDefaults, setHiddenDefaults] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('hiddenDefaultCategories') || '[]');
+      return JSON.parse(
+        localStorage.getItem("hiddenDefaultCategories") || "[]",
+      );
     } catch {
       return [];
     }
@@ -30,24 +46,26 @@ export default function Categories() {
   const hideDefault = (name: string) => {
     const updated = [...hiddenDefaults, name];
     setHiddenDefaults(updated);
-    localStorage.setItem('hiddenDefaultCategories', JSON.stringify(updated));
+    localStorage.setItem("hiddenDefaultCategories", JSON.stringify(updated));
   };
 
   const restoreDefaults = () => {
     setHiddenDefaults([]);
-    localStorage.removeItem('hiddenDefaultCategories');
+    localStorage.removeItem("hiddenDefaultCategories");
   };
 
-  const visibleDefaults = DEFAULT_CATEGORIES.filter((n) => !hiddenDefaults.includes(n));
+  const visibleDefaults = DEFAULT_CATEGORIES.filter(
+    (n) => !hiddenDefaults.includes(n),
+  );
 
-  const canManage = user?.plan === 'PRO';
+  const canManage = user?.plan === "PRO";
 
   const fetchCategories = async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/api/categories');
+      const response = await api.get("/api/categories");
       setCategories(response.data || []);
     } catch (err: any) {
       setError(apiErrorMessage(err));
@@ -61,29 +79,41 @@ export default function Categories() {
   }, [user?.id]);
 
   const defaultMessage = useMemo(() => {
-    if (user?.plan === 'FREE') return 'Você pode ver as categorias padrão, mas a criação e edição avançada estão disponíveis apenas no Plano Pro.';
-    if (user?.plan === 'BASIC') return 'Visualize categorias e filtros, mas o gerenciamento completo está disponível no Plano Pro.';
-    return 'Gerencie categorias personalizadas para organizar receitas e despesas.';
+    if (user?.plan === "FREE")
+      return "Você pode ver as categorias padrão, mas a criação e edição avançada estão disponíveis apenas no Plano Pro.";
+    if (user?.plan === "BASIC")
+      return "Visualize categorias e filtros, mas o gerenciamento completo está disponível no Plano Pro.";
+    return "Gerencie categorias personalizadas para organizar receitas e despesas.";
   }, [user?.plan]);
 
-  const resetForm = () => setNewCategory({ name: '', type: 'expense', icon: 'Tag', color: '#7C3AED' });
+  const resetForm = () =>
+    setNewCategory({
+      name: "",
+      type: "expense",
+      icon: "Tag",
+      color: "#7C3AED",
+    });
 
   const saveCategory = async () => {
     if (!newCategory.name.trim()) {
-      toast.error('Nome da categoria é obrigatório');
+      toast.error("Nome da categoria é obrigatório");
       return;
     }
     if (!user) return;
     setSaving(true);
     try {
       if (editing) {
-        const response = await api.put(`/api/categories/${editing.id}`, { ...newCategory });
-        setCategories((current) => current.map((cat) => cat.id === editing.id ? response.data : cat));
-        toast.success('Categoria atualizada!');
+        const response = await api.put(`/api/categories/${editing.id}`, {
+          ...newCategory,
+        });
+        setCategories((current) =>
+          current.map((cat) => (cat.id === editing.id ? response.data : cat)),
+        );
+        toast.success("Categoria atualizada!");
       } else {
-        const response = await api.post('/api/categories', { ...newCategory });
+        const response = await api.post("/api/categories", { ...newCategory });
         setCategories((current) => [response.data, ...current]);
-        toast.success('Categoria criada!');
+        toast.success("Categoria criada!");
       }
       resetForm();
       setEditing(null);
@@ -98,8 +128,10 @@ export default function Categories() {
     if (!window.confirm(`Excluir categoria "${category.name}"?`)) return;
     try {
       await api.delete(`/api/categories/${category.id}`);
-      setCategories((current) => current.filter((cat) => cat.id !== category.id));
-      toast.success('Categoria removida!');
+      setCategories((current) =>
+        current.filter((cat) => cat.id !== category.id),
+      );
+      toast.success("Categoria removida!");
     } catch (err: any) {
       toast.error(apiErrorMessage(err));
     }
@@ -109,9 +141,9 @@ export default function Categories() {
     setEditing(category);
     setNewCategory({
       name: category.name,
-      type: category.type as 'income' | 'expense' | 'both',
-      icon: category.icon || 'Tag',
-      color: category.color || '#7C3AED',
+      type: category.type as "income" | "expense" | "both",
+      icon: category.icon || "Tag",
+      color: category.color || "#7C3AED",
     });
   };
 
@@ -120,10 +152,15 @@ export default function Categories() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-display font-extrabold">Categorias</h1>
-          <p className="mt-2 text-muted">Organize e personalize suas categorias conforme o plano.</p>
+          <p className="mt-2 text-muted">
+            Organize e personalize suas categorias conforme o plano.
+          </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-3 text-sm text-text dark:border-border dark:bg-surface dark:text-muted">
-          <Tag className="w-4 h-4 text-brand-blue" /> {user?.plan} • {canManage ? 'Gerenciamento total ativado' : 'Gerenciamento bloqueado'}
+          <Tag className="w-4 h-4 text-brand-blue" /> {user?.plan} •{" "}
+          {canManage
+            ? "Gerenciamento total ativado"
+            : "Gerenciamento bloqueado"}
         </div>
       </div>
 
@@ -131,8 +168,12 @@ export default function Categories() {
         <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-muted">Gerenciamento</p>
-              <h2 className="mt-2 text-xl font-semibold text-text dark:text-text">Categorias personalizadas</h2>
+              <p className="text-sm uppercase tracking-[0.3em] text-muted">
+                Gerenciamento
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-text dark:text-text">
+                Categorias personalizadas
+              </h2>
             </div>
             <button
               onClick={fetchCategories}
@@ -145,18 +186,18 @@ export default function Categories() {
 
           <div className="mt-6 grid gap-3">
             <div className="rounded-3xl bg-surface p-4 text-sm text-muted dark:bg-surface-strong dark:text-text">
-              {user?.plan !== 'PRO'
-                ? 'Para criar, editar e excluir categorias você precisa atualizar para o Plano Pro.'
-                : 'Use a área ao lado para adicionar ou editar categorias.'}
+              {user?.plan !== "PRO"
+                ? "Para criar, editar e excluir categorias você precisa atualizar para o Plano Pro."
+                : "Use a área ao lado para adicionar ou editar categorias."}
             </div>
 
             <div className="rounded-3xl bg-surface p-4 text-sm text-muted dark:bg-surface-strong/60 dark:text-text">
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "10px",
                 }}
               >
                 <span style={{ fontWeight: 500 }}>Categorias padrão:</span>
@@ -164,12 +205,12 @@ export default function Categories() {
                   <button
                     onClick={restoreDefaults}
                     style={{
-                      fontSize: '12px',
-                      color: '#60a5fa',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
+                      fontSize: "12px",
+                      color: "#60a5fa",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline",
                     }}
                   >
                     Restaurar padrões
@@ -195,8 +236,9 @@ export default function Categories() {
                   </span>
                 ))}
                 {visibleDefaults.length === 0 && (
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>
-                    Nenhuma categoria padrão visível. Clique em "Restaurar padrões" para exibir novamente.
+                  <span style={{ fontSize: "12px", color: "#64748b" }}>
+                    Nenhuma categoria padrão visível. Clique em "Restaurar
+                    padrões" para exibir novamente.
                   </span>
                 )}
               </div>
@@ -207,8 +249,12 @@ export default function Categories() {
         <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-muted">Nova categoria</p>
-              <h2 className="mt-2 text-lg font-semibold text-text dark:text-text">Adicionar ou editar</h2>
+              <p className="text-sm uppercase tracking-[0.3em] text-muted">
+                Nova categoria
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-text dark:text-text">
+                Adicionar ou editar
+              </h2>
             </div>
             {editing && (
               <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">
@@ -218,10 +264,14 @@ export default function Categories() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-text dark:text-muted">Nome</label>
+              <label className="text-sm font-medium text-text dark:text-muted">
+                Nome
+              </label>
               <input
                 value={newCategory.name}
-                onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setNewCategory((prev) => ({ ...prev, name: e.target.value }))
+                }
                 disabled={!canManage}
                 className="input mt-1 text-text placeholder:text-muted dark:text-text"
                 placeholder="Ex: Streaming"
@@ -229,10 +279,17 @@ export default function Categories() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-text dark:text-muted">Tipo</label>
+                <label className="text-sm font-medium text-text dark:text-muted">
+                  Tipo
+                </label>
                 <select
                   value={newCategory.type}
-                  onChange={(e) => setNewCategory((prev) => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) =>
+                    setNewCategory((prev) => ({
+                      ...prev,
+                      type: e.target.value as any,
+                    }))
+                  }
                   disabled={!canManage}
                   className="input mt-1 text-text dark:text-text"
                 >
@@ -242,26 +299,39 @@ export default function Categories() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-text dark:text-muted">Cor</label>
+                <label className="text-sm font-medium text-text dark:text-muted">
+                  Cor
+                </label>
                 <input
                   type="color"
                   value={newCategory.color}
                   disabled={!canManage}
-                  onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
+                  onChange={(e) =>
+                    setNewCategory((prev) => ({
+                      ...prev,
+                      color: e.target.value,
+                    }))
+                  }
                   className="mt-1 h-11 w-full rounded-xl border border-border bg-surface p-1 text-text dark:border-border dark:bg-surface-strong dark:text-text"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-text dark:text-muted">Ícone</label>
+              <label className="text-sm font-medium text-text dark:text-muted">
+                Ícone
+              </label>
               <input
                 value={newCategory.icon}
-                onChange={(e) => setNewCategory((prev) => ({ ...prev, icon: e.target.value }))}
+                onChange={(e) =>
+                  setNewCategory((prev) => ({ ...prev, icon: e.target.value }))
+                }
                 disabled={!canManage}
                 className="input mt-1 text-text placeholder:text-muted dark:text-text"
                 placeholder="Ex: Wallet"
               />
-              <p className="text-xs text-muted mt-1">Nome do ícone Lucide (opcional)</p>
+              <p className="text-xs text-muted mt-1">
+                Nome do ícone Lucide (opcional)
+              </p>
             </div>
             <div className="flex gap-3">
               <button
@@ -272,14 +342,17 @@ export default function Categories() {
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : editing ? (
-                  'Salvar alterações'
+                  "Salvar alterações"
                 ) : (
-                  'Adicionar categoria'
+                  "Adicionar categoria"
                 )}
               </button>
               <button
                 type="button"
-                onClick={() => { resetForm(); setEditing(null); }}
+                onClick={() => {
+                  resetForm();
+                  setEditing(null);
+                }}
                 className="btn-outline flex-1"
               >
                 Limpar
@@ -292,8 +365,12 @@ export default function Categories() {
       <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-text dark:text-text">Categorias cadastradas</h2>
-            <p className="text-sm text-muted dark:text-muted mt-1">Visualize suas categorias e gerencie conforme seu plano.</p>
+            <h2 className="text-lg font-semibold text-text dark:text-text">
+              Categorias cadastradas
+            </h2>
+            <p className="text-sm text-muted dark:text-muted mt-1">
+              Visualize suas categorias e gerencie conforme seu plano.
+            </p>
           </div>
           <span className="rounded-full bg-surface-strong px-3 py-1 text-xs font-semibold text-text dark:bg-surface-strong dark:text-text">
             {categories.length} categorias
@@ -302,10 +379,13 @@ export default function Categories() {
 
         {loading ? (
           <div className="mt-6 flex items-center justify-center gap-3 text-muted">
-            <Loader2 className="w-5 h-5 animate-spin" /> Carregando categorias...
+            <Loader2 className="w-5 h-5 animate-spin" /> Carregando
+            categorias...
           </div>
         ) : error ? (
-          <div className="mt-6 rounded-3xl border border-rose-800 bg-rose-950 p-4 text-rose-400">{error}</div>
+          <div className="mt-6 rounded-3xl border border-rose-800 bg-rose-950 p-4 text-rose-400">
+            {error}
+          </div>
         ) : categories.length === 0 ? (
           <div className="mt-6 rounded-3xl border border-dashed border-border-strong bg-surface p-8 text-center text-muted dark:border-border dark:bg-surface-strong/40 dark:text-muted">
             Nenhuma categoria encontrada.
@@ -324,20 +404,30 @@ export default function Categories() {
                     <div className="flex items-center gap-3 text-text dark:text-text">
                       <span
                         className="inline-flex h-10 w-10 items-center justify-center rounded-3xl"
-                        style={{ backgroundColor: category.color || '#E0E7FF' }}
+                        style={{ backgroundColor: category.color || "#E0E7FF" }}
                       >
                         <Tag className="w-5 h-5 text-white" />
                       </span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-text dark:text-text truncate">{category.name}</p>
+                        <p className="font-semibold text-text dark:text-text truncate">
+                          {category.name}
+                        </p>
                         <p className="text-sm text-muted dark:text-muted">
-                          {category.type === 'income' ? 'Receita' : category.type === 'expense' ? 'Despesa' : 'Ambos'}
+                          {category.type === "income"
+                            ? "Receita"
+                            : category.type === "expense"
+                              ? "Despesa"
+                              : "Ambos"}
                         </p>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
-                      <span className="chip bg-surface-strong text-muted">ID: {category.id.slice(0, 8)}</span>
-                      <span className="chip bg-surface-strong text-muted">Ativa: {category.isActive ? 'Sim' : 'Não'}</span>
+                      <span className="chip bg-surface-strong text-muted">
+                        ID: {category.id.slice(0, 8)}
+                      </span>
+                      <span className="chip bg-surface-strong text-muted">
+                        Ativa: {category.isActive ? "Sim" : "Não"}
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">

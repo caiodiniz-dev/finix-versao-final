@@ -1,15 +1,23 @@
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
-import { Logo } from '../components/Logo';
-import toast from 'react-hot-toast';
+import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
+import { Logo } from "../components/Logo";
+import toast from "react-hot-toast";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: "",
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,22 +28,25 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         },
-        body: JSON.stringify(formData),
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Erro ao criar conta');
+        throw new Error(data.error || data.message || "Erro ao criar conta");
       }
 
-      toast.success('Conta criada! Verifique seu e-mail para ativar.');
-      navigate('/verify-email', { state: { email: formData.email } });
+      toast.success("Conta criada! Verifique seu e-mail para ativar.");
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -44,7 +55,7 @@ export default function Signup() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -122,7 +133,7 @@ export default function Signup() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
@@ -136,7 +147,11 @@ export default function Signup() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-muted"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -164,7 +179,7 @@ export default function Signup() {
           {/* Links */}
           <div className="mt-6 text-center">
             <p className="text-muted">
-              Já tem uma conta?{' '}
+              Já tem uma conta?{" "}
               <Link
                 to="/login"
                 className="text-brand-blue hover:text-brand-purple font-semibold transition-colors"

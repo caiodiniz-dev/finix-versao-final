@@ -1,42 +1,66 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { motion } from 'framer-motion';
-import { User, Building, Users, Upload, ArrowRight, Loader2, X, Check } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Logo } from '../components/Logo';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { motion } from "framer-motion";
+import {
+  User,
+  Building,
+  Users,
+  Upload,
+  ArrowRight,
+  Loader2,
+  X,
+  Check,
+} from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import { Logo } from "../components/Logo";
+import { useAuth } from "../contexts/AuthContext";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
 
 const DEFAULT_CATEGORIES = [
-  'Alimentação',
-  'Transporte',
-  'Saúde',
-  'Salário',
-  'Investimento',
-  'Pagamento',
-  'Lazer',
-  'Educação',
-  'Moradia',
-  'Serviços'
+  "Alimentação",
+  "Transporte",
+  "Saúde",
+  "Salário",
+  "Investimento",
+  "Pagamento",
+  "Lazer",
+  "Educação",
+  "Moradia",
+  "Serviços",
 ];
 
 const schema = yup.object({
-  usageType: yup.string().oneOf(['pessoal', 'empresarial', 'organizar']).required(),
-  companyName: yup.string().when('usageType', {
-    is: (val: string) => val !== 'pessoal',
-    then: (schema) => schema.required('Nome da empresa é obrigatório'),
+  usageType: yup
+    .string()
+    .oneOf(["pessoal", "empresarial", "organizar"])
+    .required(),
+  companyName: yup.string().when("usageType", {
+    is: (val: string) => val !== "pessoal",
+    then: (schema) => schema.required("Nome da empresa é obrigatório"),
   }),
   companyLogo: yup.string().optional(),
-  businessPurpose: yup.string().when('usageType', {
-    is: (val: string) => val !== 'pessoal',
-    then: (schema) => schema.required('Finalidade do negócio é obrigatória'),
+  businessPurpose: yup.string().when("usageType", {
+    is: (val: string) => val !== "pessoal",
+    then: (schema) => schema.required("Finalidade do negócio é obrigatória"),
   }),
   primaryColor: yup.string().optional(),
-  categories: yup.array().of(yup.string().min(1).max(50)).min(1, 'Adicione pelo menos uma categoria').required(),
+  categories: yup
+    .array()
+    .of(yup.string().min(1).max(50))
+    .min(1, "Adicione pelo menos uma categoria")
+    .required(),
 });
 
 type Form = yup.InferType<typeof schema>;
@@ -46,49 +70,55 @@ export default function Onboarding() {
   const nav = useNavigate();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState("");
 
   const onboardingChart = [
-    { month: 'Jan', value: 380 },
-    { month: 'Fev', value: 520 },
-    { month: 'Mar', value: 640 },
-    { month: 'Abr', value: 750 },
-    { month: 'Mai', value: 880 },
-    { month: 'Jun', value: 970 },
+    { month: "Jan", value: 380 },
+    { month: "Fev", value: 520 },
+    { month: "Mar", value: 640 },
+    { month: "Abr", value: 750 },
+    { month: "Mai", value: 880 },
+    { month: "Jun", value: 970 },
   ];
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<Form>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<Form>({
     resolver: yupResolver(schema),
-    defaultValues: { usageType: 'pessoal', categories: DEFAULT_CATEGORIES },
+    defaultValues: { usageType: "pessoal", categories: DEFAULT_CATEGORIES },
   });
 
-  const usageType = watch('usageType');
+  const usageType = watch("usageType");
 
   const toggleCategory = (categoryName: string) => {
     const updated = categories.includes(categoryName)
-      ? categories.filter(c => c !== categoryName)
+      ? categories.filter((c) => c !== categoryName)
       : [...categories, categoryName];
     setCategories(updated);
-    setValue('categories', updated);
+    setValue("categories", updated);
   };
 
   const addCategory = () => {
     if (newCategory.trim() && !categories.includes(newCategory.trim())) {
       const updated = [...categories, newCategory.trim()];
       setCategories(updated);
-      setValue('categories', updated);
-      setNewCategory('');
+      setValue("categories", updated);
+      setNewCategory("");
     }
   };
 
   const removeCategory = (categoryName: string) => {
-    const updated = categories.filter(c => c !== categoryName);
+    const updated = categories.filter((c) => c !== categoryName);
     setCategories(updated);
-    setValue('categories', updated);
+    setValue("categories", updated);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       addCategory();
     }
@@ -98,14 +128,14 @@ export default function Onboarding() {
     const file = e.target.files?.[0];
     if (file) {
       const formData = new FormData();
-      formData.append('logo', file);
+      formData.append("logo", file);
       try {
-        const { data } = await api.post('/api/upload-logo', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const { data } = await api.post("/api/upload-logo", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
         setLogoPreview(data.logoUrl);
       } catch (e) {
-        toast.error('Erro ao fazer upload do logo');
+        toast.error("Erro ao fazer upload do logo");
       }
     }
   };
@@ -113,26 +143,28 @@ export default function Onboarding() {
   const onSubmit = async (data: Form) => {
     try {
       if (categories.length === 0) {
-        toast.error('Selecione pelo menos uma categoria');
+        toast.error("Selecione pelo menos uma categoria");
         return;
       }
 
       const payload = {
         usageType: data.usageType,
-        companyName: data.usageType !== 'pessoal' ? data.companyName : undefined,
-        companyLogo: data.usageType !== 'pessoal' ? logoPreview : undefined,
-        businessPurpose: data.usageType !== 'pessoal' ? data.businessPurpose : undefined,
+        companyName:
+          data.usageType !== "pessoal" ? data.companyName : undefined,
+        companyLogo: data.usageType !== "pessoal" ? logoPreview : undefined,
+        businessPurpose:
+          data.usageType !== "pessoal" ? data.businessPurpose : undefined,
         primaryColor: data.primaryColor,
         categories: categories,
       };
 
-      const { data: res } = await api.post('/api/onboarding', payload);
+      const { data: res } = await api.post("/api/onboarding", payload);
       setUser(res.user);
-      toast.success('Onboarding completado!');
-      nav('/app/dashboard');
+      toast.success("Onboarding completado!");
+      nav("/app/dashboard");
     } catch (e: any) {
-      console.error('Onboarding error:', e);
-      toast.error(e.response?.data?.error || e.message || 'Erro no onboarding');
+      console.error("Onboarding error:", e);
+      toast.error(e.response?.data?.error || e.message || "Erro no onboarding");
     }
   };
 
@@ -152,7 +184,8 @@ export default function Onboarding() {
               Personalize sua experiência Finix
             </h1>
             <p className="text-muted max-w-xl mx-auto">
-              Configure logo, cores e categorias para o seu fluxo financeiro. Crie um workspace inteligente que reflita seu negócio.
+              Configure logo, cores e categorias para o seu fluxo financeiro.
+              Crie um workspace inteligente que reflita seu negócio.
             </p>
           </motion.div>
 
@@ -174,13 +207,15 @@ export default function Onboarding() {
                       <input
                         type="radio"
                         value="pessoal"
-                        {...register('usageType')}
+                        {...register("usageType")}
                         className="mr-3"
                       />
                       <User className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
                         <div className="font-medium">Uso pessoal</div>
-                        <div className="text-sm text-muted">Gerencie suas finanças individuais</div>
+                        <div className="text-sm text-muted">
+                          Gerencie suas finanças individuais
+                        </div>
                       </div>
                     </label>
 
@@ -188,13 +223,15 @@ export default function Onboarding() {
                       <input
                         type="radio"
                         value="empresarial"
-                        {...register('usageType')}
+                        {...register("usageType")}
                         className="mr-3"
                       />
                       <Building className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
                         <div className="font-medium">Uso empresarial</div>
-                        <div className="text-sm text-muted">Personalize o Finix para sua empresa</div>
+                        <div className="text-sm text-muted">
+                          Personalize o Finix para sua empresa
+                        </div>
                       </div>
                     </label>
 
@@ -202,24 +239,32 @@ export default function Onboarding() {
                       <input
                         type="radio"
                         value="organizar"
-                        {...register('usageType')}
+                        {...register("usageType")}
                         className="mr-3"
                       />
                       <Users className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
-                        <div className="font-medium">Organizar para outra pessoa</div>
-                        <div className="text-sm text-muted">Controle financeiro para clientes ou família</div>
+                        <div className="font-medium">
+                          Organizar para outra pessoa
+                        </div>
+                        <div className="text-sm text-muted">
+                          Controle financeiro para clientes ou família
+                        </div>
                       </div>
                     </label>
                   </div>
-                  {errors.usageType && <p className="text-red-500 text-sm mt-1">{errors.usageType.message}</p>}
+                  {errors.usageType && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.usageType.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Step 2: Detalhes da empresa (se não pessoal) */}
-                {usageType !== 'pessoal' && (
+                {usageType !== "pessoal" && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
+                    animate={{ opacity: 1, height: "auto" }}
                     className="space-y-6"
                   >
                     <div>
@@ -228,11 +273,15 @@ export default function Onboarding() {
                       </label>
                       <input
                         type="text"
-                        {...register('companyName')}
+                        {...register("companyName")}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                         placeholder="Digite o nome da empresa"
                       />
-                      {errors.companyName && <p className="text-red-500 text-sm mt-1">{errors.companyName.message}</p>}
+                      {errors.companyName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.companyName.message}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -256,7 +305,11 @@ export default function Onboarding() {
                         </label>
                         {logoPreview && (
                           <div className="flex items-center gap-3">
-                            <img src={logoPreview} alt="Logo preview" className="w-12 h-12 rounded-lg object-cover" />
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
                             <button
                               type="button"
                               onClick={() => setLogoPreview(null)}
@@ -275,11 +328,15 @@ export default function Onboarding() {
                       </label>
                       <input
                         type="text"
-                        {...register('businessPurpose')}
+                        {...register("businessPurpose")}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                         placeholder="Ex: Loja de velas, Mercado, Restaurante..."
                       />
-                      {errors.businessPurpose && <p className="text-red-500 text-sm mt-1">{errors.businessPurpose.message}</p>}
+                      {errors.businessPurpose && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.businessPurpose.message}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -288,7 +345,7 @@ export default function Onboarding() {
                       </label>
                       <input
                         type="color"
-                        {...register('primaryColor')}
+                        {...register("primaryColor")}
                         className="w-full h-12 border border-gray-300 rounded-lg cursor-pointer"
                       />
                     </div>
@@ -301,7 +358,9 @@ export default function Onboarding() {
                     Categorias de transações
                   </h2>
                   <p className="text-sm text-gray-600 mb-6">
-                    Selecione as categorias que você quer usar para organizar suas transações. Você pode adicionar novas categorias também.
+                    Selecione as categorias que você quer usar para organizar
+                    suas transações. Você pode adicionar novas categorias
+                    também.
                   </p>
 
                   {/* Default Categories Grid */}
@@ -313,10 +372,11 @@ export default function Onboarding() {
                         onClick={() => toggleCategory(cat)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${categories.includes(cat)
-                          ? 'border-brand-blue bg-brand-blue/10'
-                          : 'border-border bg-surface hover:border-brand-blue/50'
-                          }`}
+                        className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
+                          categories.includes(cat)
+                            ? "border-brand-blue bg-brand-blue/10"
+                            : "border-border bg-surface hover:border-brand-blue/50"
+                        }`}
                       >
                         <span className="font-medium text-text">{cat}</span>
                         {categories.includes(cat) && (
@@ -328,7 +388,9 @@ export default function Onboarding() {
 
                   {/* Add Custom Category */}
                   <div className="border-t border-border pt-6">
-                    <p className="text-sm font-medium text-gray-700 mb-3">Adicionar categoria personalizada</p>
+                    <p className="text-sm font-medium text-gray-700 mb-3">
+                      Adicionar categoria personalizada
+                    </p>
                     <div className="flex gap-2 mb-4">
                       <input
                         type="text"
@@ -348,30 +410,39 @@ export default function Onboarding() {
                     </div>
 
                     {/* Custom Categories List */}
-                    {categories.filter(c => !DEFAULT_CATEGORIES.includes(c)).length > 0 && (
+                    {categories.filter((c) => !DEFAULT_CATEGORIES.includes(c))
+                      .length > 0 && (
                       <div className="space-y-2">
-                        {categories.filter(c => !DEFAULT_CATEGORIES.includes(c)).map((cat) => (
-                          <motion.div
-                            key={cat}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center justify-between p-3 bg-background rounded-2xl border border-border"
-                          >
-                            <span className="font-medium text-text">{cat}</span>
-                            <button
-                              type="button"
-                              onClick={() => removeCategory(cat)}
-                              className="text-red-500 hover:text-red-700 transition"
+                        {categories
+                          .filter((c) => !DEFAULT_CATEGORIES.includes(c))
+                          .map((cat) => (
+                            <motion.div
+                              key={cat}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="flex items-center justify-between p-3 bg-background rounded-2xl border border-border"
                             >
-                              <X className="w-5 h-5" />
-                            </button>
-                          </motion.div>
-                        ))}
+                              <span className="font-medium text-text">
+                                {cat}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeCategory(cat)}
+                                className="text-red-500 hover:text-red-700 transition"
+                              >
+                                <X className="w-5 h-5" />
+                              </button>
+                            </motion.div>
+                          ))}
                       </div>
                     )}
                   </div>
 
-                  {errors.categories && <p className="text-red-500 text-sm mt-4">{errors.categories.message}</p>}
+                  {errors.categories && (
+                    <p className="text-red-500 text-sm mt-4">
+                      {errors.categories.message}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -398,45 +469,121 @@ export default function Onboarding() {
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs uppercase tracking-[0.3em] text-brand-blue font-semibold mb-2">Visão rápida</div>
-                  <h2 className="text-2xl font-display font-bold text-text">Seu onboarding com cores e progresso</h2>
+                  <div className="text-xs uppercase tracking-[0.3em] text-brand-blue font-semibold mb-2">
+                    Visão rápida
+                  </div>
+                  <h2 className="text-2xl font-display font-bold text-text">
+                    Seu onboarding com cores e progresso
+                  </h2>
                 </div>
-                <span className="chip bg-brand-green/10 text-brand-green">Fácil</span>
+                <span className="chip bg-brand-green/10 text-brand-green">
+                  Fácil
+                </span>
               </div>
 
               <div className="mt-6 h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={onboardingChart} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <AreaChart
+                    data={onboardingChart}
+                    margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                  >
                     <defs>
-                      <linearGradient id="onboardGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.45} />
-                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0.08} />
+                      <linearGradient
+                        id="onboardGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#2563EB"
+                          stopOpacity={0.45}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#7C3AED"
+                          stopOpacity={0.08}
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" vertical={false} opacity={0.4} />
-                    <XAxis dataKey="month" stroke="#475569" tickLine={false} axisLine={false} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#CBD5E1"
+                      vertical={false}
+                      opacity={0.4}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      stroke="#475569"
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <YAxis stroke="#475569" tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #E2E8F0' }} />
-                    <Area type="monotone" dataKey="value" stroke="#2563EB" fill="url(#onboardGradient)" strokeWidth={3} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid #E2E8F0",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#2563EB"
+                      fill="url(#onboardGradient)"
+                      strokeWidth={3}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
               <div className="mt-8 space-y-4">
                 <div className="rounded-2xl border border-brand-blue/10 bg-surface/80 p-4">
-                  <p className="text-sm text-muted">Categorias padrão para todos os planos básicos:</p>
+                  <p className="text-sm text-muted">
+                    Categorias padrão para todos os planos básicos:
+                  </p>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-text">
-                    {['Alimentação', 'Transporte', 'Saúde', 'Salário', 'Investimento', 'Pagamento'].map((cat) => (
-                      <span key={cat} className="chip bg-surface text-text">{cat}</span>
+                    {[
+                      "Alimentação",
+                      "Transporte",
+                      "Saúde",
+                      "Salário",
+                      "Investimento",
+                      "Pagamento",
+                    ].map((cat) => (
+                      <span key={cat} className="chip bg-surface text-text">
+                        {cat}
+                      </span>
                     ))}
                   </div>
                 </div>
                 <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-text">
                   <div className="font-semibold mb-2">Suporte direto</div>
-                  <p>Fale com a gente pelo WhatsApp ou envie uma mensagem para o nosso e-mail.</p>
+                  <p>
+                    Fale com a gente pelo WhatsApp ou envie uma mensagem para o
+                    nosso e-mail.
+                  </p>
                   <div className="mt-3 space-y-2 text-sm text-muted">
-                    <p>WhatsApp: <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="font-semibold text-brand-blue">(19) 99473-7425</a></p>
-                    <p>Email: <a href="mailto:cvdinizramos@gmail.com" className="font-semibold text-brand-blue">cvdinizramos@gmail.com</a></p>
+                    <p>
+                      WhatsApp:{" "}
+                      <a
+                        href="https://wa.me/5519994737425?text=Olá%20Finix"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-brand-blue"
+                      >
+                        (19) 99473-7425
+                      </a>
+                    </p>
+                    <p>
+                      Email:{" "}
+                      <a
+                        href="mailto:cvdinizramos@gmail.com"
+                        className="font-semibold text-brand-blue"
+                      >
+                        cvdinizramos@gmail.com
+                      </a>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -446,12 +593,28 @@ export default function Onboarding() {
             <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-text">Suporte Finix</div>
-                  <p className="text-sm text-muted">Fale conosco se precisar de ajuda ao configurar sua conta.</p>
+                  <div className="text-sm font-semibold text-text">
+                    Suporte Finix
+                  </div>
+                  <p className="text-sm text-muted">
+                    Fale conosco se precisar de ajuda ao configurar sua conta.
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="btn-outline text-brand-blue">WhatsApp</a>
-                  <a href="mailto:cvdinizramos@gmail.com" className="btn-outline text-brand-blue">cvdinizramos@gmail.com</a>
+                  <a
+                    href="https://wa.me/5519994737425?text=Olá%20Finix"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-outline text-brand-blue"
+                  >
+                    WhatsApp
+                  </a>
+                  <a
+                    href="mailto:cvdinizramos@gmail.com"
+                    className="btn-outline text-brand-blue"
+                  >
+                    cvdinizramos@gmail.com
+                  </a>
                 </div>
               </div>
             </div>

@@ -1,8 +1,12 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { sendVerificationEmail } from './emailService';
-import { createAccessToken, createRefreshTokenForUser, buildSafeUser } from './tokenService';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
+import { sendVerificationEmail } from "./emailService";
+import {
+  createAccessToken,
+  createRefreshTokenForUser,
+  buildSafeUser,
+} from "./tokenService";
 
 const prisma = new PrismaClient();
 
@@ -15,9 +19,11 @@ export const signup = async (email: string, password: string, name: string) => {
   const normalizedName = name.trim();
 
   // Check if user already exists
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (existingUser) {
-    throw new Error('Usuário já existe');
+    throw new Error("Usuário já existe");
   }
 
   // Hash password
@@ -43,29 +49,33 @@ export const signup = async (email: string, password: string, name: string) => {
     await sendVerificationEmail(normalizedEmail, verificationCode);
   } catch (error: any) {
     await prisma.user.delete({ where: { id: user.id } }).catch(() => null);
-    throw new Error(error.message || 'Erro ao criar conta. Tente novamente mais tarde.');
+    throw new Error(
+      error.message || "Erro ao criar conta. Tente novamente mais tarde.",
+    );
   }
 
-  return { userId: user.id, message: 'Usuário criado. Verifique seu e-mail.' };
+  return { userId: user.id, message: "Usuário criado. Verifique seu e-mail." };
 };
 
 export const verifyEmail = async (email: string, code: string) => {
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (!user) {
-    throw new Error('Usuário não encontrado');
+    throw new Error("Usuário não encontrado");
   }
 
   if (user.isVerified) {
-    throw new Error('E-mail já verificado');
+    throw new Error("E-mail já verificado");
   }
 
   if (!user.verificationCode || user.verificationCode !== code) {
-    throw new Error('Código inválido');
+    throw new Error("Código inválido");
   }
 
   if (!user.verificationExpires || user.verificationExpires < new Date()) {
-    throw new Error('Código expirado');
+    throw new Error("Código expirado");
   }
 
   // Update user
@@ -78,18 +88,20 @@ export const verifyEmail = async (email: string, code: string) => {
     },
   });
 
-  return { message: 'E-mail verificado com sucesso' };
+  return { message: "E-mail verificado com sucesso" };
 };
 
 export const resendVerificationCode = async (email: string) => {
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (!user) {
-    throw new Error('Usuário não encontrado');
+    throw new Error("Usuário não encontrado");
   }
 
   if (user.isVerified) {
-    throw new Error('E-mail já verificado');
+    throw new Error("E-mail já verificado");
   }
 
   // Generate new code
@@ -108,23 +120,27 @@ export const resendVerificationCode = async (email: string) => {
   // Send email
   await sendVerificationEmail(normalizedEmail, verificationCode);
 
-  return { message: 'Novo código enviado' };
+  return { message: "Novo código enviado" };
 };
 
 export const login = async (email: string, password: string) => {
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (!user) {
-    throw new Error('Credenciais inválidas');
+    throw new Error("Credenciais inválidas");
   }
 
   if (!user.isVerified) {
-    throw new Error('E-mail não verificado. Verifique seu e-mail antes de fazer login.');
+    throw new Error(
+      "E-mail não verificado. Verifique seu e-mail antes de fazer login.",
+    );
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordValid) {
-    throw new Error('Credenciais inválidas');
+    throw new Error("Credenciais inválidas");
   }
 
   const accessToken = createAccessToken(user);
@@ -134,6 +150,6 @@ export const login = async (email: string, password: string) => {
     user: buildSafeUser(user),
     token: accessToken,
     refreshToken: refreshTokenResult.token,
-    message: 'Login realizado com sucesso',
+    message: "Login realizado com sucesso",
   };
 };
