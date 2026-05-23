@@ -191,16 +191,6 @@ export default function Login() {
                 </>
               )}
             </button>
-
-            <a
-              href={`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/google?remember=true`}
-              className="btn-outline mt-4 w-full inline-flex items-center justify-center gap-2 border-border bg-surface text-text hover:bg-surface"
-            >
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm bg-surface text-[10px] font-bold text-text">
-                G
-              </span>
-              Entrar com Google
-            </a>
           </form>
 
           <div className="mt-6 p-4 rounded-xl bg-background border border-border text-sm text-text">
