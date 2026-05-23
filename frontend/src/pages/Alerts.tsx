@@ -150,16 +150,16 @@ export default function Alerts() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
+          <h1 className="text-3xl font-display font-extrabold text-text dark:text-text">
             Alertas Financeiros
           </h1>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-muted dark:text-muted">
             Acompanhe o uso dos seus orçamentos, prazos de vencimento e parcelas de crédito.
           </p>
         </div>
         <button
           onClick={fetchAlerts}
-          className="btn-outline inline-flex items-center gap-2 rounded-3xl px-4 py-3 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+          className="btn-outline inline-flex items-center gap-2 rounded-3xl px-4 py-3 text-sm border border-border dark:border-border bg-surface dark:bg-surface text-text dark:text-muted hover:bg-surface dark:hover:bg-surface-strong transition"
         >
           <RefreshCcw className="w-4 h-4" /> Atualizar
         </button>
@@ -167,33 +167,33 @@ export default function Alerts() {
 
       {/* Cards de resumo */}
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
-          <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Limite estourado</div>
+        <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
+          <div className="text-sm uppercase tracking-[0.3em] text-muted dark:text-muted">Limite estourado</div>
           <div className="mt-4 text-3xl font-bold text-rose-600 dark:text-rose-400">{overLimitCount}</div>
         </div>
-        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
-          <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Próximo do limite</div>
+        <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
+          <div className="text-sm uppercase tracking-[0.3em] text-muted dark:text-muted">Próximo do limite</div>
           <div className="mt-4 text-3xl font-bold text-amber-500 dark:text-amber-400">{nearingCount}</div>
         </div>
-        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
-          <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Vencem em 7 dias</div>
-          <div className="mt-4 text-3xl font-bold text-slate-700 dark:text-slate-200">{dueSoonCount}</div>
+        <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
+          <div className="text-sm uppercase tracking-[0.3em] text-muted dark:text-muted">Vencem em 7 dias</div>
+          <div className="mt-4 text-3xl font-bold text-text">{dueSoonCount}</div>
         </div>
-        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
-          <div className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Parcelas próximas</div>
+        <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
+          <div className="text-sm uppercase tracking-[0.3em] text-muted dark:text-muted">Parcelas próximas</div>
           <div className="mt-4 text-3xl font-bold text-blue-600 dark:text-blue-400">{installmentDueSoon}</div>
         </div>
       </div>
 
       {/* ── SEÇÃO: Parcelas de crédito ──────────────────────────────────────── */}
-      <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
+      <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
         <div className="flex items-center gap-3 mb-5">
           <CreditCard className="w-5 h-5 text-blue-500" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Compras parceladas em aberto</h2>
+          <h2 className="text-lg font-semibold text-text dark:text-text">Compras parceladas em aberto</h2>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-3 text-slate-500 dark:text-slate-400 py-8">
+          <div className="flex items-center justify-center gap-3 text-muted dark:text-muted py-8">
             <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
           </div>
         ) : error ? (
@@ -201,9 +201,9 @@ export default function Alerts() {
             {error}
           </div>
         ) : installmentGroups.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-8 text-center">
+          <div className="rounded-3xl border border-dashed border-border-strong dark:border-border bg-surface dark:bg-surface-strong/30 p-8 text-center">
             <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400 mb-3" />
-            <p className="text-slate-500 dark:text-slate-400">Nenhuma compra parcelada em andamento.</p>
+            <p className="text-muted dark:text-muted">Nenhuma compra parcelada em andamento.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -219,44 +219,44 @@ export default function Alerts() {
                     ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30'
                     : isWarning
                       ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A]'
+                      : 'border-border dark:border-border bg-surface dark:bg-surface'
                     }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                     <div className="flex-1 min-w-0">
                       {/* Título + badges */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{g.title}</span>
+                        <span className="font-semibold text-text dark:text-text">{g.title}</span>
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                           {g.paidInstallments}/{g.totalInstallments}x
                         </span>
                         {g.paymentMethod && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface-strong dark:bg-surface-strong text-muted dark:text-muted">
                             {g.paymentMethod}
                           </span>
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-400 mt-0.5">{g.category}</p>
+                      <p className="text-xs text-muted mt-0.5">{g.category}</p>
 
                       {/* Barra de progresso das parcelas */}
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden max-w-[200px]">
+                        <div className="flex-1 h-1.5 rounded-full bg-surface-strong overflow-hidden max-w-[200px]">
                           <div
                             className="h-full rounded-full bg-blue-500 transition-all"
                             style={{ width: `${progressPercent}%` }}
                           />
                         </div>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="text-xs text-muted dark:text-muted">
                           {g.remainingInstallments} parcela{g.remainingInstallments !== 1 ? 's' : ''} restante{g.remainingInstallments !== 1 ? 's' : ''}
                         </span>
                       </div>
 
                       {/* Valores */}
-                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted dark:text-muted">
                         <span>
                           Por parcela:{' '}
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                          <span className="font-semibold text-text">
                             {currency(g.amountPerInstallment)}
                           </span>
                         </span>
@@ -277,7 +277,7 @@ export default function Alerts() {
                             ? 'text-rose-600 dark:text-rose-400'
                             : isWarning
                               ? 'text-amber-600 dark:text-amber-400'
-                              : 'text-slate-600 dark:text-slate-300'
+                              : 'text-muted dark:text-muted'
                             }`}>
                             {g.daysUntilNext === 0
                               ? 'Vence hoje'
@@ -285,7 +285,7 @@ export default function Alerts() {
                                 ? 'Vence amanhã'
                                 : `Próxima em ${g.daysUntilNext} dias`}
                           </div>
-                          <span className="text-xs text-slate-400 dark:text-slate-500 rounded-xl bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                          <span className="text-xs text-muted dark:text-muted rounded-xl bg-surface-strong dark:bg-surface-strong px-2 py-1">
                             {dateBR(g.nextPaymentDate)}
                           </span>
                         </>
@@ -304,14 +304,14 @@ export default function Alerts() {
       </div>
 
       {/* ── SEÇÃO: Orçamentos ───────────────────────────────────────────────── */}
-      <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6">
+      <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-6">
         <div className="flex items-center gap-3 mb-5">
           <CalendarClock className="w-5 h-5 text-brand-blue" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Seus orçamentos</h2>
+          <h2 className="text-lg font-semibold text-text dark:text-text">Seus orçamentos</h2>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-3 text-slate-500 dark:text-slate-400 py-8">
+          <div className="flex items-center justify-center gap-3 text-muted dark:text-muted py-8">
             <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
           </div>
         ) : error ? (
@@ -319,9 +319,9 @@ export default function Alerts() {
             {error}
           </div>
         ) : budgetAlerts.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-8 text-center">
+          <div className="rounded-3xl border border-dashed border-border-strong dark:border-border bg-surface dark:bg-surface-strong/30 p-8 text-center">
             <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400 mb-3" />
-            <p className="text-slate-500 dark:text-slate-400">Nenhum orçamento cadastrado ainda.</p>
+            <p className="text-muted dark:text-muted">Nenhum orçamento cadastrado ainda.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -337,12 +337,12 @@ export default function Alerts() {
                     ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30'
                     : isWarning
                       ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A]'
+                      : 'border-border dark:border-border bg-surface dark:bg-surface'
                     }`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">{b.category}</span>
+                      <span className="font-semibold text-text dark:text-text">{b.category}</span>
                       {b.usedPercent >= 100 && (
                         <span className="chip bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-[10px]">
                           Limite estourado
@@ -356,13 +356,13 @@ export default function Alerts() {
                     </div>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden max-w-[200px]">
+                      <div className="flex-1 h-1.5 rounded-full bg-surface-strong overflow-hidden max-w-[200px]">
                         <div
                           className={`h-full rounded-full transition-all ${b.usedPercent >= 100 ? 'bg-rose-500' : b.usedPercent >= 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                           style={{ width: `${Math.min(100, b.usedPercent)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-muted dark:text-muted">
                         {currency(b.spent)} / {currency(b.limit)}
                       </span>
                     </div>
@@ -371,19 +371,19 @@ export default function Alerts() {
                   <div className="flex items-center gap-3 shrink-0">
                     {b.dueDate ? (
                       <>
-                        <div className={`text-sm font-semibold ${isDanger ? 'text-rose-600 dark:text-rose-400' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                        <div className={`text-sm font-semibold ${isDanger ? 'text-rose-600 dark:text-rose-400' : isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-muted dark:text-muted'}`}>
                           {isOverdue
                             ? `Venceu há ${Math.abs(b.diffDays!)} dia${Math.abs(b.diffDays!) > 1 ? 's' : ''}`
                             : b.diffDays === 0
                               ? 'Vence hoje'
                               : `Vence em ${b.diffDays} dia${b.diffDays! > 1 ? 's' : ''}`}
                         </div>
-                        <span className="text-xs text-slate-400 dark:text-slate-500 rounded-xl bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                        <span className="text-xs text-muted dark:text-muted rounded-xl bg-surface-strong dark:bg-surface-strong px-2 py-1">
                           {dateBR(b.dueDate)}
                         </span>
                       </>
                     ) : (
-                      <span className="text-xs text-slate-400 dark:text-slate-500 rounded-xl bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                      <span className="text-xs text-muted dark:text-muted rounded-xl bg-surface-strong dark:bg-surface-strong px-2 py-1">
                         Sem prazo
                       </span>
                     )}

@@ -133,7 +133,7 @@ export default function Dashboard() {
 
   if (!data) {
     return (
-      <div className="p-6 rounded-2xl border border-slate-700 bg-slate-900 text-slate-300">
+      <div className="p-6 rounded-2xl border border-border bg-surface-strong text-text">
         <p>Dashboard sem dados.</p>
       </div>
     );
@@ -157,7 +157,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6" data-testid="dashboard">
-      <div className="card border border-slate-200/80 shadow-sm dark:border-slate-800/80 p-6">
+      <div className="card border border-border/80 shadow-sm dark:border-border/80 p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-4">
             {user.plan === 'PRO' && user.companyName ? (
@@ -165,7 +165,7 @@ export default function Dashboard() {
                 <img src={user.companyLogo || '/logo.png'} alt={user.companyName} className="w-16 h-16 rounded-3xl object-cover border border-white shadow-sm" />
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.35em] text-brand-blue font-semibold">Área da empresa</div>
-                  <div className="text-3xl sm:text-4xl font-display font-bold text-slate-900 dark:text-white leading-tight">{user.companyName}</div>
+                  <div className="text-3xl sm:text-4xl font-display font-bold text-text dark:text-white leading-tight">{user.companyName}</div>
                 </div>
               </div>
             ) : (
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight">Olá, {user?.name}!</h1>
               </div>
             )}
-            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">Acompanhe seu progresso financeiro com análises atualizadas e visão clara por categoria.</p>
+            <p className="text-sm sm:text-base text-muted dark:text-muted">Acompanhe seu progresso financeiro com análises atualizadas e visão clara por categoria.</p>
             {alerts && alerts.count > 0 && (
               <div className="inline-flex items-center gap-3 rounded-3xl border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">
                 <AlertTriangle className="w-4 h-4" />
@@ -215,12 +215,12 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="card relative overflow-hidden border border-slate-200/80 shadow-sm dark:border-slate-800/80"
+            className="card relative overflow-hidden border border-border/80 shadow-sm dark:border-border/80"
           >
             <div className={`absolute top-0 right-0 w-24 h-24 rounded-full bg-gradient-to-br ${s.color} opacity-10 blur-2xl`} />
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{s.label}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">{s.label}</div>
                 <div className="text-2xl sm:text-3xl font-display font-bold mt-2" data-testid={`stat-${s.label}`}>{currency(s.value)}</div>
               </div>
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white shadow-md`}>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-lg sm:text-xl">Análise com IA · Claude Sonnet 4.5</h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Conselhos personalizados baseados nas suas finanças</p>
+                  <p className="text-xs sm:text-sm text-muted dark:text-muted">Conselhos personalizados baseados nas suas finanças</p>
                 </div>
               </div>
               <button onClick={() => setAiInsights(null)} className="btn-ghost !p-2" title="Fechar">✕</button>
@@ -286,10 +286,10 @@ export default function Dashboard() {
             <div className="relative grid gap-3 md:grid-cols-2">
               {aiInsights.map((ins, i) => {
                 const cfg = {
-                  info: { icon: Info, cls: 'bg-slate-900 border-blue-900/50 text-blue-300' },
-                  warning: { icon: AlertTriangle, cls: 'bg-slate-900 border-amber-900/50 text-amber-300' },
-                  success: { icon: CheckCircle2, cls: 'bg-slate-900 border-emerald-900/50 text-emerald-300' },
-                }[ins.type] || { icon: Info, cls: 'bg-slate-900 border-slate-700' };
+                  info: { icon: Info, cls: 'bg-surface-strong border-blue-900/50 text-blue-300' },
+                  warning: { icon: AlertTriangle, cls: 'bg-surface-strong border-amber-900/50 text-amber-300' },
+                  success: { icon: CheckCircle2, cls: 'bg-surface-strong border-emerald-900/50 text-emerald-300' },
+                }[ins.type] || { icon: Info, cls: 'bg-surface-strong border-border' };
                 return (
                   <motion.div
                     key={i}
@@ -314,9 +314,9 @@ export default function Dashboard() {
       </AnimatePresence>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="card lg:col-span-2 border border-slate-200/80 shadow-sm dark:border-slate-800/80">
+        <div className="card lg:col-span-2 border border-border/80 shadow-sm dark:border-border/80">
           <h3 className="font-display font-bold text-lg sm:text-xl">Fluxo mensal</h3>
-          <p className="text-xs sm:text-sm text-slate-500">Receitas vs Despesas nos últimos 6 meses</p>
+          <p className="text-xs sm:text-sm text-muted">Receitas vs Despesas nos últimos 6 meses</p>
           <div className="h-72 mt-4">
             <ResponsiveContainer>
               <AreaChart data={data.monthly}>
@@ -344,12 +344,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="card border border-slate-200/80 shadow-sm dark:border-slate-800/80">
+        <div className="card border border-border/80 shadow-sm dark:border-border/80">
           <h3 className="font-display font-bold text-lg sm:text-xl">Gastos por categoria</h3>
-          <p className="text-xs sm:text-sm text-slate-500">Distribuição atual</p>
+          <p className="text-xs sm:text-sm text-muted">Distribuição atual</p>
           <div className="h-72 mt-4">
             {data.categories.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">Sem dados ainda</div>
+              <div className="h-full flex items-center justify-center text-muted text-sm">Sem dados ainda</div>
             ) : (
               <ResponsiveContainer>
                 <PieChart>
@@ -371,7 +371,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="card lg:col-span-2 border border-slate-200/80 shadow-sm dark:border-slate-800/80">
+        <div className="card lg:col-span-2 border border-border/80 shadow-sm dark:border-border/80">
           <h3 className="font-display font-bold text-lg sm:text-xl">Comparativo mensal</h3>
           <div className="h-64 mt-4">
             <ResponsiveContainer>
@@ -387,18 +387,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="card border border-slate-200/80 shadow-sm dark:border-slate-800/80">
+        <div className="card border border-border/80 shadow-sm dark:border-border/80">
           <h3 className="font-display font-bold text-lg sm:text-xl">Últimas transações</h3>
           <div className="mt-4 space-y-2" data-testid="recent-transactions">
-            {data.recent.length === 0 && <p className="text-sm text-slate-400">Nenhuma transação ainda</p>}
+            {data.recent.length === 0 && <p className="text-sm text-muted">Nenhuma transação ainda</p>}
             {data.recent.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+              <div key={t.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface dark:hover:bg-surface-strong transition">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                   {t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm truncate">{t.title}</div>
-                  <div className="text-xs text-slate-500">{t.category} · {dateBR(t.date)}</div>
+                  <div className="text-xs text-muted">{t.category} · {dateBR(t.date)}</div>
                 </div>
                 <div className={`font-bold text-sm ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {t.type === 'INCOME' ? '+' : '-'}{currency(t.amount)}

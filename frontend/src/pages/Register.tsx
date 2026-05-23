@@ -39,7 +39,7 @@ export default function Register() {
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-brand-blue/30 blur-3xl" />
         <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-brand-green/25 blur-3xl" />
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative text-white max-w-md">
-          <div className="chip bg-white/10 text-white border border-white/20 backdrop-blur mb-5">
+          <div className="chip bg-surface/10 text-white border border-white/20 backdrop-blur mb-5">
             <Sparkles className="w-3.5 h-3.5" /> Grátis para sempre
           </div>
           <h2 className="text-4xl font-display font-extrabold leading-tight">Transforme seus gastos em resultados.</h2>
@@ -52,37 +52,37 @@ export default function Register() {
         </motion.div>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-12 bg-white">
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-surface">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8"><Logo /></div>
           <h1 className="text-3xl font-display font-extrabold tracking-tight">Criar conta</h1>
-          <p className="text-slate-600 mt-1">Comece grátis — sem cartão de crédito.</p>
+          <p className="text-muted mt-1">Comece grátis — sem cartão de crédito.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4" data-testid="register-form">
             <div>
-              <label className="text-sm font-medium text-slate-700">Nome</label>
+              <label className="text-sm font-medium text-text">Nome</label>
               <div className="relative mt-1.5">
-                <UserIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <UserIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
                 <input {...register('name')} data-testid="register-name" className="input pl-10" placeholder="Seu nome" />
               </div>
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">E-mail</label>
+              <label className="text-sm font-medium text-text">E-mail</label>
               <div className="relative mt-1.5">
-                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
                 <input {...register('email')} type="email" data-testid="register-email" className="input pl-10" placeholder="voce@email.com" />
               </div>
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">Senha</label>
+              <label className="text-sm font-medium text-text">Senha</label>
               <div className="relative mt-1.5">
-                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
                 <input {...register('password')} type={show ? 'text' : 'password'} data-testid="register-password" className="input pl-10 pr-10" placeholder="Mínimo 6 caracteres" />
-                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text">
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -94,7 +94,7 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-slate-600 text-center">
+          <p className="mt-6 text-sm text-muted text-center">
             Já tem conta?{' '}
             <Link to="/login" className="text-brand-blue font-semibold hover:underline" data-testid="goto-login">Entrar</Link>
           </p>

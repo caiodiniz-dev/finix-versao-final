@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { sendVerificationEmail } from './emailService';
+import { createAccessToken, createRefreshTokenForUser, buildSafeUser } from './tokenService';
 
 const prisma = new PrismaClient();
 
@@ -126,24 +127,13 @@ export const login = async (email: string, password: string) => {
     throw new Error('Credenciais inválidas');
   }
 
-  // Generate JWT
-  const token = jwt.sign(
-    { sub: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET || 'finix-dev-secret',
-    { expiresIn: '7d' }
-  );
+  const accessToken = createAccessToken(user);
+  const refreshTokenResult = await createRefreshTokenForUser(user.id);
 
   return {
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      plan: user.plan,
-      hasCompletedOnboarding: user.hasCompletedOnboarding,
-      isVerified: user.isVerified,
-    },
-    token,
+    user: buildSafeUser(user),
+    token: accessToken,
+    refreshToken: refreshTokenResult.token,
     message: 'Login realizado com sucesso',
   };
 };

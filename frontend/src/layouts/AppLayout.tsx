@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { useAuth, useAutoRefreshUser } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useDashboardTheme } from '../contexts/ThemeContext';
 import { api } from '../services/api';
 
 export default function AppLayout() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useDashboardTheme();
   const isDark = theme === 'dark';
   const { user, logout } = useAuth();
   useAutoRefreshUser(30000);
@@ -73,8 +73,8 @@ export default function AppLayout() {
   }
 
   const Sidebar = (
-    <aside className="w-64 shrink-0 h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col">
-      <div className="px-5 py-6 border-b border-slate-100 dark:border-slate-800">
+    <aside className="w-64 shrink-0 h-full bg-surface border-r border-border flex flex-col">
+      <div className="px-5 py-6 border-b border-border">
         <div className="flex items-center gap-4">
           <Logo
             src={user.plan === 'PRO' ? user.companyLogo : undefined}
@@ -84,8 +84,8 @@ export default function AppLayout() {
           />
           {user.plan === 'PRO' && user.companyName && (
             <div>
-              <div className="text-base font-semibold text-slate-500 dark:text-slate-300">Empresa</div>
-              <div className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
+              <div className="text-text-muted">Empresa</div>
+              <div className="text-xl font-display font-bold text-text tracking-tight">
                 {user.companyName}
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function AppLayout() {
             className={({ isActive }) =>
               `flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all ${isActive
                 ? 'bg-gradient-to-r from-brand-blue/10 to-brand-purple/10 text-brand-blue border border-brand-blue/20'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                : 'text-text-muted hover:bg-surface-strong'
               }`
             }
           >
@@ -117,8 +117,8 @@ export default function AppLayout() {
           </NavLink>
         ))}
       </nav>
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800">
+      <div className="p-3 border-t border-border-strong space-y-2">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-surface-strong text-text">
           {user.photo ? (
             <img src={user.photo} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
           ) : (
@@ -128,14 +128,14 @@ export default function AppLayout() {
           )}
           <div className="min-w-0">
             <div className="text-sm font-semibold truncate">{user.name}</div>
-            <div className="text-xs text-slate-500 truncate">{user.email}</div>
+            <div className="text-xs text-muted truncate">{user.email}</div>
             {user.plan && (
               <div className="mt-1">
                 <span
                   data-testid="plan-badge"
                   className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${user.plan === 'PRO' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
                     user.plan === 'BASIC' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
-                      'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                      'bg-surface-strong text-muted dark:text-muted'
                     }`}
                 >
                   <Crown className="w-2.5 h-2.5" /> {user.plan}
@@ -176,7 +176,7 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen flex bg-background">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">{Sidebar}</div>
 
@@ -190,7 +190,7 @@ export default function AppLayout() {
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar */}
-        <header className="lg:hidden sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-30 bg-surface/80 dark:bg-surface/80 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
           <button data-testid="open-sidebar" onClick={() => setOpen(true)} className="btn-ghost !p-2">
             <Menu className="w-5 h-5" />
           </button>

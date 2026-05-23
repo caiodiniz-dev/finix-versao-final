@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.resendVerificationCode = exports.verifyEmail = exports.signup = exports.generateVerificationCode = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const emailService_1 = require("./emailService");
+const tokenService_1 = require("./tokenService");
 const prisma = new client_1.PrismaClient();
 const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -112,19 +112,12 @@ const login = async (email, password) => {
     if (!isPasswordValid) {
         throw new Error('Credenciais inválidas');
     }
-    // Generate JWT
-    const token = jsonwebtoken_1.default.sign({ sub: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'finix-dev-secret', { expiresIn: '7d' });
+    const accessToken = (0, tokenService_1.createAccessToken)(user);
+    const refreshTokenResult = await (0, tokenService_1.createRefreshTokenForUser)(user.id);
     return {
-        user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            plan: user.plan,
-            hasCompletedOnboarding: user.hasCompletedOnboarding,
-            isVerified: user.isVerified,
-        },
-        token,
+        user: (0, tokenService_1.buildSafeUser)(user),
+        token: accessToken,
+        refreshToken: refreshTokenResult.token,
         message: 'Login realizado com sucesso',
     };
 };

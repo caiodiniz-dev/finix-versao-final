@@ -6,6 +6,7 @@ import { User } from '../types';
 interface AuthCtx {
   user: User | null | undefined; // undefined = loading, null = not logged in
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  loginWithToken: (token: string, remember?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<{ userId: string; message: string }>;
   setUser: React.Dispatch<React.SetStateAction<User | null | undefined>>;
   logout: () => void;
@@ -40,16 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('finix-auth-unauthorized', handleUnauthorized);
   }, [navigate]);
 
+  const storeToken = (token: string, remember: boolean) => {
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('finix_token', token);
+  };
+
   const login = async (email: string, password: string, remember = true) => {
     try {
       console.log('[AuthContext] Starting login request for:', email);
       const { data } = await api.post('/api/auth/login', { email, password });
       console.log('[AuthContext] Login response received:', { userId: data.user?.id, verified: data.user?.isVerified });
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('finix_token', data.token);
+      storeToken(data.token, remember);
       setUser(data.user);
 
-      // Check if user is verified
       if (!data.user.isVerified) {
         console.warn('[AuthContext] User email not verified');
         throw new Error('E-mail não verificado. Verifique seu e-mail antes de continuar.');
@@ -57,6 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] Login completed successfully');
     } catch (e) {
       console.error('[AuthContext] Login error:', e);
+      throw new Error(apiErrorMessage(e));
+    }
+  };
+
+  const loginWithToken = async (token: string, remember = true) => {
+    try {
+      console.log('[AuthContext] Authenticating with token from OAuth callback');
+      storeToken(token, remember);
+      const { data } = await api.get('/api/auth/me');
+      setUser(data);
+      console.log('[AuthContext] OAuth login completed successfully for:', data?.email);
+    } catch (e) {
+      console.error('[AuthContext] OAuth login error:', e);
+      localStorage.removeItem('finix_token');
+      sessionStorage.removeItem('finix_token');
       throw new Error(apiErrorMessage(e));
     }
   };
@@ -86,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return <Ctx.Provider value={{ user, login, register, setUser, logout, refreshUser }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, login, loginWithToken, register, setUser, logout, refreshUser }}>{children}</Ctx.Provider>;
 }
 
 export const useAuth = () => {

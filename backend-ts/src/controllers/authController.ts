@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { signup, verifyEmail, resendVerificationCode, login } from '../services/authService';
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../services/tokenService';
 import { AuthRequest } from '../middlewares/auth';
 
 export const signupController = async (req: Request, res: Response) => {
@@ -52,11 +53,13 @@ export const resendCodeController = async (req: Request, res: Response) => {
   }
 };
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const loginController = async (req: Request, res: Response) => {
   try {
     console.log('[AUTH] Login request:', { email: req.body.email, method: req.method, path: req.path });
 
-    const { email, password } = req.body;
+    const { email, password, remember = false } = req.body;
 
     if (!email || !password) {
       console.warn('[AUTH] Login failed: missing email or password');
@@ -65,6 +68,12 @@ export const loginController = async (req: Request, res: Response) => {
 
     console.log('[AUTH] Attempting login for:', email);
     const result = await login(email, password);
+
+    if (remember && result.refreshToken) {
+      res.cookie('refresh_token', result.refreshToken, refreshTokenCookieOptions(isProduction));
+      res.cookie('access_token', result.token, accessTokenCookieOptions(isProduction));
+    }
+
     console.log('[AUTH] Login successful for:', email);
     res.json(result);
   } catch (error: any) {

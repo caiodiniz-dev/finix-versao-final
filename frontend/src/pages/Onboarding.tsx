@@ -148,10 +148,10 @@ export default function Onboarding() {
             className="text-center mb-8"
           >
             <Logo className="mx-auto mb-4" />
-            <h1 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 mb-2">
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-text mb-2">
               Personalize sua experiência Finix
             </h1>
-            <p className="text-slate-600 max-w-xl mx-auto">
+            <p className="text-muted max-w-xl mx-auto">
               Configure logo, cores e categorias para o seu fluxo financeiro. Crie um workspace inteligente que reflita seu negócio.
             </p>
           </motion.div>
@@ -162,15 +162,15 @@ export default function Onboarding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               onSubmit={handleSubmit(onSubmit)}
-              className="bg-white rounded-2xl shadow-xl p-8"
+              className="bg-surface rounded-2xl shadow-xl p-8"
             >
               <div className="space-y-10">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                  <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                  <h2 className="text-xl font-semibold text-text mb-4">
                     Como você vai usar o Finix?
                   </h2>
                   <div className="grid gap-4">
-                    <label className="flex items-center p-4 border border-slate-200 rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-slate-50/80">
+                    <label className="flex items-center p-4 border border-border rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-background/80">
                       <input
                         type="radio"
                         value="pessoal"
@@ -180,11 +180,11 @@ export default function Onboarding() {
                       <User className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
                         <div className="font-medium">Uso pessoal</div>
-                        <div className="text-sm text-slate-600">Gerencie suas finanças individuais</div>
+                        <div className="text-sm text-muted">Gerencie suas finanças individuais</div>
                       </div>
                     </label>
 
-                    <label className="flex items-center p-4 border border-slate-200 rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-slate-50/80">
+                    <label className="flex items-center p-4 border border-border rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-background/80">
                       <input
                         type="radio"
                         value="empresarial"
@@ -194,11 +194,11 @@ export default function Onboarding() {
                       <Building className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
                         <div className="font-medium">Uso empresarial</div>
-                        <div className="text-sm text-slate-600">Personalize o Finix para sua empresa</div>
+                        <div className="text-sm text-muted">Personalize o Finix para sua empresa</div>
                       </div>
                     </label>
 
-                    <label className="flex items-center p-4 border border-slate-200 rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-slate-50/80">
+                    <label className="flex items-center p-4 border border-border rounded-3xl cursor-pointer hover:border-brand-blue transition-colors bg-background/80">
                       <input
                         type="radio"
                         value="organizar"
@@ -208,7 +208,7 @@ export default function Onboarding() {
                       <Users className="w-6 h-6 text-brand-blue mr-3" />
                       <div>
                         <div className="font-medium">Organizar para outra pessoa</div>
-                        <div className="text-sm text-slate-600">Controle financeiro para clientes ou família</div>
+                        <div className="text-sm text-muted">Controle financeiro para clientes ou família</div>
                       </div>
                     </label>
                   </div>
@@ -315,10 +315,10 @@ export default function Onboarding() {
                         whileTap={{ scale: 0.98 }}
                         className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${categories.includes(cat)
                           ? 'border-brand-blue bg-brand-blue/10'
-                          : 'border-slate-200 bg-white hover:border-brand-blue/50'
+                          : 'border-border bg-surface hover:border-brand-blue/50'
                           }`}
                       >
-                        <span className="font-medium text-slate-900">{cat}</span>
+                        <span className="font-medium text-text">{cat}</span>
                         {categories.includes(cat) && (
                           <Check className="w-5 h-5 text-brand-blue" />
                         )}
@@ -327,7 +327,7 @@ export default function Onboarding() {
                   </div>
 
                   {/* Add Custom Category */}
-                  <div className="border-t border-slate-200 pt-6">
+                  <div className="border-t border-border pt-6">
                     <p className="text-sm font-medium text-gray-700 mb-3">Adicionar categoria personalizada</p>
                     <div className="flex gap-2 mb-4">
                       <input
@@ -355,9 +355,9 @@ export default function Onboarding() {
                             key={cat}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200"
+                            className="flex items-center justify-between p-3 bg-background rounded-2xl border border-border"
                           >
-                            <span className="font-medium text-slate-900">{cat}</span>
+                            <span className="font-medium text-text">{cat}</span>
                             <button
                               type="button"
                               onClick={() => removeCategory(cat)}
@@ -394,12 +394,12 @@ export default function Onboarding() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm"
+              className="rounded-3xl border border-border bg-background p-6 shadow-sm"
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs uppercase tracking-[0.3em] text-brand-blue font-semibold mb-2">Visão rápida</div>
-                  <h2 className="text-2xl font-display font-bold text-slate-900">Seu onboarding com cores e progresso</h2>
+                  <h2 className="text-2xl font-display font-bold text-text">Seu onboarding com cores e progresso</h2>
                 </div>
                 <span className="chip bg-brand-green/10 text-brand-green">Fácil</span>
               </div>
@@ -423,18 +423,18 @@ export default function Onboarding() {
               </div>
 
               <div className="mt-8 space-y-4">
-                <div className="rounded-2xl border border-brand-blue/10 bg-white/80 p-4">
-                  <p className="text-sm text-slate-500">Categorias padrão para todos os planos básicos:</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-700">
+                <div className="rounded-2xl border border-brand-blue/10 bg-surface/80 p-4">
+                  <p className="text-sm text-muted">Categorias padrão para todos os planos básicos:</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-text">
                     {['Alimentação', 'Transporte', 'Saúde', 'Salário', 'Investimento', 'Pagamento'].map((cat) => (
-                      <span key={cat} className="chip bg-slate-100 text-slate-700">{cat}</span>
+                      <span key={cat} className="chip bg-surface text-text">{cat}</span>
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-sm text-slate-700">
+                <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-text">
                   <div className="font-semibold mb-2">Suporte direto</div>
                   <p>Fale com a gente pelo WhatsApp ou envie uma mensagem para o nosso e-mail.</p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <div className="mt-3 space-y-2 text-sm text-muted">
                     <p>WhatsApp: <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="font-semibold text-brand-blue">(19) 99473-7425</a></p>
                     <p>Email: <a href="mailto:cvdinizramos@gmail.com" className="font-semibold text-brand-blue">cvdinizramos@gmail.com</a></p>
                   </div>
@@ -443,11 +443,11 @@ export default function Onboarding() {
             </motion.div>
           </div>
           <div className="mt-10">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-slate-900">Suporte Finix</div>
-                  <p className="text-sm text-slate-600">Fale conosco se precisar de ajuda ao configurar sua conta.</p>
+                  <div className="text-sm font-semibold text-text">Suporte Finix</div>
+                  <p className="text-sm text-muted">Fale conosco se precisar de ajuda ao configurar sua conta.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a href="https://wa.me/5519994737425?text=Olá%20Finix" target="_blank" rel="noreferrer" className="btn-outline text-brand-blue">WhatsApp</a>

@@ -18,6 +18,8 @@ model User {
   role                   String    @default("USER")
   blocked                Boolean   @default(false)
   photo                  String?   @db.Text
+  googleId               String?   @unique
+  authProvider           String?   @default("local")
   plan                   String    @default("FREE") // FREE | BASIC | PRO | TEST
   stripeCustomerId       String?
   stripeSubscriptionId   String?
@@ -45,8 +47,22 @@ model User {
   subscription        Subscription?
   installments        Installment[]
   financialAlerts     FinancialAlert[]
+  refreshTokens       RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id               String   @id @default(uuid())
+  userId           String
+  tokenHash        String
+  tokenFingerprint String   @unique
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
 
 model Transaction {

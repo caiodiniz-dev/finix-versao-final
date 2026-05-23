@@ -18,7 +18,7 @@ const PLANS = [
       'Banner de upgrade visível',
     ],
     icon: Zap,
-    color: 'from-slate-500 to-slate-600',
+    color: 'from-brand-blue to-brand-purple',
     accent: 'rgba(100,116,139,.15)',
     border: 'rgba(100,116,139,.25)',
   },
@@ -114,12 +114,12 @@ function DowngradeModal({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.93 }}
         transition={{ duration: 0.18 }}
-        className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-slate-900 p-8 shadow-2xl"
+        className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-surface-strong p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-full p-1 text-slate-400 hover:text-white transition"
+          className="absolute right-5 top-5 rounded-full p-1 text-muted hover:text-white transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -131,7 +131,7 @@ function DowngradeModal({
         <h2 className="mb-2 text-2xl font-extrabold text-white">
           Fazer downgrade para {targetPlan.emoji} {targetPlan.name}?
         </h2>
-        <p className="mb-6 text-sm text-slate-400 leading-relaxed">
+        <p className="mb-6 text-sm text-muted leading-relaxed">
           Ao confirmar, sua assinatura será ajustada imediatamente e você
           perderá acesso aos seguintes recursos do plano Pro:
         </p>
@@ -139,7 +139,7 @@ function DowngradeModal({
         {lostFeatures.length > 0 && (
           <ul className="mb-8 space-y-2">
             {lostFeatures.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-slate-300">
+              <li key={f} className="flex items-start gap-2 text-sm text-muted">
                 <span className="mt-0.5 text-red-400">✕</span>
                 {f}
               </li>
@@ -150,7 +150,7 @@ function DowngradeModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition"
+            className="flex-1 rounded-2xl border border-white/10 bg-surface/5 px-4 py-3 text-sm font-semibold text-white hover:bg-surface/10 transition"
           >
             Manter Pro
           </button>
@@ -278,22 +278,22 @@ export default function Plans() {
           className="max-w-3xl"
         >
           <h1 className="text-4xl font-display font-extrabold">Planos e Preços</h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+          <p className="mt-4 text-lg text-muted max-w-2xl">
             Escolha o plano ideal para sua realidade. Faça upgrade ou downgrade a qualquer momento.
           </p>
 
           {/* Current plan badge */}
           {user && currentPlan && (
-            <div className="mt-6 inline-flex items-center gap-4 rounded-3xl border border-slate-700/60 bg-slate-950/70 px-5 py-4 shadow-soft">
+            <div className="mt-6 inline-flex items-center gap-4 rounded-3xl border border-border/60 bg-surface-strong/70 px-5 py-4 shadow-soft">
               <div>
-                <p className="text-xs uppercase tracking-[.28em] text-slate-500">Plano atual</p>
+                <p className="text-xs uppercase tracking-[.28em] text-muted">Plano atual</p>
                 <p className="mt-1 text-xl font-bold text-white">
                   {currentPlan.emoji} {currentPlan.name}
                 </p>
               </div>
               {user.plan !== 'FREE' && (
                 <>
-                  <div className="h-8 w-px bg-slate-700/60" />
+                  <div className="h-8 w-px bg-surface-strong/60" />
                   <button
                     onClick={handleCancel}
                     disabled={loading === 'cancel'}
@@ -373,7 +373,7 @@ export default function Plans() {
                     <h3 className="font-bold text-white text-lg leading-none">
                       {plan.emoji} {plan.name}
                     </h3>
-                    <p className="mt-1 text-xs text-slate-500">{plan.description}</p>
+                    <p className="mt-1 text-xs text-muted">{plan.description}</p>
                   </div>
                 </div>
 
@@ -383,7 +383,7 @@ export default function Plans() {
                     <span className="text-[42px] font-extrabold leading-none text-white">
                       {plan.price === 0 ? 'Grátis' : `R$\u00a0${plan.price.toFixed(2).replace('.', ',')}`}
                     </span>
-                    {plan.price > 0 && <span className="text-slate-500 text-sm">/mês</span>}
+                    {plan.price > 0 && <span className="text-muted text-sm">/mês</span>}
                   </div>
                 </div>
 
@@ -397,12 +397,12 @@ export default function Plans() {
                       : {}
                   }
                   className={`mb-7 w-full rounded-2xl px-5 py-3 text-sm font-bold transition-all ${isCurrent
-                      ? 'bg-white/5 text-slate-500 cursor-default'
-                      : isDowngrade
-                        ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
-                        : plan.highlighted
-                          ? 'shadow-lg hover:opacity-90'
-                          : 'border border-white/10 bg-white/5 text-white hover:bg-white/10'
+                    ? 'bg-surface/5 text-muted cursor-default'
+                    : isDowngrade
+                      ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                      : plan.highlighted
+                        ? 'shadow-lg hover:opacity-90'
+                        : 'border border-white/10 bg-surface/5 text-white hover:bg-surface/10'
                     } disabled:opacity-50 disabled:cursor-default`}
                 >
                   {btnLabel}
@@ -413,7 +413,7 @@ export default function Plans() {
                   {plan.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <Check className="mt-0.5 w-3.5 h-3.5 flex-shrink-0 text-emerald-400" />
-                      <span className="text-sm text-slate-400 leading-snug">{f}</span>
+                      <span className="text-sm text-muted leading-snug">{f}</span>
                     </div>
                   ))}
                 </div>
@@ -437,7 +437,7 @@ export default function Plans() {
                 <h2 className="mt-3 text-2xl font-bold text-white">
                   Cancelar assinatura
                 </h2>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+                <p className="mt-3 text-sm text-muted leading-relaxed">
                   Ao cancelar, sua assinatura será encerrada no final do período atual e você
                   voltará ao plano Grátis, perdendo acesso a todos os recursos pagos.
                   {user.plan === 'PRO' && (
@@ -485,13 +485,13 @@ export default function Plans() {
             ].map((item, i) => (
               <details
                 key={i}
-                className="group cursor-pointer rounded-2xl border border-white/7 bg-slate-900/60 p-5"
+                className="group cursor-pointer rounded-2xl border border-white/7 bg-surface-strong/60 p-5"
               >
                 <summary className="flex items-center justify-between font-semibold text-white text-sm">
                   {item.q}
-                  <span className="ml-4 text-slate-500 group-open:rotate-45 transition-transform text-lg">+</span>
+                  <span className="ml-4 text-muted group-open:rotate-45 transition-transform text-lg">+</span>
                 </summary>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{item.a}</p>
+                <p className="mt-3 text-sm text-muted leading-relaxed">{item.a}</p>
               </details>
             ))}
           </div>

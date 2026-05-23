@@ -1,14 +1,15 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { PublicThemeProvider, DashboardThemeProvider } from './contexts/ThemeContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
+import OAuthCallback from './pages/OAuthCallback';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -25,10 +26,26 @@ import { Logo } from './components/Logo';
 
 function FullScreenLoader() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-surface text-text text-text">
       <Logo />
       <div className="w-10 h-10 border-4 border-brand-blue/30 border-t-brand-blue rounded-full animate-spin" />
     </div>
+  );
+}
+
+function PublicRoutes() {
+  return (
+    <PublicThemeProvider>
+      <Outlet />
+    </PublicThemeProvider>
+  );
+}
+
+function DashboardRoutes() {
+  return (
+    <DashboardThemeProvider>
+      <Outlet />
+    </DashboardThemeProvider>
   );
 }
 
@@ -75,21 +92,25 @@ function Home() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
-              success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
-            }}
-          />
-          <Routes>
+      <AuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: { borderRadius: 12, padding: '12px 16px', fontFamily: 'Inter, sans-serif' },
+            success: { iconTheme: { primary: '#22C55E', secondary: 'white' } },
+          }}
+        />
+        <Routes>
+          <Route element={<PublicRoutes />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
             <Route path="/signup" element={<PublicOnly><Signup /></PublicOnly>} />
             <Route path="/verify-email" element={<PublicOnly><VerifyEmail /></PublicOnly>} />
+            <Route path="/oauth-callback" element={<PublicOnly><OAuthCallback /></PublicOnly>} />
+          </Route>
+
+          <Route element={<DashboardRoutes />}>
             <Route path="/onboarding" element={<NeedsOnboarding><Onboarding /></NeedsOnboarding>} />
             <Route path="/app" element={<OnboardingRequired><AppLayout /></OnboardingRequired>}>
               <Route index element={<Navigate to="/app/dashboard" replace />} />
@@ -104,10 +125,11 @@ export default function App() {
               <Route path="profile" element={<Profile />} />
               <Route path="admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthProvider>
-      </ThemeProvider>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

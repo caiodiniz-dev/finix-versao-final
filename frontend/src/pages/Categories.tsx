@@ -120,19 +120,19 @@ export default function Categories() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-display font-extrabold">Categorias</h1>
-          <p className="mt-2 text-slate-500">Organize e personalize suas categorias conforme o plano.</p>
+          <p className="mt-2 text-muted">Organize e personalize suas categorias conforme o plano.</p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-[#0F172A] dark:text-slate-300">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-3 text-sm text-text dark:border-border dark:bg-surface dark:text-muted">
           <Tag className="w-4 h-4 text-brand-blue" /> {user?.plan} • {canManage ? 'Gerenciamento total ativado' : 'Gerenciamento bloqueado'}
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6 shadow-sm">
+        <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Gerenciamento</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Categorias personalizadas</h2>
+              <p className="text-sm uppercase tracking-[0.3em] text-muted">Gerenciamento</p>
+              <h2 className="mt-2 text-xl font-semibold text-text dark:text-text">Categorias personalizadas</h2>
             </div>
             <button
               onClick={fetchCategories}
@@ -141,16 +141,16 @@ export default function Categories() {
               <RefreshCcw className="w-4 h-4" /> Atualizar
             </button>
           </div>
-          <p className="mt-4 text-sm text-slate-400">{defaultMessage}</p>
+          <p className="mt-4 text-sm text-muted">{defaultMessage}</p>
 
           <div className="mt-6 grid gap-3">
-            <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+            <div className="rounded-3xl bg-surface p-4 text-sm text-muted dark:bg-surface-strong dark:text-text">
               {user?.plan !== 'PRO'
                 ? 'Para criar, editar e excluir categorias você precisa atualizar para o Plano Pro.'
                 : 'Use a área ao lado para adicionar ou editar categorias.'}
             </div>
 
-            <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-800/60 dark:text-slate-200">
+            <div className="rounded-3xl bg-surface p-4 text-sm text-muted dark:bg-surface-strong/60 dark:text-text">
               <div
                 style={{
                   display: 'flex',
@@ -181,7 +181,7 @@ export default function Categories() {
                 {visibleDefaults.map((name) => (
                   <span
                     key={name}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface-strong px-3 py-1 text-xs font-medium text-text dark:border-border dark:bg-surface-strong dark:text-text"
                   >
                     {name}
                     <button
@@ -204,11 +204,11 @@ export default function Categories() {
           </div>
         </section>
 
-        <section className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6 shadow-sm">
+        <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Nova categoria</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">Adicionar ou editar</h2>
+              <p className="text-sm uppercase tracking-[0.3em] text-muted">Nova categoria</p>
+              <h2 className="mt-2 text-lg font-semibold text-text dark:text-text">Adicionar ou editar</h2>
             </div>
             {editing && (
               <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">
@@ -218,23 +218,23 @@ export default function Categories() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nome</label>
+              <label className="text-sm font-medium text-text dark:text-muted">Nome</label>
               <input
                 value={newCategory.name}
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
                 disabled={!canManage}
-                className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100"
+                className="input mt-1 text-text placeholder:text-muted dark:text-text"
                 placeholder="Ex: Streaming"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
+                <label className="text-sm font-medium text-text dark:text-muted">Tipo</label>
                 <select
                   value={newCategory.type}
                   onChange={(e) => setNewCategory((prev) => ({ ...prev, type: e.target.value as any }))}
                   disabled={!canManage}
-                  className="input mt-1 text-slate-900 dark:text-slate-100"
+                  className="input mt-1 text-text dark:text-text"
                 >
                   <option value="expense">Despesa</option>
                   <option value="income">Receita</option>
@@ -242,26 +242,26 @@ export default function Categories() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Cor</label>
+                <label className="text-sm font-medium text-text dark:text-muted">Cor</label>
                 <input
                   type="color"
                   value={newCategory.color}
                   disabled={!canManage}
                   onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
-                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white p-1 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="mt-1 h-11 w-full rounded-xl border border-border bg-surface p-1 text-text dark:border-border dark:bg-surface-strong dark:text-text"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Ícone</label>
+              <label className="text-sm font-medium text-text dark:text-muted">Ícone</label>
               <input
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, icon: e.target.value }))}
                 disabled={!canManage}
-                className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100"
+                className="input mt-1 text-text placeholder:text-muted dark:text-text"
                 placeholder="Ex: Wallet"
               />
-              <p className="text-xs text-slate-500 mt-1">Nome do ícone Lucide (opcional)</p>
+              <p className="text-xs text-muted mt-1">Nome do ícone Lucide (opcional)</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -289,25 +289,25 @@ export default function Categories() {
         </section>
       </div>
 
-      <section className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-6 shadow-sm">
+      <section className="card border border-border dark:border-border bg-surface dark:bg-surface p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Categorias cadastradas</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Visualize suas categorias e gerencie conforme seu plano.</p>
+            <h2 className="text-lg font-semibold text-text dark:text-text">Categorias cadastradas</h2>
+            <p className="text-sm text-muted dark:text-muted mt-1">Visualize suas categorias e gerencie conforme seu plano.</p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          <span className="rounded-full bg-surface-strong px-3 py-1 text-xs font-semibold text-text dark:bg-surface-strong dark:text-text">
             {categories.length} categorias
           </span>
         </div>
 
         {loading ? (
-          <div className="mt-6 flex items-center justify-center gap-3 text-slate-400">
+          <div className="mt-6 flex items-center justify-center gap-3 text-muted">
             <Loader2 className="w-5 h-5 animate-spin" /> Carregando categorias...
           </div>
         ) : error ? (
           <div className="mt-6 rounded-3xl border border-rose-800 bg-rose-950 p-4 text-rose-400">{error}</div>
         ) : categories.length === 0 ? (
-          <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+          <div className="mt-6 rounded-3xl border border-dashed border-border-strong bg-surface p-8 text-center text-muted dark:border-border dark:bg-surface-strong/40 dark:text-muted">
             Nenhuma categoria encontrada.
           </div>
         ) : (
@@ -317,11 +317,11 @@ export default function Categories() {
                 key={category.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/50"
+                className="rounded-3xl border border-border bg-surface p-4 shadow-sm dark:border-border dark:bg-surface-strong/50"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
+                    <div className="flex items-center gap-3 text-text dark:text-text">
                       <span
                         className="inline-flex h-10 w-10 items-center justify-center rounded-3xl"
                         style={{ backgroundColor: category.color || '#E0E7FF' }}
@@ -329,15 +329,15 @@ export default function Categories() {
                         <Tag className="w-5 h-5 text-white" />
                       </span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{category.name}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="font-semibold text-text dark:text-text truncate">{category.name}</p>
+                        <p className="text-sm text-muted dark:text-muted">
                           {category.type === 'income' ? 'Receita' : category.type === 'expense' ? 'Despesa' : 'Ambos'}
                         </p>
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-                      <span className="chip bg-slate-700 text-slate-300">ID: {category.id.slice(0, 8)}</span>
-                      <span className="chip bg-slate-700 text-slate-300">Ativa: {category.isActive ? 'Sim' : 'Não'}</span>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+                      <span className="chip bg-surface-strong text-muted">ID: {category.id.slice(0, 8)}</span>
+                      <span className="chip bg-surface-strong text-muted">Ativa: {category.isActive ? 'Sim' : 'Não'}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">

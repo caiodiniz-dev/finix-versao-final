@@ -58,7 +58,7 @@ export default function Admin() {
           <Shield className="w-3.5 h-3.5" /> Painel administrativo
         </div>
         <h1 className="text-3xl font-display font-extrabold tracking-tight">Gestão Global</h1>
-        <p className="text-slate-500 mt-1">Gerencie usuários e visualize estatísticas</p>
+        <p className="text-muted mt-1">Gerencie usuários e visualize estatísticas</p>
       </div>
 
       {/* Stats */}
@@ -76,7 +76,7 @@ export default function Admin() {
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white mb-3`}>
                 <s.icon className="w-5 h-5" />
               </div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{s.label}</div>
+              <div className="text-xs text-muted uppercase tracking-wider font-semibold">{s.label}</div>
               <div className="text-2xl font-display font-bold mt-1">{s.value}</div>
             </motion.div>
           ))}
@@ -85,11 +85,11 @@ export default function Admin() {
       {stats && (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="card">
-            <div className="flex items-center gap-2 text-slate-500 text-sm"><TrendingUp className="w-4 h-4" /> Volume global — Receitas</div>
+            <div className="flex items-center gap-2 text-muted text-sm"><TrendingUp className="w-4 h-4" /> Volume global — Receitas</div>
             <div className="text-3xl font-display font-bold text-emerald-600 mt-1">{currency(stats.globalIncome)}</div>
           </div>
           <div className="card">
-            <div className="flex items-center gap-2 text-slate-500 text-sm"><TrendingUp className="w-4 h-4 rotate-180" /> Volume global — Despesas</div>
+            <div className="flex items-center gap-2 text-muted text-sm"><TrendingUp className="w-4 h-4 rotate-180" /> Volume global — Despesas</div>
             <div className="text-3xl font-display font-bold text-rose-600 mt-1">{currency(stats.globalExpense)}</div>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function Admin() {
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white mb-3`}>
                 <s.icon className="w-5 h-5" />
               </div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{s.label}</div>
+              <div className="text-xs text-muted uppercase tracking-wider font-semibold">{s.label}</div>
               <div className="text-2xl font-display font-bold mt-1">{s.value}</div>
             </motion.div>
           ))}
@@ -118,7 +118,7 @@ export default function Admin() {
       {/* Search */}
       <div className="card !p-4">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou e-mail..." className="input pl-10" data-testid="admin-search" />
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function Admin() {
       <div className="card !p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[900px] w-full text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-left text-slate-600 dark:text-slate-300">
+            <thead className="bg-background dark:bg-surface-strong/50 text-left text-muted dark:text-muted">
               <tr>
                 <th className="px-5 py-3 font-semibold">Usuário</th>
                 <th className="px-5 py-3 font-semibold">E-mail</th>
@@ -142,7 +142,7 @@ export default function Admin() {
               {users === null ? (
                 <tr><td colSpan={7} className="p-6"><div className="skeleton h-8" /></td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={7} className="p-10 text-center text-slate-400">Nenhum usuário encontrado</td></tr>
+                <tr><td colSpan={7} className="p-10 text-center text-muted">Nenhum usuário encontrado</td></tr>
               ) : users.map((u) => (
                 <tr key={u.id} data-testid={`user-row-${u.id}`}>
                   <td className="px-5 py-3">
@@ -153,14 +153,14 @@ export default function Admin() {
                       <span className="font-semibold">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{u.email}</td>
+                  <td className="px-5 py-3 text-muted dark:text-muted">{u.email}</td>
                   <td className="px-5 py-3">
-                    <span className={`chip ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{u.role}</span>
+                    <span className={`chip ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-700' : 'bg-surface text-text'}`}>{u.role}</span>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`chip ${u.plan === 'PRO' ? 'bg-purple-100 text-purple-700' :
                       u.plan === 'BASIC' ? 'bg-blue-100 text-blue-700' :
-                        'bg-slate-100 text-slate-700'
+                        'bg-surface text-text'
                       }`}>{u.plan || 'FREE'}</span>
                   </td>
                   <td className="px-5 py-3">
@@ -168,7 +168,7 @@ export default function Admin() {
                       ? <span className="chip bg-red-100 text-red-700">Bloqueado</span>
                       : <span className="chip bg-emerald-100 text-emerald-700">Ativo</span>}
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{dateBR(u.createdAt)}</td>
+                  <td className="px-5 py-3 text-muted">{dateBR(u.createdAt)}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
                       <button className="btn-ghost !p-2" title="Ver detalhes" onClick={() => setSelected(u.id)} data-testid={`view-${u.id}`}><Eye className="w-4 h-4" /></button>
@@ -282,7 +282,7 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-auto p-6"
+        className="bg-surface dark:bg-surface-strong rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-auto p-6"
         onClick={(e) => e.stopPropagation()} data-testid="user-detail-modal">
         {!data ? (
           <div className="space-y-3"><div className="skeleton h-8 w-1/2" /><div className="skeleton h-40" /></div>
@@ -295,7 +295,7 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
                 </div>
                 <div>
                   <h2 className="font-display font-bold text-xl">{data.user.name}</h2>
-                  <p className="text-sm text-slate-500">{data.user.email} · {data.user.role}</p>
+                  <p className="text-sm text-muted">{data.user.email} · {data.user.role}</p>
                 </div>
               </div>
               <button onClick={onClose} className="btn-ghost !p-2"><X className="w-4 h-4" /></button>
@@ -303,15 +303,15 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
 
             <div className="mt-6 grid grid-cols-3 gap-3">
               <div className="card !p-4">
-                <div className="text-xs text-slate-500">Transações</div>
+                <div className="text-xs text-muted">Transações</div>
                 <div className="text-xl font-bold">{data.transactions.length}</div>
               </div>
               <div className="card !p-4">
-                <div className="text-xs text-slate-500">Metas</div>
+                <div className="text-xs text-muted">Metas</div>
                 <div className="text-xl font-bold">{data.goals.length}</div>
               </div>
               <div className="card !p-4">
-                <div className="text-xs text-slate-500">Saldo</div>
+                <div className="text-xs text-muted">Saldo</div>
                 <div className="text-xl font-bold">
                   {currency(
                     data.transactions.reduce((s, t) => s + (t.type === 'INCOME' ? t.amount : -t.amount), 0)
@@ -343,13 +343,13 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
                         onClick={() => setSelectedPlan(plan)}
                         className={`p-4 rounded-xl border-2 transition-all ${selectedPlan === plan
                           ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          : 'border-border dark:border-border hover:border-border'
                           }`}
                       >
                         <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold text-white bg-gradient-to-r ${planColors[plan]} mb-2`}>
                           {plan}
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300">{planDescriptions[plan]}</p>
+                        <p className="text-xs text-muted dark:text-muted">{planDescriptions[plan]}</p>
                       </button>
                     ))}
                   </div>
@@ -363,12 +363,12 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r bg-slate-50 dark:bg-slate-800">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r bg-background dark:bg-surface-strong">
                   <div className={`inline-block px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r ${planColors[data.user.plan as 'FREE' | 'BASIC' | 'PRO' || 'FREE']}`}>
                     {data.user.plan || 'FREE'}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    <p className="text-sm font-semibold text-text dark:text-muted">
                       {planDescriptions[data.user.plan as 'FREE' | 'BASIC' | 'PRO' || 'FREE']}
                     </p>
                   </div>
@@ -379,7 +379,7 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
             <div className="mt-6 card !p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-slate-700" />
+                  <Shield className="w-5 h-5 text-text" />
                   <h3 className="font-semibold text-lg">Configurações da conta</h3>
                 </div>
                 {!editingUser ? (
@@ -456,7 +456,7 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
                   <div>
                     <label className="label">Categorias</label>
                     <textarea value={categoriesInput} onChange={(e) => setCategoriesInput(e.target.value)} className="input w-full min-h-[90px]" placeholder="Digite uma categoria por linha ou separadas por vírgula" />
-                    <p className="text-xs text-slate-500 mt-1">As categorias serão atualizadas para este usuário.</p>
+                    <p className="text-xs text-muted mt-1">As categorias serão atualizadas para este usuário.</p>
                   </div>
 
                   <div className="flex gap-2 pt-2">
@@ -467,32 +467,32 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
               ) : (
                 <div className="grid gap-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Papel</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Papel</div>
                       <div className="mt-2 font-semibold">{data.user.role}</div>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Onboarding</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Onboarding</div>
                       <div className="mt-2 font-semibold">{data.user.hasCompletedOnboarding ? 'Concluído' : 'Pendente'}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Uso</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Uso</div>
                       <div className="mt-2 font-semibold">{data.user.usageType || 'pessoal'}</div>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Empresa</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Empresa</div>
                       <div className="mt-2 font-semibold">{data.user.companyName || 'Nenhuma'}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Categoria principal</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Categoria principal</div>
                       <div className="mt-2 font-semibold">{data.categories.slice(0, 3).map((c) => c.name).join(', ') || 'Sem categorias'}</div>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Cor</div>
+                    <div className="rounded-xl border border-border dark:border-border p-4">
+                      <div className="text-xs text-muted uppercase tracking-wide">Cor</div>
                       <div className="mt-2 font-semibold">{data.user.primaryColor || 'Padrão'}</div>
                     </div>
                   </div>
@@ -504,14 +504,14 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
               <h3 className="font-semibold mb-2">Últimas transações</h3>
               <div className="space-y-1.5 max-h-60 overflow-auto">
                 {data.transactions.slice(0, 20).map((t) => (
-                  <div key={t.id} className="flex justify-between text-sm px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>{t.title} <span className="text-slate-400 text-xs">· {t.category}</span></span>
+                  <div key={t.id} className="flex justify-between text-sm px-3 py-2 rounded-lg bg-background dark:bg-surface-strong">
+                    <span>{t.title} <span className="text-muted text-xs">· {t.category}</span></span>
                     <span className={t.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}>
                       {t.type === 'INCOME' ? '+' : '-'}{currency(t.amount)}
                     </span>
                   </div>
                 ))}
-                {data.transactions.length === 0 && <p className="text-sm text-slate-400">Sem transações</p>}
+                {data.transactions.length === 0 && <p className="text-sm text-muted">Sem transações</p>}
               </div>
             </div>
 
@@ -521,17 +521,17 @@ function UserDetail({ userId, onClose }: { userId: string; onClose: () => void }
                 {data.goals.map((g) => {
                   const pct = Math.min(100, (g.currentAmount / g.targetAmount) * 100);
                   return (
-                    <div key={g.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <div key={g.id} className="p-3 rounded-xl bg-background dark:bg-surface-strong">
                       <div className="flex justify-between text-sm font-semibold">
                         <span>{g.title}</span><span>{pct.toFixed(0)}%</span>
                       </div>
-                      <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full mt-1.5 overflow-hidden">
+                      <div className="h-2 bg-surface-strong dark:bg-surface rounded-full mt-1.5 overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-brand-blue to-brand-purple" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
                 })}
-                {data.goals.length === 0 && <p className="text-sm text-slate-400">Sem metas</p>}
+                {data.goals.length === 0 && <p className="text-sm text-muted">Sem metas</p>}
               </div>
             </div>
           </>

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import 'express-async-errors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -12,6 +13,7 @@ import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 import Stripe from 'stripe';
 import authRoutes from './routes/authRoutes';
+import googleRoutes from './routes/googleRoutes';
 import { authRateLimit } from './middlewares/rateLimit';
 import { signup } from './services/authService';
 
@@ -68,6 +70,7 @@ const corsOptions: cors.CorsOptions = {
 
 // FIX 1: aplica cors() globalmente
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // FIX 2: responde imediatamente a todo preflight OPTIONS
 // Sem isso, o browser recebe 404 no preflight e bloqueia a requisição real.
@@ -130,6 +133,7 @@ app.get('/', (_req, res) => {
   });
 });
 
+app.use('/google', googleRoutes);
 app.use('/api/auth', authRoutes);
 
 // ============================================================================
@@ -509,6 +513,27 @@ const buildInstallmentSchedule = async (user: any, data: any) => {
     where: { id: user.id },
     data: { transactionsUsed: { increment: data.installments } },
   });
+
+  // Create persistent financial alerts for installments that are credit-card charges
+  try {
+    const cardAlerts = transactionsData
+      .filter((t) => t.paymentMethod === 'credito')
+      .map((t) => ({
+        id: uuidv4(),
+        userId: user.id,
+        installmentId: t.installmentId,
+        title: `Cobrança no cartão: ${t.title}`,
+        description: `Parcela vence em ${toLocalDateKey(new Date(t.date))}`,
+        type: 'installment',
+        severity: 'warning',
+        amount: t.amount,
+        daysUntilDue: diffDays(new Date(t.date), new Date()),
+        dueDate: new Date(t.date),
+      }));
+    if (cardAlerts.length) await prisma.financialAlert.createMany({ data: cardAlerts });
+  } catch (err: any) {
+    console.error('Failed to create installment alerts:', err);
+  }
 
   return { installment, transactions: transactionsData };
 };
@@ -938,6 +963,28 @@ app.post('/api/transactions', authenticate, async (req, res) => {
       where: { id: user.id },
       data: { transactionsUsed: { increment: 1 } },
     });
+
+    // If this is a credit-card charge, create a FinancialAlert for the user
+    try {
+      if (data.paymentMethod === 'credito') {
+        await prisma.financialAlert.create({
+          data: {
+            id: uuidv4(),
+            userId: user.id,
+            installmentId: transaction.installmentId || null,
+            title: `Cobrança no cartão: ${transaction.title}`,
+            description: transaction.description || null,
+            type: 'installment',
+            severity: 'warning',
+            amount: transaction.amount,
+            daysUntilDue: transaction.dueDate ? diffDays(new Date(transaction.dueDate), new Date()) : null,
+            dueDate: transaction.dueDate || null,
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to create credit card alert:', err);
+    }
     res.json(transaction);
   } catch (err: any) {
     console.error('Transaction creation error:', err);
@@ -1022,7 +1069,25 @@ app.get('/api/alerts', authenticate, requireFeature('canUseAlerts'), async (req,
     const futureLimit = new Date(today);
     futureLimit.setDate(futureLimit.getDate() + 7);
 
-    const transactions = await prisma.transaction.findMany({
+    // 1) persistent FinancialAlert records
+    const storedAlerts = await prisma.financialAlert.findMany({
+      where: { userId: user.id, isRead: false },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    const persistent = storedAlerts.map((a) => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      dueDate: a.dueDate,
+      amount: a.amount,
+      daysUntilDue: a.daysUntilDue,
+      severity: a.severity,
+      type: a.type,
+    }));
+
+    // 2) upcoming installment transactions (existing behavior)
+    const upcomingInstallments = await prisma.transaction.findMany({
       where: {
         userId: user.id,
         type: 'EXPENSE',
@@ -1032,7 +1097,7 @@ app.get('/api/alerts', authenticate, requireFeature('canUseAlerts'), async (req,
       orderBy: { date: 'asc' },
     });
 
-    const alerts = transactions.map((tx) => {
+    const computedInstallments = upcomingInstallments.map((tx) => {
       const dueDate = new Date(tx.date);
       const daysUntilDue = diffDays(dueDate, today);
       const installmentsLeft =
@@ -1058,6 +1123,43 @@ app.get('/api/alerts', authenticate, requireFeature('canUseAlerts'), async (req,
         installmentNumber: tx.installmentNumber,
         totalInstallments: tx.totalInstallments,
       };
+    });
+
+    // 3) upcoming credit-card charges (single transactions or installments flagged as credit)
+    const upcomingCardCharges = await prisma.transaction.findMany({
+      where: {
+        userId: user.id,
+        type: 'EXPENSE',
+        paymentMethod: 'credito',
+        date: { gte: today, lte: futureLimit },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    const computedCard = upcomingCardCharges.map((tx) => {
+      const dueDate = new Date(tx.date);
+      const daysUntilDue = diffDays(dueDate, today);
+      const title =
+        daysUntilDue === 0
+          ? `Cobrança no cartão: ${tx.title} — R$ ${tx.amount.toFixed(2)}`
+          : `Cobrança no cartão: ${tx.title} vence em ${daysUntilDue} dia${daysUntilDue > 1 ? 's' : ''} — R$ ${tx.amount.toFixed(2)}`;
+      return {
+        id: tx.id,
+        title,
+        description: tx.description || null,
+        dueDate: tx.date,
+        amount: tx.amount,
+        daysUntilDue,
+        severity: daysUntilDue === 0 ? 'danger' : 'warning',
+        type: 'card_charge',
+      };
+    });
+
+    // Merge all alerts and sort by dueDate
+    const alerts = [...persistent, ...computedInstallments, ...computedCard].sort((a, b) => {
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      return da - db;
     });
 
     res.json({ alerts, count: alerts.length });

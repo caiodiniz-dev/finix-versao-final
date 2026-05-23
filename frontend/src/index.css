@@ -32,7 +32,8 @@
     --color-overlay: rgba(15, 23, 42, 0.04);
   }
 
-  .dark {
+  /* Dark theme scoped to dashboard only */
+  .dashboard-theme.dark {
     color-scheme: dark;
     --color-background: #020617;
     --color-surface: #0F172A;
@@ -158,7 +159,7 @@
   background: #94A3B8;
 }
 
-.dark ::-webkit-scrollbar-thumb {
+.dashboard-theme.dark ::-webkit-scrollbar-thumb {
   background: #334155;
 }
 

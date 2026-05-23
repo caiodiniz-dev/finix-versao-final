@@ -37,7 +37,7 @@ function StatCounter({ value, label, suffix = '', prefix = '' }) {
       <div className="text-4xl sm:text-5xl font-display font-extrabold bg-gradient-to-br from-brand-blue via-brand-purple to-brand-green bg-clip-text text-transparent tabular-nums">
         {prefix}{n.toLocaleString('pt-BR')}{suffix}
       </div>
-      <div className="text-sm text-slate-500 mt-2">{label}</div>
+      <div className="text-sm text-muted mt-2">{label}</div>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-surface overflow-x-hidden">
       {/* Progress bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-blue via-brand-purple to-brand-green origin-left z-50"
@@ -140,27 +140,27 @@ export default function Landing() {
       />
 
       {/* Nav - fundo branco, pill branca com borda sutil */}
-      <div className="sticky top-0 z-40 bg-white border-b border-slate-100 py-3 px-4">
+      <div className="sticky top-0 z-40 bg-surface border-b border-border py-3 px-4">
         <nav className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-sm">
+          <div className="bg-surface rounded-2xl border border-border px-4 py-2.5 flex items-center justify-between shadow-sm">
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
               <Logo />
             </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hidden md:flex items-center gap-0.5 text-sm text-slate-700">
-              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">Funcionalidades</a>
-              <a href="#testimonials" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">Depoimentos</a>
-              <a href="#pricing" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">Planos</a>
-              <a href="#faq" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">FAQ</a>
-              <a href="#contact" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">Contato</a>
-              <span className="text-slate-300 mx-1">·</span>
-              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium flex items-center gap-1">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hidden md:flex items-center gap-0.5 text-sm text-text">
+              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">Funcionalidades</a>
+              <a href="#testimonials" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">Depoimentos</a>
+              <a href="#pricing" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">Planos</a>
+              <a href="#faq" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">FAQ</a>
+              <a href="#contact" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">Contato</a>
+              <span className="text-muted mx-1">·</span>
+              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium flex items-center gap-1">
                 Recursos <ChevronDown className="w-3.5 h-3.5" />
               </a>
-              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 transition font-medium">Institucional</a>
+              <a href="#features" className="px-3 py-1.5 rounded-lg hover:bg-surface transition font-medium">Institucional</a>
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2">
-              <Link to="/login" className="hidden sm:inline-flex px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition">Entrar</Link>
-              <Link to="/register" className="bg-slate-900 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-slate-800 transition">
+              <Link to="/login" className="hidden sm:inline-flex px-4 py-1.5 text-sm font-semibold text-text hover:bg-surface rounded-lg transition">Entrar</Link>
+              <Link to="/register" className="bg-surface-strong text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-surface-strong transition">
                 Teste Grátis!
               </Link>
             </motion.div>
@@ -199,7 +199,7 @@ export default function Landing() {
               </span>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
-              className="mt-5 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
+              className="mt-5 text-base sm:text-lg text-muted max-w-xl leading-relaxed">
               O painel financeiro mais completo do Brasil. Dashboard premium, Finix IA, metas, orçamentos, calendário financeiro e muito mais.
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
@@ -213,7 +213,7 @@ export default function Landing() {
               </a>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-              className="mt-8 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-5 text-xs sm:text-sm text-slate-500">
+              className="mt-8 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-5 text-xs sm:text-sm text-muted">
               {[
                 { icon: CheckCircle2, text: 'Sem cartão de crédito' },
                 { icon: ShieldCheck, text: 'Criptografia bcrypt + JWT' },
@@ -236,7 +236,7 @@ export default function Landing() {
                 <div className="flex items-center gap-1 text-amber-500">
                   {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
                 </div>
-                <p className="text-slate-600 font-medium">Centenas de pessoas no controle</p>
+                <p className="text-muted font-medium">Centenas de pessoas no controle</p>
               </div>
             </motion.div>
           </div>
@@ -248,7 +248,7 @@ export default function Landing() {
       </section>
 
       {/* Stats strip */}
-      <section className="border-y border-slate-100 bg-white">
+      <section className="border-y border-border bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           <StatCounter value={100} label="Satisfação garantida" suffix="%" />
           <StatCounter value={9} label="Módulos financeiros" suffix="+" />
@@ -266,7 +266,7 @@ export default function Landing() {
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">
               Tudo que você precisa para <span className="text-brand-blue">dominar seu dinheiro</span>
             </h2>
-            <p className="mt-4 text-slate-600 text-sm sm:text-lg">9 módulos integrados. Uma plataforma completa.</p>
+            <p className="mt-4 text-muted text-sm sm:text-lg">9 módulos integrados. Uma plataforma completa.</p>
           </motion.div>
 
           <div className="hidden md:block overflow-hidden">
@@ -296,13 +296,13 @@ export default function Landing() {
               <motion.div key={item.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="card hover:shadow-glow transition-all group p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 group-hover:bg-brand-blue/10 transition flex items-center justify-center">
-                    <item.icon className="w-5 h-5 text-slate-600 group-hover:text-brand-blue transition" />
+                  <div className="w-12 h-12 rounded-2xl bg-surface group-hover:bg-brand-blue/10 transition flex items-center justify-center">
+                    <item.icon className="w-5 h-5 text-muted group-hover:text-brand-blue transition" />
                   </div>
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${item.badgeColor}`}>{item.badge}</span>
                 </div>
                 <h3 className="font-display font-bold text-lg">{item.title}</h3>
-                <p className="text-slate-600 mt-2 text-sm leading-relaxed">{item.desc}</p>
+                <p className="text-muted mt-2 text-sm leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -310,13 +310,13 @@ export default function Landing() {
       </section>
 
       {/* Product preview */}
-      <section id="preview" className="py-16 sm:py-24 bg-slate-50 border-y border-slate-100">
+      <section id="preview" className="py-16 sm:py-24 bg-background border-y border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
             <div className="chip bg-brand-green/10 text-brand-green mb-3 mx-auto border border-brand-green/20 w-fit">Preview</div>
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Veja o Finix em ação</h2>
-            <p className="mt-4 text-slate-600 text-sm sm:text-lg">Cada pixel foi pensado para você tomar decisões melhores.</p>
+            <p className="mt-4 text-muted text-sm sm:text-lg">Cada pixel foi pensado para você tomar decisões melhores.</p>
           </motion.div>
 
           <PreviewCard order={1} badge="Dashboard" title="Seu panorama financeiro em 1 olhada"
@@ -335,7 +335,7 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-16 sm:py-24 bg-white">
+      <section id="testimonials" className="py-16 sm:py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto mb-12">
@@ -343,51 +343,51 @@ export default function Landing() {
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">
               Pessoas que <span className="text-brand-green">economizaram de verdade</span>
             </h2>
-            <p className="mt-4 text-slate-600 text-sm sm:text-lg">Resultados reais de usuários do Finix.</p>
+            <p className="mt-4 text-muted text-sm sm:text-lg">Resultados reais de usuários do Finix.</p>
           </motion.div>
           <TestimonialCarousel />
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 sm:py-24 bg-slate-50">
+      <section id="pricing" className="py-16 sm:py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <div className="chip bg-brand-blue/10 text-brand-blue mb-3 mx-auto border border-brand-blue/20 w-fit">Planos</div>
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight">Escolha seu plano perfeito</h2>
-            <p className="mt-3 text-slate-600 text-sm sm:text-lg">7 dias grátis em qualquer plano pago. Sem cartão no plano gratuito.</p>
+            <p className="mt-3 text-muted text-sm sm:text-lg">7 dias grátis em qualquer plano pago. Sem cartão no plano gratuito.</p>
           </motion.div>
 
           {/* Cards: Free | Pro (destaque central) | Basic */}
           <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto items-center">
             {/* Free */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="relative rounded-3xl border border-slate-200 bg-white shadow p-7 flex flex-col">
+              className="relative rounded-3xl border border-border bg-surface shadow p-7 flex flex-col">
               <div className="flex items-center gap-3 mb-5">
-                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-100">
-                  <Globe className="w-6 h-6 text-slate-600" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-surface">
+                  <Globe className="w-6 h-6 text-muted" />
                 </div>
                 <div>
                   <h3 className="text-lg font-display font-bold">Grátis</h3>
-                  <p className="text-xs text-slate-500">Para começar</p>
+                  <p className="text-xs text-muted">Para começar</p>
                 </div>
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-display font-extrabold text-slate-900">R$0</span>
-                  <span className="text-sm text-slate-500">/mês</span>
+                  <span className="text-4xl font-display font-extrabold text-text">R$0</span>
+                  <span className="text-sm text-muted">/mês</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Para sempre gratuito</p>
+                <p className="text-xs text-muted mt-1">Para sempre gratuito</p>
               </div>
               <div className="space-y-2 mb-6 flex-1">
                 {['Dashboard básica', 'Até 2 metas financeiras', 'Visualização de categorias', 'Sem transações'].map(f => (
                   <div key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    <span className="text-slate-600">{f}</span>
+                    <CheckCircle2 className="w-4 h-4 text-muted flex-shrink-0" />
+                    <span className="text-muted">{f}</span>
                   </div>
                 ))}
               </div>
-              <Link to="/register" className="w-full mt-auto py-3 px-6 border border-slate-300 text-slate-700 rounded-2xl font-semibold hover:bg-slate-50 transition text-center">
+              <Link to="/register" className="w-full mt-auto py-3 px-6 border border-border text-text rounded-2xl font-semibold hover:bg-background transition text-center">
                 Criar conta grátis
               </Link>
             </motion.div>
@@ -449,22 +449,22 @@ export default function Landing() {
             {/* Básico */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
               whileHover={{ y: -4 }}
-              className="relative rounded-3xl border border-slate-200 bg-white shadow-lg hover:shadow-xl transition-all p-7 flex flex-col">
+              className="relative rounded-3xl border border-border bg-surface shadow-lg hover:shadow-xl transition-all p-7 flex flex-col">
               <div className="flex items-center gap-3 mb-5">
-                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-100">
-                  <PiggyBank className="w-6 h-6 text-slate-700" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-surface">
+                  <PiggyBank className="w-6 h-6 text-text" />
                 </div>
                 <div>
                   <h3 className="text-lg font-display font-bold">Finix Básico</h3>
-                  <p className="text-xs text-slate-500">Para autônomos</p>
+                  <p className="text-xs text-muted">Para autônomos</p>
                 </div>
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-display font-extrabold text-slate-900">R$10</span>
-                  <span className="text-sm text-slate-500">/mês</span>
+                  <span className="text-4xl font-display font-extrabold text-text">R$10</span>
+                  <span className="text-sm text-muted">/mês</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">R$100/ano · economia de R$20</p>
+                <p className="text-xs text-muted mt-1">R$100/ano · economia de R$20</p>
               </div>
               <div className="space-y-2 mb-6 flex-1">
                 {[
@@ -478,13 +478,13 @@ export default function Landing() {
                   'Suporte por e-mail',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-slate-700 flex-shrink-0" />
-                    <span className="text-slate-700">{f}</span>
+                    <CheckCircle2 className="w-4 h-4 text-text flex-shrink-0" />
+                    <span className="text-text">{f}</span>
                   </div>
                 ))}
               </div>
               <button onClick={() => handleCheckout('BASIC')} disabled={loadingPlan === 'BASIC'}
-                className="w-full mt-auto py-3 px-6 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition disabled:opacity-50">
+                className="w-full mt-auto py-3 px-6 bg-surface-strong text-white rounded-2xl font-bold hover:bg-surface-strong transition disabled:opacity-50">
                 {loadingPlan === 'BASIC' ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
                 {loadingPlan === 'BASIC' ? 'Processando...' : '7 dias grátis'}
               </button>
@@ -496,13 +496,13 @@ export default function Landing() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-16 sm:py-24 bg-white">
+      <section id="faq" className="py-16 sm:py-24 bg-surface">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-12">
-            <div className="chip bg-slate-100 text-slate-700 mb-3 mx-auto border border-slate-200 w-fit">FAQ</div>
+            <div className="chip bg-surface text-text mb-3 mx-auto border border-border w-fit">FAQ</div>
             <h2 className="text-2xl sm:text-4xl font-display font-extrabold tracking-tight">Perguntas frequentes</h2>
-            <p className="mt-4 text-slate-600">Tudo que você precisa saber antes de começar.</p>
+            <p className="mt-4 text-muted">Tudo que você precisa saber antes de começar.</p>
           </motion.div>
 
           <div className="space-y-3">
@@ -511,16 +511,16 @@ export default function Landing() {
                 className="card overflow-hidden p-0">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-50 transition"
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-background transition"
                 >
-                  <span className="font-semibold text-slate-900 pr-4">{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-slate-400 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <span className="font-semibold text-text pr-4">{faq.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-muted flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {openFaq === i && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25 }} className="overflow-hidden">
-                      <div className="px-5 pb-5 text-slate-600 text-sm leading-relaxed border-t border-slate-100 pt-4">
+                      <div className="px-5 pb-5 text-muted text-sm leading-relaxed border-t border-border pt-4">
                         {faq.a}
                       </div>
                     </motion.div>
@@ -549,10 +549,10 @@ export default function Landing() {
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register"
-                className="inline-flex items-center gap-2 bg-white text-brand-blue font-bold px-8 py-4 rounded-2xl hover:bg-white/90 transition shadow-xl text-base">
+                className="inline-flex items-center gap-2 bg-surface text-brand-blue font-bold px-8 py-4 rounded-2xl hover:bg-surface/90 transition shadow-xl text-base">
                 Criar conta grátis <ArrowRight className="w-5 h-5" />
               </Link>
-              <a href="#pricing" className="inline-flex items-center gap-2 border border-white/40 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/10 transition text-base">
+              <a href="#pricing" className="inline-flex items-center gap-2 border border-white/40 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-surface/10 transition text-base">
                 Ver planos
               </a>
             </div>
@@ -563,9 +563,9 @@ export default function Landing() {
         {/* Formulário de contato */}
         <div id="contact" className="relative max-w-2xl mx-auto px-4 sm:px-6 mt-16">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8">
+            className="bg-surface/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-white/20 text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-3">
+              <div className="inline-flex items-center gap-2 bg-surface/20 text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-3">
                 <MessageCircle className="w-4 h-4" /> Fale com a gente
               </div>
               <h3 className="text-2xl font-display font-bold text-white">Preencha os campos abaixo e retornaremos em breve.</h3>
@@ -579,7 +579,7 @@ export default function Landing() {
                     value={contactForm.nome}
                     onChange={e => setContactForm(p => ({ ...p, nome: e.target.value }))}
                     placeholder="João Silva"
-                    className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-white/15 transition"
+                    className="w-full bg-surface/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-surface/15 transition"
                     required
                   />
                 </div>
@@ -590,7 +590,7 @@ export default function Landing() {
                     value={contactForm.email}
                     onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
                     placeholder="joao@empresa.com.br"
-                    className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-white/15 transition"
+                    className="w-full bg-surface/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-surface/15 transition"
                     required
                   />
                 </div>
@@ -602,7 +602,7 @@ export default function Landing() {
                   value={contactForm.empresa}
                   onChange={e => setContactForm(p => ({ ...p, empresa: e.target.value }))}
                   placeholder="Minha Empresa Ltda."
-                  className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-white/15 transition"
+                  className="w-full bg-surface/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-surface/15 transition"
                 />
               </div>
               <div>
@@ -612,13 +612,13 @@ export default function Landing() {
                   onChange={e => setContactForm(p => ({ ...p, mensagem: e.target.value }))}
                   placeholder="Conte-nos um pouco sobre o que você precisa..."
                   rows={3}
-                  className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-white/15 transition resize-none"
+                  className="w-full bg-surface/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/50 focus:bg-surface/15 transition resize-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={sendingContact}
-                className="w-full py-4 bg-white text-brand-blue font-bold rounded-2xl hover:bg-white/90 transition shadow-xl flex items-center justify-center gap-2 text-base"
+                className="w-full py-4 bg-surface text-brand-blue font-bold rounded-2xl hover:bg-surface/90 transition shadow-xl flex items-center justify-center gap-2 text-base"
               >
                 {sendingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {sendingContact ? 'Enviando...' : 'Enviar via WhatsApp'}
@@ -630,18 +630,18 @@ export default function Landing() {
       </section>
 
       {/* Support */}
-      <section className="py-12 sm:py-16 bg-white border-t border-slate-100">
+      <section className="py-12 sm:py-16 bg-surface border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            className="rounded-3xl border border-border bg-background p-6 sm:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <div className="text-xs uppercase tracking-[0.35em] text-brand-blue font-semibold mb-2">Suporte</div>
-                <h2 className="text-xl sm:text-3xl font-display font-bold text-slate-900">Precisa de ajuda? Estamos aqui.</h2>
-                <p className="mt-3 text-slate-600 max-w-2xl text-sm sm:text-base">
+                <h2 className="text-xl sm:text-3xl font-display font-bold text-text">Precisa de ajuda? Estamos aqui.</h2>
+                <p className="mt-3 text-muted max-w-2xl text-sm sm:text-base">
                   Nossa equipe responde em menos de 24h por e-mail e em tempo real pelo WhatsApp para clientes Pro.
                 </p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-500">
+                <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted">
                   <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> cvdinizramos@gmail.com</div>
                   <div className="flex items-center gap-2"><Phone className="w-4 h-4" /> +55 19 99473-7425</div>
                 </div>
@@ -659,18 +659,18 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 py-8 sm:py-10 bg-white">
+      <footer className="border-t border-border py-8 sm:py-10 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <Logo size={32} />
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted">
               <a href="#features" className="hover:text-brand-blue transition">Funcionalidades</a>
               <a href="#pricing" className="hover:text-brand-blue transition">Planos</a>
               <a href="#faq" className="hover:text-brand-blue transition">FAQ</a>
               <Link to="/login" className="hover:text-brand-blue transition">Entrar</Link>
               <Link to="/register" className="hover:text-brand-blue transition">Cadastrar</Link>
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-muted">
               © 2026 Finix · Feito com 💙 por <a href="https://caiodiniz.dev.br" target="_blank" rel="noreferrer" className="text-brand-blue hover:underline">Caio Diniz</a>
             </div>
           </div>
@@ -690,7 +690,7 @@ function FeatureCard({ feature }) {
         <feature.icon className="w-5 h-5" />
       </div>
       <h3 className="font-display font-bold text-lg">{feature.title}</h3>
-      <p className="text-slate-600 mt-2 text-sm leading-relaxed">{feature.desc}</p>
+      <p className="text-muted mt-2 text-sm leading-relaxed">{feature.desc}</p>
     </motion.div>
   );
 }
@@ -717,20 +717,20 @@ function TestimonialCarousel() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.45 }}
           className="card p-6 sm:p-8 shadow-xl relative">
-          <Quote className="absolute top-6 right-6 w-10 h-10 text-slate-100" />
+          <Quote className="absolute top-6 right-6 w-10 h-10 text-text" />
           <div className="flex items-center gap-1 text-amber-500 mb-4">
             {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
             <span className="ml-2 text-xs font-semibold text-brand-green bg-green-50 px-2 py-1 rounded-full">{testimonials[current].saving}</span>
           </div>
-          <p className="text-base sm:text-xl text-slate-700 leading-relaxed">"{testimonials[current].text}"</p>
+          <p className="text-base sm:text-xl text-text leading-relaxed">"{testimonials[current].text}"</p>
           <div className="mt-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
               style={{ background: testimonials[current].color }}>
               {testimonials[current].name.charAt(0)}
             </div>
             <div>
-              <div className="font-semibold text-slate-900">{testimonials[current].name}</div>
-              <div className="text-sm text-slate-500">{testimonials[current].role}</div>
+              <div className="font-semibold text-text">{testimonials[current].name}</div>
+              <div className="text-sm text-muted">{testimonials[current].role}</div>
             </div>
           </div>
         </motion.div>
@@ -744,7 +744,7 @@ function TestimonialCarousel() {
         <div className="flex items-center gap-2">
           {testimonials.map((_, i) => (
             <button key={i} onClick={() => setCurrent(i)}
-              className={`w-3 h-3 rounded-full transition-all ${i === current ? 'bg-brand-green scale-125' : 'bg-slate-300'}`} />
+              className={`w-3 h-3 rounded-full transition-all ${i === current ? 'bg-brand-green scale-125' : 'bg-border'}`} />
           ))}
         </div>
         <button onClick={() => setCurrent((p) => (p + 1) % testimonials.length)}
@@ -763,7 +763,7 @@ function HeroDashboard() {
       transition={{ duration: 0.8, delay: 0.2, type: 'spring', stiffness: 70 }} className="relative perspective">
       <div className="absolute -inset-4 sm:-inset-8 bg-gradient-to-br from-brand-blue/30 via-brand-purple/30 to-brand-green/30 blur-3xl rounded-full opacity-60" />
       <motion.div initial={{ opacity: 0, x: 30, y: 20 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ delay: 0.8 }}
-        className="hidden sm:block absolute -left-8 top-44 z-20 card !p-4 w-56 bg-white/95 backdrop-blur"
+        className="hidden sm:block absolute -left-8 top-44 z-20 card !p-4 w-56 bg-surface/95 backdrop-blur"
         style={{ boxShadow: '0 20px 60px -20px rgba(37,99,235,0.4)' }}>
         <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
           <div className="flex items-center gap-2">
@@ -772,11 +772,11 @@ function HeroDashboard() {
             </div>
             <div className="text-xs font-semibold">Finix IA</div>
           </div>
-          <p className="text-xs text-slate-600 mt-2 leading-snug">Você economizou <b className="text-brand-green">62%</b> da sua renda este mês! 🎉</p>
+          <p className="text-xs text-muted mt-2 leading-snug">Você economizou <b className="text-brand-green">62%</b> da sua renda este mês! 🎉</p>
         </motion.div>
       </motion.div>
       <motion.div initial={{ opacity: 0, x: -30, y: -10 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ delay: 1 }}
-        className="hidden sm:block absolute -right-6 -bottom-6 z-20 card !p-4 w-52 bg-white/95 backdrop-blur"
+        className="hidden sm:block absolute -right-6 -bottom-6 z-20 card !p-4 w-52 bg-surface/95 backdrop-blur"
         style={{ boxShadow: '0 20px 60px -20px rgba(34,197,94,0.4)' }}>
         <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}>
           <div className="flex items-center gap-2">
@@ -785,19 +785,19 @@ function HeroDashboard() {
             </div>
             <div className="text-xs font-semibold">Meta atingível</div>
           </div>
-          <div className="text-xs text-slate-600 mt-1.5">Notebook novo</div>
-          <div className="h-2 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+          <div className="text-xs text-muted mt-1.5">Notebook novo</div>
+          <div className="h-2 bg-surface rounded-full mt-1.5 overflow-hidden">
             <motion.div initial={{ width: 0 }} animate={{ width: '69%' }} transition={{ delay: 1.2, duration: 1.2 }}
               className="h-full bg-gradient-to-r from-brand-green to-emerald-500" />
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">R$ 5.500 / 8.000 · 69%</div>
+          <div className="text-[10px] text-muted mt-1">R$ 5.500 / 8.000 · 69%</div>
         </motion.div>
       </motion.div>
-      <div className="relative card !p-4 sm:!p-6 bg-white/95 backdrop-blur border border-white"
+      <div className="relative card !p-4 sm:!p-6 bg-surface/95 backdrop-blur border border-white"
         style={{ boxShadow: '0 30px 80px -30px rgba(37,99,235,0.5)' }}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
           <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo total</div>
+            <div className="text-xs font-semibold text-muted uppercase tracking-wider">Saldo total</div>
             <div className="text-2xl sm:text-3xl font-display font-extrabold mt-1 tabular-nums">R$ 19.230,75</div>
           </div>
           <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}
@@ -812,9 +812,9 @@ function HeroDashboard() {
             { label: 'Metas', value: 'R$ 16,0k', color: 'from-brand-blue to-brand-purple' },
           ].map((c, i) => (
             <motion.div key={c.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 + i * 0.1 }}
-              className="rounded-lg sm:rounded-xl bg-slate-50 p-2 sm:p-3">
+              className="rounded-lg sm:rounded-xl bg-background p-2 sm:p-3">
               <div className={`h-0.5 sm:h-1 rounded-full bg-gradient-to-r ${c.color} mb-1 sm:mb-2`} />
-              <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500">{c.label}</div>
+              <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted">{c.label}</div>
               <div className="font-bold text-xs sm:text-sm">{c.value}</div>
             </motion.div>
           ))}
@@ -826,7 +826,7 @@ function HeroDashboard() {
               className="flex-1 rounded-t-md bg-gradient-to-t from-brand-blue to-brand-purple" />
           ))}
         </div>
-        <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400 mt-1">
+        <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-muted mt-1">
           <span>Nov</span><span className="hidden sm:inline">Dez</span><span>Jan</span><span className="hidden sm:inline">Fev</span><span>Mar</span><span className="hidden sm:inline">Abr</span>
         </div>
       </div>
@@ -841,7 +841,7 @@ function PreviewCard({ order, badge, title, desc, align, visual }) {
       <div>
         <div className="chip bg-brand-blue/10 text-brand-blue border border-brand-blue/20 mb-3 w-fit">#{order} · {badge}</div>
         <h3 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight">{title}</h3>
-        <p className="mt-4 text-slate-600 text-sm sm:text-lg leading-relaxed">{desc}</p>
+        <p className="mt-4 text-muted text-sm sm:text-lg leading-relaxed">{desc}</p>
         <Link to="/register" className="inline-flex items-center gap-1 mt-5 text-brand-blue font-semibold hover:gap-2 transition-all text-sm sm:text-base">
           Experimente agora <ArrowRight className="w-4 h-4" />
         </Link>
@@ -853,12 +853,12 @@ function PreviewCard({ order, badge, title, desc, align, visual }) {
 
 function DashboardVisual() {
   return (
-    <div className="card !p-5 bg-white" style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.3)' }}>
+    <div className="card !p-5 bg-surface" style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.3)' }}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-400" /><div className="w-3 h-3 rounded-full bg-amber-400" /><div className="w-3 h-3 rounded-full bg-green-400" />
         </div>
-        <div className="text-xs text-slate-400">finixapp.com.br/dashboard</div>
+        <div className="text-xs text-muted">finixapp.com.br/dashboard</div>
       </div>
       <div className="grid grid-cols-4 gap-2 mb-4">
         {[
@@ -867,9 +867,9 @@ function DashboardVisual() {
           { label: 'Despesas', v: 'R$ 11,9k', c: 'from-rose-500 to-red-500' },
           { label: 'Metas', v: 'R$ 16,0k', c: 'from-amber-500 to-orange-500' },
         ].map(k => (
-          <div key={k.label} className="rounded-lg bg-slate-50 p-2">
+          <div key={k.label} className="rounded-lg bg-background p-2">
             <div className={`h-0.5 rounded bg-gradient-to-r ${k.c} mb-1`} />
-            <div className="text-[9px] uppercase text-slate-500">{k.label}</div>
+            <div className="text-[9px] uppercase text-muted">{k.label}</div>
             <div className="font-bold text-xs">{k.v}</div>
           </div>
         ))}
@@ -911,7 +911,7 @@ function AIInsightsVisual() {
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-blue to-brand-purple flex items-center justify-center text-white">
           <Sparkles className="w-4 h-4" />
         </div>
-        <div><div className="font-bold text-sm">Finix IA</div><div className="text-[10px] text-slate-500">Análise inteligente</div></div>
+        <div><div className="font-bold text-sm">Finix IA</div><div className="text-[10px] text-muted">Análise inteligente</div></div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {items.map((item, idx) => (
@@ -936,16 +936,16 @@ function GoalsVisual() {
     <div className="card !p-5 space-y-3" style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.3)' }}>
       {goals.map((g, i) => (
         <motion.div key={g.t} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-          className="rounded-xl border border-slate-100 p-3">
+          className="rounded-xl border border-border p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2"><Target className="w-4 h-4 text-brand-blue" /><span className="font-semibold text-sm">{g.t}</span></div>
             <span className="text-xs font-bold text-brand-blue">{g.pct}%</span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden mt-2">
+          <div className="h-2 bg-surface rounded-full overflow-hidden mt-2">
             <motion.div initial={{ width: 0 }} whileInView={{ width: `${g.pct}%` }} viewport={{ once: true }} transition={{ duration: 1.2, delay: i * 0.15 }}
               className={`h-full rounded-full bg-gradient-to-r ${g.c}`} />
           </div>
-          <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1">
+          <div className="flex items-center justify-between text-[11px] text-muted mt-1">
             <span>{g.cur}</span><span>de {g.tgt}</span>
           </div>
         </motion.div>
@@ -963,25 +963,25 @@ function CalendarVisual() {
     { d: 13, inc: 0, exp: 123 }, { d: 14, inc: 3000, exp: 2100 },
   ];
   return (
-    <div className="card !p-5 bg-white" style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.3)' }}>
+    <div className="card !p-5 bg-surface" style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.3)' }}>
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-bold text-sm">Maio 2026</h4>
         <span className="text-xs text-brand-green font-semibold">+R$ 10.300</span>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center">
         {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-          <div key={i} className="text-[10px] text-slate-400 font-semibold pb-1">{d}</div>
+          <div key={i} className="text-[10px] text-muted font-semibold pb-1">{d}</div>
         ))}
         {days.map((day) => (
           <motion.div key={day.d} initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: day.d * 0.03 }}
-            className={`rounded-lg p-1 text-center cursor-pointer hover:scale-105 transition ${day.inc > 0 ? 'bg-green-50 border border-green-200' : day.exp > 0 ? 'bg-red-50 border border-red-100' : 'bg-slate-50'}`}>
-            <div className="text-[10px] font-semibold text-slate-700">{day.d}</div>
+            className={`rounded-lg p-1 text-center cursor-pointer hover:scale-105 transition ${day.inc > 0 ? 'bg-green-50 border border-green-200' : day.exp > 0 ? 'bg-red-50 border border-red-100' : 'bg-background'}`}>
+            <div className="text-[10px] font-semibold text-text">{day.d}</div>
             {day.inc > 0 && <div className="text-[8px] text-green-600 font-bold truncate">+{(day.inc / 1000).toFixed(1)}k</div>}
             {day.exp > 0 && <div className="text-[8px] text-red-500 truncate">-{day.exp}</div>}
           </motion.div>
         ))}
       </div>
-      <div className="mt-3 flex gap-3 text-[10px] text-slate-500">
+      <div className="mt-3 flex gap-3 text-[10px] text-muted">
         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-green-100 border border-green-200" /> Receita</div>
         <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-red-50 border border-red-100" /> Despesa</div>
       </div>

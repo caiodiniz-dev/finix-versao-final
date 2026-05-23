@@ -8,6 +8,7 @@ import {
   loginController,
   getMeController
 } from '../controllers/authController';
+import { refreshTokenController, logoutController } from '../controllers/oauthController';
 
 const router = Router();
 
@@ -35,6 +36,10 @@ router.post('/resend-code', resendCodeController);
 
 // Rota de Login
 router.post('/login', loginController);
+
+// Refresh token e logout
+router.post('/refresh-token', refreshTokenController);
+router.post('/logout', logoutController);
 
 // Rota para buscar dados do usuário logado
 router.get('/me', authenticate, getMeController);

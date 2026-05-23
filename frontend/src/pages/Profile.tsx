@@ -155,13 +155,13 @@ export default function Profile() {
     <div className="space-y-6" data-testid="profile-page">
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
+        <aside className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <Avatar size={56} />
             <div>
-              <p className="text-sm text-slate-400">Bom te ver de novo,</p>
-              <h2 className="text-xl font-bold text-slate-100">{user.name}</h2>
-              <p className="text-sm text-slate-400">Plano {planName}</p>
+              <p className="text-sm text-muted">Bom te ver de novo,</p>
+              <h2 className="text-xl font-bold text-text">{user.name}</h2>
+              <p className="text-sm text-muted">Plano {planName}</p>
             </div>
           </div>
 
@@ -170,7 +170,7 @@ export default function Profile() {
               <button
                 key={item}
                 onClick={() => setTab(item)}
-                className={`w-full rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${tab === item ? 'bg-brand-blue/10 text-brand-blue' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                className={`w-full rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${tab === item ? 'bg-brand-blue/10 text-brand-blue' : 'bg-surface-strong text-muted hover:bg-surface-strong'
                   }`}
               >
                 {item}
@@ -181,34 +181,34 @@ export default function Profile() {
 
         <main className="space-y-6">
           {/* Header card */}
-          <div className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
+          <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Perfil</p>
-                <h1 className="text-3xl font-display font-extrabold text-slate-100">Configurações pessoais</h1>
+                <p className="text-sm uppercase tracking-[0.3em] text-muted">Perfil</p>
+                <h1 className="text-3xl font-display font-extrabold text-text">Configurações pessoais</h1>
               </div>
-              <div className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300">
+              <div className="rounded-full bg-surface-strong px-4 py-2 text-sm font-semibold text-muted">
                 {planName}
               </div>
             </div>
-            <p className="mt-3 text-sm text-slate-400">Ajuste sua conta, veja o uso do plano e acesse exportações.</p>
+            <p className="mt-3 text-sm text-muted">Ajuste sua conta, veja o uso do plano e acesse exportações.</p>
           </div>
 
           {/* Perfil tab */}
           {tab === 'Perfil' && (
             <section className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-                  <h2 className="font-display font-bold text-lg text-slate-100">Dados de usuário</h2>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+                  <h2 className="font-display font-bold text-lg text-text">Dados de usuário</h2>
                   <form onSubmit={nameForm.handleSubmit(onSaveName)} className="mt-6 space-y-4" data-testid="name-form">
                     <div>
-                      <label className="text-sm font-medium text-slate-300">Nome</label>
-                      <input {...nameForm.register('name')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
+                      <label className="text-sm font-medium text-muted">Nome</label>
+                      <input {...nameForm.register('name')} className="input mt-1 text-text placeholder:text-muted dark:text-text" />
                       {nameForm.formState.errors.name && <p className="text-xs text-rose-400 mt-1">{nameForm.formState.errors.name.message}</p>}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-slate-300">E-mail</label>
-                      <input value={user.email} disabled className="input mt-1 bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-900/50 dark:border-slate-700 dark:text-slate-400" />
+                      <label className="text-sm font-medium text-muted">E-mail</label>
+                      <input value={user.email} disabled className="input mt-1 bg-surface-strong border-border text-muted cursor-not-allowed bg-surface-strong dark:border-border dark:text-muted" />
                     </div>
                     <button type="submit" className="btn-primary w-full" disabled={nameForm.formState.isSubmitting}>
                       {nameForm.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar alterações'}
@@ -217,8 +217,8 @@ export default function Profile() {
                 </motion.div>
 
                 {/* Card de foto */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-                  <h2 className="font-display font-bold text-lg text-slate-100">Foto de perfil</h2>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+                  <h2 className="font-display font-bold text-lg text-text">Foto de perfil</h2>
                   <div className="mt-6 flex flex-col items-center gap-6">
                     {/* Avatar grande com botão de câmera */}
                     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -285,9 +285,9 @@ export default function Profile() {
                     </div>
 
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-slate-100">{user.name}</p>
-                      <p className="text-xs text-slate-400 mt-1">Clique no ícone de câmera para trocar a foto</p>
-                      <p className="text-xs text-slate-500 mt-1">JPG, PNG ou GIF • máx 5MB</p>
+                      <p className="text-sm font-semibold text-text">{user.name}</p>
+                      <p className="text-xs text-muted mt-1">Clique no ícone de câmera para trocar a foto</p>
+                      <p className="text-xs text-muted mt-1">JPG, PNG ou GIF • máx 5MB</p>
                     </div>
                   </div>
                 </motion.div>
@@ -297,18 +297,18 @@ export default function Profile() {
 
           {/* Segurança tab */}
           {tab === 'Segurança' && (
-            <section className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-              <h2 className="font-display font-bold text-lg text-slate-100">Segurança</h2>
-              <p className="mt-2 text-sm text-slate-400">Mantenha sua conta protegida.</p>
+            <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+              <h2 className="font-display font-bold text-lg text-text">Segurança</h2>
+              <p className="mt-2 text-sm text-muted">Mantenha sua conta protegida.</p>
               <form onSubmit={pwForm.handleSubmit(onChangePw)} className="mt-6 space-y-4" data-testid="password-form">
                 <div>
-                  <label className="text-sm font-medium text-slate-300">Senha atual</label>
-                  <input type="password" {...pwForm.register('currentPassword')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
+                  <label className="text-sm font-medium text-muted">Senha atual</label>
+                  <input type="password" {...pwForm.register('currentPassword')} className="input mt-1 text-text placeholder:text-muted dark:text-text" />
                   {pwForm.formState.errors.currentPassword && <p className="text-xs text-rose-400 mt-1">{pwForm.formState.errors.currentPassword.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300">Nova senha</label>
-                  <input type="password" {...pwForm.register('newPassword')} className="input mt-1 text-slate-900 placeholder:text-slate-500 dark:text-slate-100" />
+                  <label className="text-sm font-medium text-muted">Nova senha</label>
+                  <input type="password" {...pwForm.register('newPassword')} className="input mt-1 text-text placeholder:text-muted dark:text-text" />
                   {pwForm.formState.errors.newPassword && <p className="text-xs text-rose-400 mt-1">{pwForm.formState.errors.newPassword.message}</p>}
                 </div>
                 <button type="submit" className="btn-primary w-full" disabled={pwForm.formState.isSubmitting}>
@@ -321,33 +321,33 @@ export default function Profile() {
           {/* Assinatura tab */}
           {tab === 'Assinatura' && (
             <section className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
+              <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Plano atual</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-slate-100">{planName}</h2>
+                    <p className="text-sm uppercase tracking-[0.3em] text-muted">Plano atual</p>
+                    <h2 className="mt-2 text-2xl font-semibold text-text">{planName}</h2>
                   </div>
                   <div className="rounded-full bg-brand-blue/10 px-3 py-1 text-sm font-semibold text-brand-blue">{user.plan}</div>
                 </div>
                 <div className="mt-6">
-                  <div className="flex items-center justify-between text-sm text-slate-400">
+                  <div className="flex items-center justify-between text-sm text-muted">
                     <span>Transações usadas</span>
                     <span>{usedTransactions}{transactionLimit === -1 ? '' : ` / ${transactionLimit}`}</span>
                   </div>
-                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-700">
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-strong">
                     <div className="h-full rounded-full bg-brand-blue" style={{ width: `${planUsedPercent}%` }} />
                   </div>
-                  <p className="mt-3 text-xs text-slate-400">{transactionLimit === -1 ? 'Movimentações ilimitadas' : `${planUsedPercent}% do limite usado`}</p>
+                  <p className="mt-3 text-xs text-muted">{transactionLimit === -1 ? 'Movimentações ilimitadas' : `${planUsedPercent}% do limite usado`}</p>
                 </div>
                 <div className="mt-6 space-y-3">
-                  <div className="rounded-3xl bg-slate-800 p-4 text-sm text-slate-300">Transações: {transactionLimit === -1 ? 'Ilimitadas' : transactionLimit === 0 ? 'Não disponível no plano Free' : `${transactionLimit} por mês`}</div>
-                  <div className="rounded-3xl bg-slate-800 p-4 text-sm text-slate-300">Categoria personalizada: {user.plan === 'PRO' ? 'Ativado' : 'Bloqueado'}</div>
-                  <div className="rounded-3xl bg-slate-800 p-4 text-sm text-slate-300">Exportação: {user.plan === 'PRO' ? 'PDF e Excel' : user.plan === 'BASIC' ? 'PDF apenas' : 'Não disponível'}</div>
+                  <div className="rounded-3xl bg-surface-strong p-4 text-sm text-muted">Transações: {transactionLimit === -1 ? 'Ilimitadas' : transactionLimit === 0 ? 'Não disponível no plano Free' : `${transactionLimit} por mês`}</div>
+                  <div className="rounded-3xl bg-surface-strong p-4 text-sm text-muted">Categoria personalizada: {user.plan === 'PRO' ? 'Ativado' : 'Bloqueado'}</div>
+                  <div className="rounded-3xl bg-surface-strong p-4 text-sm text-muted">Exportação: {user.plan === 'PRO' ? 'PDF e Excel' : user.plan === 'BASIC' ? 'PDF apenas' : 'Não disponível'}</div>
                 </div>
               </div>
-              <div className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-                <h3 className="font-semibold text-slate-100">Atualize seu plano</h3>
-                <p className="mt-2 text-sm text-slate-400">Acesse recursos premium como gestão de categorias, IA e suporte prioritário.</p>
+              <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+                <h3 className="font-semibold text-text">Atualize seu plano</h3>
+                <p className="mt-2 text-sm text-muted">Acesse recursos premium como gestão de categorias, IA e suporte prioritário.</p>
                 <Link to="/app/plans" className="btn-primary mt-6 inline-flex items-center gap-2">
                   <ArrowRight className="w-4 h-4" /> Ver planos
                 </Link>
@@ -357,21 +357,21 @@ export default function Profile() {
 
           {/* Notificações tab */}
           {tab === 'Notificações' && (
-            <section className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-              <h2 className="font-display font-bold text-lg text-slate-100">Notificações</h2>
-              <p className="mt-2 text-sm text-slate-400">Configure os canais de alerta que deseja receber.</p>
+            <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+              <h2 className="font-display font-bold text-lg text-text">Notificações</h2>
+              <p className="mt-2 text-sm text-muted">Configure os canais de alerta que deseja receber.</p>
               <div className="mt-6 space-y-4">
                 {(['email', 'push', 'whatsapp'] as const).map((channel) => (
-                  <label key={channel} className="flex items-center justify-between rounded-3xl border border-slate-700 bg-slate-800 p-4">
+                  <label key={channel} className="flex items-center justify-between rounded-3xl border border-border bg-surface-strong p-4">
                     <div>
-                      <p className="font-semibold text-slate-100">{channel === 'email' ? 'E-mail' : channel === 'push' ? 'Push' : 'WhatsApp'}</p>
-                      <p className="text-sm text-slate-400">Receba alertas sobre parcelas e pendências por {channel === 'email' ? 'e-mail' : channel === 'push' ? 'notificações no navegador' : 'WhatsApp'}.</p>
+                      <p className="font-semibold text-text">{channel === 'email' ? 'E-mail' : channel === 'push' ? 'Push' : 'WhatsApp'}</p>
+                      <p className="text-sm text-muted">Receba alertas sobre parcelas e pendências por {channel === 'email' ? 'e-mail' : channel === 'push' ? 'notificações no navegador' : 'WhatsApp'}.</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={notifSettings[channel]}
                       onChange={(e) => setNotifSettings((prev) => ({ ...prev, [channel]: e.target.checked }))}
-                      className="h-5 w-5 rounded border-slate-600 text-brand-blue focus:ring-brand-blue"
+                      className="h-5 w-5 rounded border-border text-brand-blue focus:ring-brand-blue"
                     />
                   </label>
                 ))}
@@ -381,28 +381,28 @@ export default function Profile() {
 
           {/* Empresa tab */}
           {tab === 'Empresa' && (
-            <section className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
-              <h2 className="font-display font-bold text-lg text-slate-100">Empresa</h2>
-              <p className="mt-2 text-sm text-slate-400">Gerencie informações da sua empresa.</p>
+            <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+              <h2 className="font-display font-bold text-lg text-text">Empresa</h2>
+              <p className="mt-2 text-sm text-muted">Gerencie informações da sua empresa.</p>
               {user.plan === 'PRO' ? (
                 <div className="mt-6 grid gap-4">
-                  <div className="rounded-3xl border border-slate-700 bg-slate-800 p-4">
-                    <p className="text-sm text-slate-400">Razão social</p>
-                    <p className="mt-2 text-slate-100">{user.companyName || 'Não informada'}</p>
+                  <div className="rounded-3xl border border-border bg-surface-strong p-4">
+                    <p className="text-sm text-muted">Razão social</p>
+                    <p className="mt-2 text-text">{user.companyName || 'Não informada'}</p>
                   </div>
-                  <div className="rounded-3xl border border-slate-700 bg-slate-800 p-4">
-                    <p className="text-sm text-slate-400">Logo</p>
+                  <div className="rounded-3xl border border-border bg-surface-strong p-4">
+                    <p className="text-sm text-muted">Logo</p>
                     {user.companyLogo ? (
                       <img src={user.companyLogo} alt="Logo da empresa" className="mt-3 h-20 w-20 rounded-3xl object-cover" />
                     ) : (
-                      <p className="mt-2 text-slate-400">Nenhuma logo carregada.</p>
+                      <p className="mt-2 text-muted">Nenhuma logo carregada.</p>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 rounded-3xl border border-slate-700 bg-slate-800 p-6 text-slate-300">
-                  <p className="font-semibold text-slate-100">Recurso disponível apenas no plano Pro</p>
-                  <p className="mt-2 text-sm text-slate-400">Para adicionar empresa, CNPJ e personalização, atualize seu plano.</p>
+                <div className="mt-6 rounded-3xl border border-border bg-surface-strong p-6 text-muted">
+                  <p className="font-semibold text-text">Recurso disponível apenas no plano Pro</p>
+                  <p className="mt-2 text-sm text-muted">Para adicionar empresa, CNPJ e personalização, atualize seu plano.</p>
                   <Link to="/app/plans" className="btn-outline mt-4 inline-flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" /> Ver planos Pro
                   </Link>
@@ -413,13 +413,13 @@ export default function Profile() {
 
           {/* Exportação tab */}
           {tab === 'Exportação' && (
-            <section className="rounded-3xl border border-slate-700 bg-[#0F172A] p-6 shadow-sm">
+            <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display font-bold text-lg text-slate-100">Exportação de dados</h2>
-                  <p className="mt-2 text-sm text-slate-400">Baixe seu histórico em PDF ou Excel.</p>
+                  <h2 className="font-display font-bold text-lg text-text">Exportação de dados</h2>
+                  <p className="mt-2 text-sm text-muted">Baixe seu histórico em PDF ou Excel.</p>
                 </div>
-                <div className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">{user.plan === 'PRO' ? 'Completo' : user.plan === 'BASIC' ? 'Parcial' : 'Limitado'}</div>
+                <div className="rounded-full bg-surface-strong px-3 py-1 text-sm text-muted">{user.plan === 'PRO' ? 'Completo' : user.plan === 'BASIC' ? 'Parcial' : 'Limitado'}</div>
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <button onClick={() => exportData('pdf')} className="btn-primary w-full inline-flex items-center justify-center gap-2">
@@ -429,7 +429,7 @@ export default function Profile() {
                   <Upload className="w-4 h-4" /> Exportar Excel
                 </button>
               </div>
-              <p className="mt-4 text-sm text-slate-400">Exportação Excel disponível apenas no plano Pro.</p>
+              <p className="mt-4 text-sm text-muted">Exportação Excel disponível apenas no plano Pro.</p>
             </section>
           )}
         </main>

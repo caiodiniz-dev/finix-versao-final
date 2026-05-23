@@ -34,7 +34,7 @@ export default function Budgets() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-display font-extrabold tracking-tight">Orçamentos</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Defina limites mensais por categoria</p>
+          <p className="text-muted dark:text-muted mt-1">Defina limites mensais por categoria</p>
         </div>
         <button onClick={() => { setEditing(null); setOpen(true); }} className="btn-primary" data-testid="new-budget-btn">
           <Plus className="w-4 h-4" /> Novo orçamento
@@ -45,9 +45,9 @@ export default function Budgets() {
         <div className="grid sm:grid-cols-2 gap-4">{[1, 2, 3].map(i => <div key={i} className="skeleton h-32" />)}</div>
       ) : items.length === 0 ? (
         <div className="card text-center py-14">
-          <Wallet className="w-12 h-12 mx-auto text-slate-300" />
+          <Wallet className="w-12 h-12 mx-auto text-muted" />
           <p className="mt-3 font-semibold text-lg">Nenhum orçamento definido</p>
-          <p className="text-sm text-slate-500 mt-1">Crie limites mensais para dominar seus gastos.</p>
+          <p className="text-sm text-muted mt-1">Crie limites mensais para dominar seus gastos.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -73,7 +73,7 @@ export default function Budgets() {
                     </div>
                     <div>
                       <h3 className="font-bold">{b.category}</h3>
-                      <p className="text-xs text-slate-500">Limite mensal</p>
+                      <p className="text-xs text-muted">Limite mensal</p>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -84,9 +84,9 @@ export default function Budgets() {
                 <div className="mt-4">
                   <div className="flex items-baseline justify-between mb-1">
                     <span className="text-xl font-display font-bold">{currency(b.spent)}</span>
-                    <span className="text-sm text-slate-500">de {currency(b.limit)}</span>
+                    <span className="text-sm text-muted">de {currency(b.limit)}</span>
                   </div>
-                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-surface dark:bg-surface-strong rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
@@ -137,7 +137,7 @@ function BudgetModal({ editing, onClose, onSaved }: { editing: Budget | null; on
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()} data-testid="budget-modal">
+        className="bg-surface dark:bg-surface-strong rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()} data-testid="budget-modal">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl font-bold">{editing ? 'Editar orçamento' : 'Novo orçamento'}</h2>
           <button onClick={onClose} className="btn-ghost !p-2"><X className="w-4 h-4" /></button>

@@ -294,18 +294,18 @@ export default function Calendar() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-extrabold text-slate-900 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-extrabold text-text dark:text-text">
             Calendário Financeiro
           </h1>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-slate-500 dark:text-slate-400">
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-muted dark:text-muted">
             Visualize receitas, despesas e saldo diário com navegação mensal.
           </p>
         </div>
-        <div className="inline-flex self-start sm:self-auto items-center gap-2 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-3 py-2 shadow-sm">
+        <div className="inline-flex self-start sm:self-auto items-center gap-2 rounded-3xl border border-border dark:border-border bg-surface dark:bg-surface px-3 py-2 shadow-sm">
           <button onClick={handlePrevMonth} className="btn-ghost rounded-full p-1.5 sm:p-2">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <span className="font-semibold capitalize text-sm sm:text-base text-slate-800 dark:text-slate-100">
+          <span className="font-semibold capitalize text-sm sm:text-base text-text">
             {currentMonthLabel}
           </span>
           <button onClick={handleNextMonth} className="btn-ghost rounded-full p-1.5 sm:p-2">
@@ -315,12 +315,12 @@ export default function Calendar() {
       </div>
 
       {loading && !calendar ? (
-        <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-8 text-center text-slate-400">
+        <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-8 text-center text-muted">
           <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-brand-blue" />
           Carregando calendário...
         </div>
       ) : error ? (
-        <div className="card border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-[#0F172A] p-6 text-rose-600 dark:text-rose-300">
+        <div className="card border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-surface p-6 text-rose-600 dark:text-rose-300">
           {error}
         </div>
       ) : (
@@ -336,8 +336,8 @@ export default function Calendar() {
                 color: monthlyTotals.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
               },
             ].map((item) => (
-              <div key={item.label} className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 md:p-6 shadow-sm">
-                <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-400 truncate">
+              <div key={item.label} className="card border border-border dark:border-border bg-surface dark:bg-surface p-3 sm:p-4 md:p-6 shadow-sm">
+                <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-muted truncate">
                   <span className="sm:hidden">{item.label}</span>
                   <span className="hidden sm:inline">{item.label === 'Saldo' ? 'Saldo líquido' : item.label}</span>
                 </div>
@@ -345,7 +345,7 @@ export default function Calendar() {
                   {formatCurrency(item.value)}
                 </div>
                 {isCurrentMonth && (
-                  <p className="mt-1 text-[10px] sm:text-xs text-slate-400 hidden sm:block">Acumulado até hoje</p>
+                  <p className="mt-1 text-[10px] sm:text-xs text-muted hidden sm:block">Acumulado até hoje</p>
                 )}
               </div>
             ))}
@@ -354,15 +354,15 @@ export default function Calendar() {
           {/* Main grid: calendar + day detail */}
           <div className="grid gap-4 xl:grid-cols-[1.8fr_1fr]">
             {/* Calendar grid */}
-            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 shadow-sm">
+            <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-3 sm:p-4 shadow-sm">
               {loading && (
-                <div className="mb-3 flex items-center gap-2 text-xs text-slate-400">
+                <div className="mb-3 flex items-center gap-2 text-xs text-muted">
                   <Loader2 className="h-3 w-3 animate-spin" /> Atualizando...
                 </div>
               )}
               <div className="grid gap-1 sm:gap-2">
                 {/* Weekday labels */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.25em] text-slate-400">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.25em] text-muted">
                   {WEEKDAY_LABELS.map((label) => (
                     <div key={label} className="py-1 sm:py-2">
                       <span className="sm:hidden">{label.charAt(0)}</span>
@@ -378,7 +378,7 @@ export default function Calendar() {
                       return (
                         <div
                           key={`empty-${index}`}
-                          className="min-h-[60px] sm:min-h-[80px] md:min-h-[98px] rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20"
+                          className="min-h-[60px] sm:min-h-[80px] md:min-h-[98px] rounded-xl sm:rounded-2xl md:rounded-3xl border border-border-strong bg-surface dark:bg-surface-strong/20"
                         />
                       );
                     }
@@ -397,18 +397,18 @@ export default function Calendar() {
                         className={[
                           'group flex flex-col gap-1 sm:gap-2 rounded-xl sm:rounded-2xl md:rounded-3xl border p-1.5 sm:p-2 md:p-3 text-left transition-all min-h-[60px] sm:min-h-[80px] md:min-h-[98px]',
                           !past
-                            ? 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 opacity-35 cursor-not-allowed'
+                            ? 'border-border-strong bg-surface dark:bg-surface-strong/20 opacity-35 cursor-not-allowed'
                             : isActive
                               ? 'border-brand-blue/50 bg-brand-blue/10 dark:bg-brand-blue/10 shadow-sm cursor-pointer'
-                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] hover:border-brand-blue/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer',
+                              : 'border-border dark:border-border bg-surface dark:bg-surface hover:border-brand-blue/30 hover:bg-surface dark:hover:bg-surface-strong/60 cursor-pointer',
                         ].join(' ')}
                       >
-                        <span className="hidden md:block text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                        <span className="hidden md:block text-[10px] uppercase tracking-[0.2em] text-muted">
                           {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
                         </span>
 
                         <div className="flex items-center gap-1">
-                          <span className={`text-sm sm:text-base md:text-xl font-semibold leading-none ${past ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
+                          <span className={`text-sm sm:text-base md:text-xl font-semibold leading-none ${past ? 'text-text' : 'text-muted'}`}>
                             {date.getDate()}
                           </span>
                           {isToday && <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-brand-blue flex-shrink-0" />}
@@ -428,13 +428,13 @@ export default function Calendar() {
                                 </div>
                               )}
                               {(day.revenue ?? 0) === 0 && (day.expense ?? 0) === 0 && (
-                                <div className="text-slate-300 dark:text-slate-600 text-[10px]">—</div>
+                                <div className="text-muted dark:text-muted text-[10px]">—</div>
                               )}
                             </div>
                             <div className={`mt-auto h-1 sm:h-1.5 rounded-full ${(day.net ?? 0) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                           </>
                         ) : (
-                          <div className="mt-auto h-1 sm:h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50" />
+                          <div className="mt-auto h-1 sm:h-1.5 rounded-full bg-surface-strong/50" />
                         )}
                       </button>
                     );
@@ -443,20 +443,20 @@ export default function Calendar() {
               </div>
 
               {/* Legend */}
-              <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-3 sm:gap-4 px-1 text-[10px] sm:text-xs text-slate-400">
+              <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-3 sm:gap-4 px-1 text-[10px] sm:text-xs text-muted">
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Receita</span>
                 <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-400" /> Despesa</span>
                 <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-blue" /> Hoje</span>
-                <span className="flex items-center gap-1.5 opacity-50"><span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600" /> Futuros</span>
+                <span className="flex items-center gap-1.5 opacity-50"><span className="h-2 w-2 rounded-full bg-surface-strong/50 dark:bg-surface-strong/80" /> Futuros</span>
               </div>
             </div>
 
             {/* Day detail panel */}
-            <div className="card border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4 md:p-6 shadow-sm">
+            <div className="card border border-border dark:border-border bg-surface dark:bg-surface p-3 sm:p-4 md:p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-slate-400">Detalhes do dia</p>
-                  <h2 className="mt-1 sm:mt-2 text-base sm:text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-muted">Detalhes do dia</p>
+                  <h2 className="mt-1 sm:mt-2 text-base sm:text-lg md:text-xl font-semibold text-text">
                     {selectedDate ? dateBR(selectedDate) : 'Selecione um dia'}
                   </h2>
                 </div>
@@ -473,14 +473,14 @@ export default function Calendar() {
               <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
                 {/* Revenue / Expense mini cards */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
-                    <div className="text-[10px] sm:text-xs text-slate-400">Receita</div>
+                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-border-strong dark:border-border bg-surface bg-surface-strong p-2.5 sm:p-3 md:p-4">
+                    <div className="text-[10px] sm:text-xs text-muted">Receita</div>
                     <div className="mt-1 sm:mt-1.5 text-sm sm:text-base md:text-lg font-semibold text-emerald-600 dark:text-emerald-400 break-all">
                       {formatCurrency(dayTotals.revenue)}
                     </div>
                   </div>
-                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
-                    <div className="text-[10px] sm:text-xs text-slate-400">Despesa</div>
+                  <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-border-strong dark:border-border bg-surface bg-surface-strong p-2.5 sm:p-3 md:p-4">
+                    <div className="text-[10px] sm:text-xs text-muted">Despesa</div>
                     <div className="mt-1 sm:mt-1.5 text-sm sm:text-base md:text-lg font-semibold text-rose-600 dark:text-rose-400 break-all">
                       {formatCurrency(dayTotals.expense)}
                     </div>
@@ -488,8 +488,8 @@ export default function Calendar() {
                 </div>
 
                 {/* Net balance */}
-                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
-                  <div className="text-[10px] sm:text-xs text-slate-400">Saldo do dia</div>
+                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-border-strong dark:border-border bg-surface bg-surface-strong p-2.5 sm:p-3 md:p-4">
+                  <div className="text-[10px] sm:text-xs text-muted">Saldo do dia</div>
                   <div className={`mt-1 sm:mt-1.5 text-sm sm:text-base md:text-xl font-semibold break-all ${dayTotals.net >= 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-rose-600 dark:text-rose-400'
@@ -499,12 +499,12 @@ export default function Calendar() {
                 </div>
 
                 {/* Transactions list */}
-                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0F172A] p-3 sm:p-4">
+                <div className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-border dark:border-border bg-surface dark:bg-surface p-3 sm:p-4">
                   <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-                    <p className="font-semibold text-sm sm:text-base text-slate-800 dark:text-slate-100">Transações</p>
+                    <p className="font-semibold text-sm sm:text-base text-text">Transações</p>
                     <div className="flex items-center gap-2">
-                      {loadingDay && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
-                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] sm:text-xs text-slate-500">
+                      {loadingDay && <Loader2 className="h-3 w-3 animate-spin text-muted" />}
+                      <span className="rounded-full bg-surface-strong dark:bg-surface-strong px-2 py-0.5 text-[10px] sm:text-xs text-muted">
                         {dayTransactions.length} itens
                       </span>
                     </div>
@@ -515,25 +515,25 @@ export default function Calendar() {
                       // Skeleton só aparece se não há nada para mostrar ainda
                       <div className="space-y-2">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 animate-pulse">
-                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2" />
-                            <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                          <div key={i} className="rounded-xl border border-border-strong dark:border-border bg-surface bg-surface-strong p-3 animate-pulse">
+                            <div className="h-3 bg-surface-strong rounded w-3/4 mb-2" />
+                            <div className="h-2 bg-surface-strong dark:bg-surface-strong rounded w-1/2" />
                           </div>
                         ))}
                       </div>
                     ) : dayTransactions.length > 0 ? (
                       dayTransactions.map((tx) => (
-                        <div key={tx.id} className="rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2.5 sm:p-3 md:p-4">
+                        <div key={tx.id} className="rounded-xl sm:rounded-2xl border border-border-strong dark:border-border bg-surface bg-surface-strong p-2.5 sm:p-3 md:p-4">
                           <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-xs sm:text-sm md:text-base">{tx.title}</p>
-                              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 truncate">
+                              <p className="font-semibold text-text truncate text-xs sm:text-sm md:text-base">{tx.title}</p>
+                              <p className="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1 truncate">
                                 {tx.category}
                                 {tx.paymentMethod && <> · {tx.paymentMethod}</>}
                                 {' · '}{dateBR(tx.date)}
                               </p>
                               {tx.description && (
-                                <p className="mt-1 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">{tx.description}</p>
+                                <p className="mt-1 text-[10px] sm:text-xs text-muted dark:text-muted leading-relaxed line-clamp-2">{tx.description}</p>
                               )}
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {tx.recurring && (
@@ -551,14 +551,14 @@ export default function Calendar() {
                             <div className={`font-bold whitespace-nowrap flex-shrink-0 text-right text-xs sm:text-sm md:text-base ${tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                               <div>{tx.type === 'INCOME' ? '+' : '-'}{currency(tx.amount)}</div>
                               {tx.currency && tx.currency !== 'BRL' && (
-                                <div className="text-[10px] text-slate-400 font-normal">{tx.currency}</div>
+                                <div className="text-[10px] text-muted font-normal">{tx.currency}</div>
                               )}
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 p-4 sm:p-6 text-center text-slate-400 text-xs sm:text-sm">
+                      <div className="rounded-xl sm:rounded-2xl border border-dashed border-border dark:border-border bg-surface dark:bg-surface-strong/30 p-4 sm:p-6 text-center text-muted text-xs sm:text-sm">
                         {selectedDate
                           ? 'Nenhuma transação registrada para este dia.'
                           : 'Selecione um dia para ver as transações.'}

@@ -50,7 +50,7 @@ export default function Goals() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-display font-extrabold tracking-tight">Metas</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Defina objetivos e acompanhe seu progresso</p>
+          <p className="text-muted dark:text-muted mt-1">Defina objetivos e acompanhe seu progresso</p>
         </div>
         <button onClick={() => { setEditing(null); setOpen(true); }} className="btn-primary" data-testid="new-goal-btn">
           <Plus className="w-4 h-4" /> Nova meta
@@ -63,9 +63,9 @@ export default function Goals() {
         </div>
       ) : items.length === 0 ? (
         <div className="card text-center py-14">
-          <Target className="w-12 h-12 mx-auto text-slate-300" />
+          <Target className="w-12 h-12 mx-auto text-muted" />
           <p className="mt-3 font-semibold text-lg">Nenhuma meta ainda</p>
-          <p className="text-sm text-slate-500 mt-1">Crie sua primeira meta e transforme desejos em planos.</p>
+          <p className="text-sm text-muted mt-1">Crie sua primeira meta e transforme desejos em planos.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -88,7 +88,7 @@ export default function Goals() {
                       {done ? <Trophy className="w-5 h-5 text-amber-500" /> : <Target className="w-5 h-5 text-brand-blue" />}
                       <h3 className="font-display font-bold truncate">{g.title}</h3>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted mt-1">
                       <CalendarDays className="w-3.5 h-3.5" /> {dateBR(g.deadline)}
                     </div>
                   </div>
@@ -100,9 +100,9 @@ export default function Goals() {
                 <div className="relative mt-5">
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="text-2xl font-display font-bold">{currency(g.currentAmount)}</span>
-                    <span className="text-sm text-slate-500">de {currency(g.targetAmount)}</span>
+                    <span className="text-sm text-muted">de {currency(g.targetAmount)}</span>
                   </div>
-                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-3 bg-surface dark:bg-surface-strong rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
@@ -112,7 +112,7 @@ export default function Goals() {
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs">
                     <span className="font-semibold text-brand-blue">{pct.toFixed(0)}% concluído</span>
-                    <span className="text-slate-500">{forecast(g)}</span>
+                    <span className="text-muted">{forecast(g)}</span>
                   </div>
                 </div>
               </motion.div>
@@ -157,7 +157,7 @@ function GoalModal({ editing, onClose, onSaved }: { editing: Goal | null; onClos
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()} data-testid="goal-modal">
+        className="bg-surface dark:bg-surface-strong rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()} data-testid="goal-modal">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl font-bold">{editing ? 'Editar meta' : 'Nova meta'}</h2>
           <button onClick={onClose} className="btn-ghost !p-2"><X className="w-4 h-4" /></button>

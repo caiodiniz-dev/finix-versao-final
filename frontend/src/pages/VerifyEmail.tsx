@@ -92,13 +92,13 @@ export default function VerifyEmail() {
             <CheckCircle className="w-24 h-24 text-green-500" />
           </div>
 
-          <h1 className="text-4xl font-display font-bold text-slate-900 mb-3">
+          <h1 className="text-4xl font-display font-bold text-text mb-3">
             E-mail verificado!
           </h1>
-          <p className="text-xl text-slate-600 mb-8">
+          <p className="text-xl text-muted mb-8">
             Sua conta foi ativada com sucesso
           </p>
-          <div className="text-sm text-slate-500 font-medium">
+          <div className="text-sm text-muted font-medium">
             Redirecionando para login...
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-slate-50">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex relative overflow-hidden items-center justify-center p-12 bg-auth-side text-white">
         <div className="absolute top-8 left-8">
           <Logo size={44} showText={false} />
@@ -133,10 +133,10 @@ export default function VerifyEmail() {
               <Mail className="w-4 h-4" />
               {email || 'seu e-mail'}
             </div>
-            <h1 className="text-4xl font-display font-bold text-slate-900">
+            <h1 className="text-4xl font-display font-bold text-text">
               Digite seu código
             </h1>
-            <p className="text-slate-600 text-base">
+            <p className="text-muted text-base">
               Enviamos um código de 6 dígitos para o seu e-mail. Confira sua caixa de entrada.
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function VerifyEmail() {
           <div className="card shadow-xl p-8">
             <form onSubmit={handleVerify} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-semibold text-slate-700">
+                <label htmlFor="email" className="text-sm font-semibold text-text">
                   E-mail
                 </label>
                 <input
@@ -158,7 +158,7 @@ export default function VerifyEmail() {
               </div>
 
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-text">
                   Código de verificação
                 </label>
                 <div className="grid grid-cols-6 gap-2">
@@ -169,7 +169,7 @@ export default function VerifyEmail() {
                       value={digit}
                       onChange={(e) => handleCodeChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="h-14 text-center text-2xl font-bold rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-purple/50 focus:border-brand-purple outline-none transition text-slate-900"
+                      className="h-14 text-center text-2xl font-bold rounded-2xl border border-border bg-background focus:bg-surface focus:ring-2 focus:ring-brand-purple/50 focus:border-brand-purple outline-none transition text-text"
                       maxLength={1}
                       inputMode="numeric"
                     />
@@ -195,7 +195,7 @@ export default function VerifyEmail() {
                 )}
               </button>
 
-              <p className="text-center text-sm text-slate-500">Sua segurança é nossa prioridade</p>
+              <p className="text-center text-sm text-muted">Sua segurança é nossa prioridade</p>
             </form>
           </div>
 
@@ -203,7 +203,7 @@ export default function VerifyEmail() {
             <button
               onClick={handleResend}
               disabled={isResending}
-              className="w-full text-sm font-semibold text-brand-purple hover:text-brand-blue transition disabled:opacity-50 flex items-center justify-center gap-2 py-3 rounded-2xl border border-brand-purple/20 bg-white"
+              className="w-full text-sm font-semibold text-brand-purple hover:text-brand-blue transition disabled:opacity-50 flex items-center justify-center gap-2 py-3 rounded-2xl border border-brand-purple/20 bg-surface"
             >
               {isResending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -215,7 +215,7 @@ export default function VerifyEmail() {
 
             <button
               onClick={() => navigate('/register')}
-              className="w-full text-sm font-semibold text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2 py-3 rounded-2xl border border-slate-200 bg-white"
+              className="w-full text-sm font-semibold text-muted hover:text-text transition flex items-center justify-center gap-2 py-3 rounded-2xl border border-border bg-surface"
             >
               <ArrowLeft className="w-4 h-4" />
               Voltar
