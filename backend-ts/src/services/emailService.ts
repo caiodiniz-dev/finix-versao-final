@@ -9,7 +9,7 @@ const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
 const SMTP_HOST =
   process.env.SMTP_HOST || process.env.GMAIL_HOST || "smtp.gmail.com";
 const SMTP_PORT = Number(
-  process.env.SMTP_PORT || process.env.GMAIL_PORT || 465,
+  process.env.SMTP_PORT || process.env.GMAIL_PORT || 587,
 );
 const EMAIL_FROM =
   process.env.EMAIL_FROM ||
@@ -227,6 +227,7 @@ const createSmtpTransport = (isGmail: boolean) => {
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
       auth,
+      requireTLS: SMTP_PORT === 587,
       tls: { rejectUnauthorized: false },
     });
   }

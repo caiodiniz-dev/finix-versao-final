@@ -150,7 +150,7 @@ export default function AppLayout() {
           />
           {user.plan === "PRO" && user.companyName && (
             <div>
-              <div className="text-text-muted">Empresa</div>
+              <div className="text-muted">Empresa</div>
               <div className="text-xl font-display font-bold text-text tracking-tight">
                 {user.companyName}
               </div>
@@ -169,7 +169,7 @@ export default function AppLayout() {
               `flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all ${
                 isActive
                   ? "bg-gradient-to-r from-brand-blue/10 to-brand-purple/10 text-brand-blue border border-brand-blue/20"
-                  : "text-text-muted hover:bg-surface-strong"
+                  : "text-muted hover:bg-surface-strong"
               }`
             }
           >
